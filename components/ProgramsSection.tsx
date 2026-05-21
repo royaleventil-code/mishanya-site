@@ -543,31 +543,7 @@ function ProgramModal({
         exit={{ opacity: 0, scale: 0.96, y: 24 }}
         transition={{ duration: 0.32, ease: APPLE_EASE }}
       >
-        <div
-          data-close-drag-handle
-          role="button"
-          tabIndex={0}
-          aria-label="Закрыть"
-          className="absolute left-1/2 top-2 z-30 flex h-7 w-24 -translate-x-1/2 cursor-grab items-start justify-center rounded-full pt-1.5 active:cursor-grabbing"
-          style={{ touchAction: "none" }}
-          onClick={(event) => {
-            event.stopPropagation();
-            onClose();
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") onClose();
-          }}
-          onPointerDown={(event) => startCloseTracking(event.clientY)}
-          onMouseDown={(event) => startCloseTracking(event.clientY)}
-          onTouchStart={(event) => {
-            const touch = event.touches[0];
-            if (touch) startCloseTracking(touch.clientY);
-          }}
-        >
-          <span className="h-1.5 w-12 rounded-full bg-black/20" />
-        </div>
-
-        <AnimatePresence mode="wait" initial={false} custom={slideDirection}>
+        <AnimatePresence mode="sync" initial={false} custom={slideDirection}>
           <motion.div
             key={program.id}
             custom={slideDirection}
@@ -621,13 +597,6 @@ function ProgramModal({
               {program.emoji}
             </span>
           )}
-          <button
-            onClick={onClose}
-            aria-label="Закрыть"
-            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/90 hover:bg-white flex items-center justify-center shadow-md transition"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
         <div className="p-5 sm:p-7">
@@ -802,6 +771,40 @@ function ProgramModal({
           </motion.div>
         </AnimatePresence>
       </motion.div>
+
+      {/* Sticky drag handle — always visible at top, swipe down to close */}
+      <div
+        data-close-drag-handle
+        role="button"
+        tabIndex={0}
+        aria-label="Закрыть"
+        className="fixed left-1/2 top-2 z-[70] flex h-10 w-28 -translate-x-1/2 cursor-grab items-start justify-center rounded-full pt-2 active:cursor-grabbing"
+        style={{ touchAction: "none" }}
+        onClick={(event) => {
+          event.stopPropagation();
+          onClose();
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") onClose();
+        }}
+        onPointerDown={(event) => startCloseTracking(event.clientY)}
+        onMouseDown={(event) => startCloseTracking(event.clientY)}
+        onTouchStart={(event) => {
+          const touch = event.touches[0];
+          if (touch) startCloseTracking(touch.clientY);
+        }}
+      >
+        <span className="h-1.5 w-12 rounded-full bg-black/30 shadow-sm" />
+      </div>
+
+      {/* Sticky close button */}
+      <button
+        onClick={onClose}
+        aria-label="Закрыть"
+        className="fixed top-3 right-3 z-[70] w-10 h-10 rounded-full bg-white/95 hover:bg-white flex items-center justify-center shadow-md backdrop-blur transition"
+      >
+        <X className="w-5 h-5" />
+      </button>
 
       {/* Floating navigation arrows — vertically centered on cover area, stay visible on scroll */}
       {total > 1 && (
