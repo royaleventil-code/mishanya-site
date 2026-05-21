@@ -489,12 +489,7 @@ function ProgramModal({
       onClose();
       return;
     }
-
-    const isHorizontalSwipe = Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.0;
-    if (!isHorizontalSwipe) return;
-
-    if (dx < 0 && canGoNext) onNavigate(1);
-    if (dx > 0 && canGoPrevious) onNavigate(-1);
+    // Horizontal swipe handled by framer-motion drag on the slide content (visual follow + spring)
   };
 
   const rememberSwipeStart = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -588,6 +583,21 @@ function ProgramModal({
               x: { type: "spring", stiffness: 280, damping: 30, mass: 0.9 },
               opacity: { duration: 0.18 },
             }}
+            drag="x"
+            dragDirectionLock
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.6}
+            dragMomentum={false}
+            onDragEnd={(_event, info) => {
+              const offset = info.offset.x;
+              const velocity = info.velocity.x;
+              const swiped =
+                Math.abs(offset) > 80 || Math.abs(velocity) > 500;
+              if (!swiped) return;
+              if (offset < 0 && canGoNext) onNavigate(1);
+              else if (offset > 0 && canGoPrevious) onNavigate(-1);
+            }}
+            style={{ touchAction: "pan-y" }}
           >
         {/* Cover */}
         <div
