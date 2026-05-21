@@ -38,6 +38,7 @@ export function ProgramsSection({ segment, accent, programs, heroes }: Props) {
     language: null,
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [slideDirection, setSlideDirection] = useState<-1 | 1>(1);
 
   const visibleProgramsBase = useMemo(
     () => programs.filter((p) => p.segments.includes(segment)),
@@ -62,7 +63,10 @@ export function ProgramsSection({ segment, accent, programs, heroes }: Props) {
       if (!selectedId) return;
       const index = visiblePrograms.findIndex((p) => p.id === selectedId);
       const nextProgram = visiblePrograms[index + direction];
-      if (nextProgram) setSelectedId(nextProgram.id);
+      if (nextProgram) {
+        setSlideDirection(direction);
+        setSelectedId(nextProgram.id);
+      }
     },
     [selectedId, visiblePrograms],
   );
@@ -146,6 +150,7 @@ export function ProgramsSection({ segment, accent, programs, heroes }: Props) {
             total={visiblePrograms.length}
             canGoPrevious={canGoPrevious}
             canGoNext={canGoNext}
+            slideDirection={slideDirection}
             onNavigate={navigateProgram}
             onClose={() => setSelectedId(null)}
           />
@@ -377,6 +382,7 @@ function ProgramModal({
   total,
   canGoPrevious,
   canGoNext,
+  slideDirection,
   onNavigate,
   onClose,
 }: {
@@ -389,6 +395,7 @@ function ProgramModal({
   total: number;
   canGoPrevious: boolean;
   canGoNext: boolean;
+  slideDirection: -1 | 1;
   onNavigate: (direction: -1 | 1) => void;
   onClose: () => void;
 }) {
@@ -525,7 +532,7 @@ function ProgramModal({
       transition={{ duration: 0.2, ease: APPLE_EASE }}
     >
       <motion.div
-        className="relative w-full max-w-2xl bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl my-auto sm:my-8 max-h-[95vh] overflow-y-auto"
+        className="relative w-full max-w-2xl bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl my-auto sm:my-8 max-h-[95vh] overflow-y-auto overflow-x-hidden"
         onClick={(e) => e.stopPropagation()}
         onPointerDown={rememberSwipeStart}
         onPointerMove={handleSwipeMove}
@@ -565,9 +572,26 @@ function ProgramModal({
           <span className="h-1.5 w-12 rounded-full bg-black/20" />
         </div>
 
+        <AnimatePresence mode="wait" initial={false} custom={slideDirection}>
+          <motion.div
+            key={program.id}
+            custom={slideDirection}
+            variants={{
+              enter: (dir: number) => ({ x: dir > 0 ? "100%" : "-100%", opacity: 0 }),
+              center: { x: 0, opacity: 1 },
+              exit: (dir: number) => ({ x: dir > 0 ? "-100%" : "100%", opacity: 0 }),
+            }}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{
+              x: { type: "spring", stiffness: 280, damping: 30, mass: 0.9 },
+              opacity: { duration: 0.18 },
+            }}
+          >
         {/* Cover */}
         <div
-          className="relative h-40 sm:h-52 flex items-center justify-center rounded-t-3xl overflow-hidden"
+          className="relative h-48 sm:h-64 flex items-center justify-center rounded-t-3xl overflow-hidden"
           style={
             program.cover
               ? { background: "white" }
@@ -765,11 +789,13 @@ function ProgramModal({
             💬 Написать менеджеру про эту программу
           </a>
         </div>
+          </motion.div>
+        </AnimatePresence>
       </motion.div>
 
-      {/* Floating navigation arrows — stay visible while scrolling modal */}
+      {/* Floating navigation arrows — bottom-fixed FAB style, always visible */}
       {total > 1 && (
-        <div className="pointer-events-none fixed inset-y-0 left-0 right-0 z-[60] flex items-center justify-between px-2 sm:px-5">
+        <div className="pointer-events-none fixed left-0 right-0 z-[60] flex items-center justify-between px-3 sm:px-6 bottom-5 sm:bottom-8">
           <button
             type="button"
             aria-label="Предыдущая программа"
