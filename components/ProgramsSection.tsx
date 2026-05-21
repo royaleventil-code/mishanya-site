@@ -524,7 +524,7 @@ function ProgramModal({
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 modal-backdrop bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-y-auto"
+      className="fixed inset-0 z-50 modal-backdrop bg-black/40 sm:flex sm:items-center sm:justify-center sm:p-6"
       onClick={onClose}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -532,7 +532,7 @@ function ProgramModal({
       transition={{ duration: 0.2, ease: APPLE_EASE }}
     >
       <motion.div
-        className="relative w-full max-w-2xl bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl my-auto sm:my-8 max-h-[95vh] overflow-y-auto overflow-x-hidden"
+        className="relative w-full sm:max-w-2xl bg-white sm:rounded-3xl shadow-2xl h-[100dvh] sm:h-auto sm:max-h-[95vh] overflow-y-auto overflow-x-hidden"
         onClick={(e) => e.stopPropagation()}
         onPointerDown={rememberSwipeStart}
         onPointerMove={handleSwipeMove}
@@ -793,9 +793,9 @@ function ProgramModal({
         </AnimatePresence>
       </motion.div>
 
-      {/* Floating navigation arrows — bottom-fixed FAB style, always visible */}
+      {/* Floating navigation arrows — vertically centered on cover area, stay visible on scroll */}
       {total > 1 && (
-        <div className="pointer-events-none fixed left-0 right-0 z-[60] flex items-center justify-between px-3 sm:px-6 bottom-5 sm:bottom-8">
+        <div className="pointer-events-none fixed left-0 right-0 z-[60] flex items-center justify-between px-2 sm:px-5 top-[120px] sm:top-1/2 sm:-translate-y-1/2">
           <button
             type="button"
             aria-label="Предыдущая программа"
