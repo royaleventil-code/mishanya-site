@@ -45,23 +45,20 @@ const STEPS: Step[] = [
   },
 ];
 
-const CARD_W = 250;
-const CARD_W_SM = 280;
-
 export function HowItWorks() {
   return (
     <section
-      className="relative mx-auto max-w-4xl px-5 sm:px-6 py-12 sm:py-20 overflow-hidden"
+      className="relative mx-auto max-w-5xl px-5 sm:px-6 py-14 sm:py-24 overflow-hidden"
       style={{
         backgroundImage:
-          "radial-gradient(ellipse 80% 60% at 50% 0%, #eef2ff 0%, transparent 70%)",
+          "radial-gradient(ellipse 78% 58% at 50% 8%, rgba(219,234,254,0.7) 0%, rgba(250,245,255,0.35) 45%, transparent 76%)",
       }}
     >
       <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center">
         Как мы работаем
       </h2>
 
-      <div className="mt-10 sm:mt-14 mx-auto w-full max-w-[420px] sm:max-w-[480px]">
+      <div className="mt-12 sm:mt-16 mx-auto w-full max-w-[760px]">
         {STEPS.map((step, idx) => {
           const isLeft = idx % 2 === 0;
           const nextStep = STEPS[idx + 1];
@@ -75,7 +72,7 @@ export function HowItWorks() {
                 <StepCard step={step} />
               </div>
               {nextStep && (
-                <ArrowConnector
+                <ZigZagConnector
                   direction={isLeft ? "rightDown" : "leftDown"}
                   color={step.to}
                 />
@@ -92,34 +89,31 @@ function StepCard({ step }: { step: Step }) {
   const { n, title, desc, Icon, from, to } = step;
   return (
     <div
-      className="relative rounded-3xl px-5 py-5 flex items-center gap-4"
+      className="relative w-full max-w-[520px] rounded-[32px] px-6 py-6 sm:px-8 sm:py-7 flex items-center gap-5 sm:gap-7"
       style={{
-        width: CARD_W,
         background:
-          "linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.75) 100%)",
-        backdropFilter: "blur(14px)",
-        WebkitBackdropFilter: "blur(14px)",
-        boxShadow: `0 18px 40px -16px ${to}55, 0 8px 20px -12px rgba(15,15,20,0.08), inset 0 0 0 1px rgba(255,255,255,0.6)`,
+          "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.78) 100%)",
+        backdropFilter: "blur(18px) saturate(160%)",
+        WebkitBackdropFilter: "blur(18px) saturate(160%)",
+        boxShadow: `0 30px 70px -34px ${to}99, 0 22px 48px -34px rgba(15,15,20,0.18), inset 0 0 0 1px rgba(255,255,255,0.78)`,
       }}
     >
-      {/* Decorative dots */}
       <span
         aria-hidden
-        className="absolute top-2 right-3 w-1.5 h-1.5 rounded-full opacity-70"
+        className="absolute left-7 top-5 w-2 h-2 rounded-full opacity-70"
         style={{ background: from }}
       />
       <span
         aria-hidden
-        className="absolute bottom-3 left-3 w-1 h-1 rounded-full opacity-50"
+        className="absolute left-5 top-12 w-2 h-2 rounded-full opacity-60"
         style={{ background: to }}
       />
       <span
         aria-hidden
-        className="absolute bottom-5 right-6 w-1 h-1 rounded-full opacity-50"
+        className="absolute bottom-7 right-7 w-2.5 h-2.5 rounded-full opacity-70"
         style={{ background: from }}
       />
 
-      {/* Icon orb with glow */}
       <div className="relative shrink-0">
         <div
           aria-hidden
@@ -130,44 +124,44 @@ function StepCard({ step }: { step: Step }) {
           }}
         />
         <div
-          className="relative w-16 h-16 sm:w-[68px] sm:h-[68px] rounded-full flex items-center justify-center"
+          className="relative w-[88px] h-[88px] sm:w-[112px] sm:h-[112px] rounded-full flex items-center justify-center"
           style={{
             background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
-            boxShadow: `0 12px 28px -8px ${to}99, inset 0 -6px 14px rgba(0,0,0,0.18), inset 0 6px 14px rgba(255,255,255,0.4)`,
+            boxShadow: `0 18px 40px -12px ${to}aa, inset 0 -10px 22px rgba(0,0,0,0.18), inset 0 9px 20px rgba(255,255,255,0.44), 0 0 0 8px rgba(255,255,255,0.62)`,
           }}
         >
           <Icon
-            className="w-7 h-7 sm:w-8 sm:h-8 text-white drop-shadow"
-            strokeWidth={2.2}
+            className="w-10 h-10 sm:w-12 sm:h-12 text-white drop-shadow"
+            strokeWidth={2.35}
           />
         </div>
       </div>
 
-      {/* Text */}
       <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="text-base sm:text-lg font-bold tracking-tight">
-            {title}
-          </h3>
-          <span
-            className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums"
-            style={{
-              background: `${to}1a`,
-              color: to,
-            }}
-          >
-            {String(n).padStart(2, "0")}
-          </span>
-        </div>
-        <p className="mt-1 text-[12.5px] leading-snug text-[var(--color-ink-soft)]">
+        <h3 className="text-2xl sm:text-[28px] font-bold tracking-tight leading-tight">
+          {title}
+        </h3>
+        <p className="mt-2 text-base sm:text-lg leading-snug text-[var(--color-ink-soft)]">
           {desc}
         </p>
       </div>
+
+      <span
+        className="absolute -top-4 right-7 sm:right-10 grid w-14 h-14 sm:w-16 sm:h-16 place-items-center rounded-full text-xl sm:text-2xl font-bold tabular-nums"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,255,255,0.68))",
+          color: to,
+          boxShadow: `0 12px 28px -16px ${to}, inset 0 0 0 1px rgba(255,255,255,0.82)`,
+        }}
+      >
+        {String(n).padStart(2, "0")}
+      </span>
     </div>
   );
 }
 
-function ArrowConnector({
+function ZigZagConnector({
   direction,
   color,
 }: {
@@ -175,41 +169,54 @@ function ArrowConnector({
   color: string;
 }) {
   const isRight = direction === "rightDown";
-
-  /*
-    SVG uses a virtual 1000×90 viewBox. The line is drawn from the
-    horizontal center of the upper card to the horizontal center of
-    the next (opposite-side) card with a soft S-curve in between.
-    No arrowhead — just a clean curved line.
-
-    Card width ≈ 60% of the container, so card centers sit roughly at
-    x≈300 (left card) and x≈700 (right card) within the 1000-unit viewBox.
-  */
-  const startX = isRight ? 300 : 700;
-  const endX = isRight ? 700 : 300;
-  const midX = 500;
-  const startY = 4;
-  const endY = 86;
-
-  const path = `M ${startX} ${startY} C ${midX} ${startY + 6}, ${midX} ${endY - 6}, ${endX} ${endY}`;
+  const shadowId = `journey-arrow-${direction}-${color.replace("#", "")}`;
+  const path = isRight
+    ? "M 520 8 C 650 8 704 52 704 104"
+    : "M 240 8 C 110 8 56 52 56 104";
+  const arrowHead = isRight ? "M 682 84 L704 106 L724 84" : "M 78 84 L56 106 L36 84";
 
   return (
-    <div className="relative w-full" style={{ height: 70 }} aria-hidden>
+    <div className="-mt-8 -mb-1 sm:-mt-9 sm:-mb-1 relative w-full" style={{ height: 124 }} aria-hidden>
       <svg
         width="100%"
         height="100%"
-        viewBox="0 0 1000 90"
+        viewBox="0 0 760 124"
         preserveAspectRatio="none"
         fill="none"
         className="block"
       >
+        <defs>
+          <filter id={shadowId} x="-18%" y="-30%" width="136%" height="170%">
+            <feDropShadow dx="0" dy="8" stdDeviation="7" floodColor={color} floodOpacity="0.18" />
+          </filter>
+        </defs>
+        <path
+          d={path}
+          stroke="rgba(255,255,255,0.9)"
+          strokeWidth="12"
+          strokeLinecap="round"
+          fill="none"
+          vectorEffect="non-scaling-stroke"
+        />
         <path
           d={path}
           stroke={color}
-          strokeWidth="6"
+          strokeWidth="4"
           strokeLinecap="round"
           fill="none"
-          opacity="0.7"
+          opacity="0.58"
+          filter={`url(#${shadowId})`}
+          vectorEffect="non-scaling-stroke"
+        />
+        <path
+          d={arrowHead}
+          stroke={color}
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none"
+          opacity="0.72"
+          filter={`url(#${shadowId})`}
           vectorEffect="non-scaling-stroke"
         />
       </svg>

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, ChevronDown, X, Clock, Users, Banknote, Baby } from "lucide-react";
+import { Baby, Banknote, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Users, X } from "lucide-react";
 import type { FilterState, Hero, Program, SegmentId } from "@/lib/types";
 import { filterHeroes, filterPrograms } from "@/lib/filtering";
 import { sortHeroes } from "@/lib/heroOrder";
@@ -48,14 +48,31 @@ export function ProgramsSection({ segment, accent, programs, heroes }: Props) {
     [programs, segment, filters],
   );
 
+  const selectedIndex = selectedId
+    ? visiblePrograms.findIndex((p) => p.id === selectedId)
+    : -1;
   const selectedProgram = selectedId
-    ? programs.find((p) => p.id === selectedId) ?? null
+    ? visiblePrograms[selectedIndex] ?? programs.find((p) => p.id === selectedId) ?? null
     : null;
+  const canGoPrevious = selectedIndex > 0;
+  const canGoNext = selectedIndex >= 0 && selectedIndex < visiblePrograms.length - 1;
+
+  const navigateProgram = useCallback(
+    (direction: -1 | 1) => {
+      if (!selectedId) return;
+      const index = visiblePrograms.findIndex((p) => p.id === selectedId);
+      const nextProgram = visiblePrograms[index + direction];
+      if (nextProgram) setSelectedId(nextProgram.id);
+    },
+    [selectedId, visiblePrograms],
+  );
 
   useEffect(() => {
     if (!selectedProgram) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setSelectedId(null);
+      if (e.key === "ArrowLeft") navigateProgram(-1);
+      if (e.key === "ArrowRight") navigateProgram(1);
     };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -63,7 +80,7 @@ export function ProgramsSection({ segment, accent, programs, heroes }: Props) {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-  }, [selectedProgram]);
+  }, [navigateProgram, selectedProgram]);
 
   return (
     <section className="mx-auto max-w-3xl px-5 sm:px-6 pb-10">
@@ -119,12 +136,17 @@ export function ProgramsSection({ segment, accent, programs, heroes }: Props) {
       <AnimatePresence>
         {selectedProgram && (
           <ProgramModal
-            key={selectedProgram.id}
+            key="program-modal"
             program={selectedProgram}
             accent={accent}
             segment={segment}
             heroes={heroes}
             languageFilter={filters.language}
+            position={selectedIndex + 1}
+            total={visiblePrograms.length}
+            canGoPrevious={canGoPrevious}
+            canGoNext={canGoNext}
+            onNavigate={navigateProgram}
             onClose={() => setSelectedId(null)}
           />
         )}
@@ -351,6 +373,11 @@ function ProgramModal({
   segment,
   heroes,
   languageFilter,
+  position,
+  total,
+  canGoPrevious,
+  canGoNext,
+  onNavigate,
   onClose,
 }: {
   program: Program;
@@ -358,9 +385,136 @@ function ProgramModal({
   segment: SegmentId;
   heroes: Hero[];
   languageFilter: FilterState["language"];
+  position: number;
+  total: number;
+  canGoPrevious: boolean;
+  canGoNext: boolean;
+  onNavigate: (direction: -1 | 1) => void;
   onClose: () => void;
 }) {
   const APPLE_EASE = [0.32, 0.72, 0, 1] as const;
+  const swipeStartRef = useRef<{ x: number; y: number; canClose: boolean } | null>(null);
+  const closeTrackingCleanupRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    return () => {
+      closeTrackingCleanupRef.current?.();
+    };
+  }, []);
+
+  const startCloseTracking = (startY: number) => {
+    closeTrackingCleanupRef.current?.();
+
+    let closed = false;
+    const cleanup = () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", cleanup);
+      window.removeEventListener("pointercancel", cleanup);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", cleanup);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", cleanup);
+      window.removeEventListener("touchcancel", cleanup);
+      closeTrackingCleanupRef.current = null;
+    };
+
+    const closeIfPulled = (clientY: number) => {
+      if (closed || clientY - startY <= 86) return;
+      closed = true;
+      cleanup();
+      onClose();
+    };
+
+    function onPointerMove(event: PointerEvent) {
+      closeIfPulled(event.clientY);
+    }
+
+    function onMouseMove(event: MouseEvent) {
+      closeIfPulled(event.clientY);
+    }
+
+    function onTouchMove(event: TouchEvent) {
+      const touch = event.touches[0];
+      if (touch) closeIfPulled(touch.clientY);
+    }
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", cleanup);
+    window.addEventListener("pointercancel", cleanup);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", cleanup);
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("touchend", cleanup);
+    window.addEventListener("touchcancel", cleanup);
+    closeTrackingCleanupRef.current = cleanup;
+  };
+
+  const startSwipe = (target: EventTarget, container: HTMLDivElement, x: number, y: number) => {
+    const targetElement = target as HTMLElement;
+    const isCloseHandle = !!targetElement.closest("[data-close-drag-handle]");
+    const isTopDragZone = y - container.getBoundingClientRect().top <= 96;
+    if (targetElement.closest("a")) return;
+    if (targetElement.closest("button") && !isCloseHandle) return;
+    swipeStartRef.current = { x, y, canClose: isCloseHandle || isTopDragZone };
+  };
+
+  const moveSwipe = (x: number, y: number) => {
+    const start = swipeStartRef.current;
+    if (!start?.canClose) return;
+    const dx = x - start.x;
+    const dy = y - start.y;
+    const isDownClose = dy > 86 && Math.abs(dy) > Math.abs(dx) * 1.2;
+    if (!isDownClose) return;
+
+    swipeStartRef.current = null;
+    onClose();
+  };
+
+  const endSwipe = (x: number, y: number) => {
+    const start = swipeStartRef.current;
+    swipeStartRef.current = null;
+    if (!start) return;
+
+    const dx = x - start.x;
+    const dy = y - start.y;
+    const isDownClose = start.canClose && dy > 86 && Math.abs(dy) > Math.abs(dx) * 1.2;
+    if (isDownClose) {
+      onClose();
+      return;
+    }
+
+    const isHorizontalSwipe = Math.abs(dx) > 78 && Math.abs(dx) > Math.abs(dy) * 1.25;
+    if (!isHorizontalSwipe) return;
+
+    if (dx < 0 && canGoNext) onNavigate(1);
+    if (dx > 0 && canGoPrevious) onNavigate(-1);
+  };
+
+  const rememberSwipeStart = (event: React.PointerEvent<HTMLDivElement>) => {
+    startSwipe(event.target, event.currentTarget, event.clientX, event.clientY);
+  };
+
+  const rememberMouseSwipeStart = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    startSwipe(event.target, event.currentTarget, event.clientX, event.clientY);
+  };
+
+  const handleSwipeMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    moveSwipe(event.clientX, event.clientY);
+  };
+
+  const handleMouseSwipeMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    moveSwipe(event.clientX, event.clientY);
+  };
+
+  const handleSwipeEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    endSwipe(event.clientX, event.clientY);
+  };
+
+  const handleMouseSwipeEnd = (event: React.MouseEvent<HTMLDivElement>) => {
+    endSwipe(event.clientX, event.clientY);
+  };
+
   return (
     <motion.div
       className="fixed inset-0 z-50 modal-backdrop bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-y-auto"
@@ -373,11 +527,44 @@ function ProgramModal({
       <motion.div
         className="relative w-full max-w-2xl bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl my-auto sm:my-8 max-h-[95vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
+        onPointerDown={rememberSwipeStart}
+        onPointerMove={handleSwipeMove}
+        onPointerUp={handleSwipeEnd}
+        onPointerCancel={() => {
+          swipeStartRef.current = null;
+        }}
+        onMouseDown={rememberMouseSwipeStart}
+        onMouseMove={handleMouseSwipeMove}
+        onMouseUp={handleMouseSwipeEnd}
         initial={{ opacity: 0, scale: 0.96, y: 24 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: 24 }}
         transition={{ duration: 0.32, ease: APPLE_EASE }}
       >
+        <div
+          data-close-drag-handle
+          role="button"
+          tabIndex={0}
+          aria-label="Закрыть"
+          className="absolute left-1/2 top-2 z-30 flex h-7 w-24 -translate-x-1/2 cursor-grab items-start justify-center rounded-full pt-1.5 active:cursor-grabbing"
+          style={{ touchAction: "none" }}
+          onClick={(event) => {
+            event.stopPropagation();
+            onClose();
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") onClose();
+          }}
+          onPointerDown={(event) => startCloseTracking(event.clientY)}
+          onMouseDown={(event) => startCloseTracking(event.clientY)}
+          onTouchStart={(event) => {
+            const touch = event.touches[0];
+            if (touch) startCloseTracking(touch.clientY);
+          }}
+        >
+          <span className="h-1.5 w-12 rounded-full bg-black/20" />
+        </div>
+
         {/* Cover */}
         <div
           className="relative h-40 sm:h-52 flex items-center justify-center rounded-t-3xl overflow-hidden"
@@ -400,6 +587,36 @@ function ProgramModal({
               {program.emoji}
             </span>
           )}
+          {total > 1 && (
+            <div className="pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center justify-between px-3">
+              <button
+                type="button"
+                aria-label="Предыдущая программа"
+                disabled={!canGoPrevious}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNavigate(-1);
+                }}
+                className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-[var(--color-ink)] shadow-md transition disabled:opacity-35"
+                title="Предыдущая программа"
+              >
+                <ChevronLeft className="h-5 w-5" strokeWidth={2.4} />
+              </button>
+              <button
+                type="button"
+                aria-label="Следующая программа"
+                disabled={!canGoNext}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNavigate(1);
+                }}
+                className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-[var(--color-ink)] shadow-md transition disabled:opacity-35"
+                title="Следующая программа"
+              >
+                <ChevronRight className="h-5 w-5" strokeWidth={2.4} />
+              </button>
+            </div>
+          )}
           <button
             onClick={onClose}
             aria-label="Закрыть"
@@ -416,6 +633,11 @@ function ProgramModal({
           {program.tagline && (
             <p className="mt-1 text-sm text-[var(--color-ink-soft)] text-center">
               {program.tagline}
+            </p>
+          )}
+          {total > 1 && (
+            <p className="mt-2 text-center text-xs font-medium tabular-nums text-[var(--color-ink-soft)]">
+              {position} / {total}
             </p>
           )}
           {program.ruOnly && (
@@ -495,14 +717,14 @@ function ProgramModal({
               {[...program.includes, ...(program.bundled ?? [])].map((item, i) => (
                 <li
                   key={i}
-                  className="flex items-center gap-3 px-4 py-3 text-[15px]"
+                  className="flex items-start gap-3 px-4 py-3 text-[15px]"
                   style={{
                     borderTop: i === 0 ? "none" : "0.5px solid rgba(0,0,0,0.08)",
                     color: "var(--color-ink)",
                   }}
                 >
                   <Check
-                    className="w-[18px] h-[18px] shrink-0"
+                    className="mt-0.5 w-[18px] h-[18px] shrink-0"
                     strokeWidth={2.5}
                     style={{ color: accent }}
                   />
