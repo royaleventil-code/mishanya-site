@@ -302,7 +302,7 @@ function ProgramCard({
             src={program.cover}
             alt={program.title}
             className="relative z-10 w-full h-full object-cover"
-            style={{ objectPosition: "center top" }}
+            style={{ objectPosition: "center 30%" }}
           />
         ) : (
           <span className="relative z-10 text-7xl" style={{ filter: `drop-shadow(0 10px 28px ${accent}55)` }}>
@@ -419,7 +419,7 @@ function ProgramModal({
     };
 
     const closeIfPulled = (clientY: number) => {
-      if (closed || clientY - startY <= 86) return;
+      if (closed || clientY - startY <= 50) return;
       closed = true;
       cleanup();
       onClose();
@@ -463,7 +463,7 @@ function ProgramModal({
     if (!start?.canClose) return;
     const dx = x - start.x;
     const dy = y - start.y;
-    const isDownClose = dy > 86 && Math.abs(dy) > Math.abs(dx) * 1.2;
+    const isDownClose = dy > 50 && Math.abs(dy) > Math.abs(dx) * 1.0;
     if (!isDownClose) return;
 
     swipeStartRef.current = null;
@@ -477,13 +477,13 @@ function ProgramModal({
 
     const dx = x - start.x;
     const dy = y - start.y;
-    const isDownClose = start.canClose && dy > 86 && Math.abs(dy) > Math.abs(dx) * 1.2;
+    const isDownClose = start.canClose && dy > 50 && Math.abs(dy) > Math.abs(dx) * 1.0;
     if (isDownClose) {
       onClose();
       return;
     }
 
-    const isHorizontalSwipe = Math.abs(dx) > 78 && Math.abs(dx) > Math.abs(dy) * 1.25;
+    const isHorizontalSwipe = Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.0;
     if (!isHorizontalSwipe) return;
 
     if (dx < 0 && canGoNext) onNavigate(1);
@@ -580,42 +580,12 @@ function ProgramModal({
               src={program.cover}
               alt={program.title}
               className="w-full h-full object-cover"
-              style={{ objectPosition: "center top" }}
+              style={{ objectPosition: "center 30%" }}
             />
           ) : (
             <span className="text-7xl sm:text-8xl" style={{ filter: `drop-shadow(0 8px 24px ${accent}55)` }}>
               {program.emoji}
             </span>
-          )}
-          {total > 1 && (
-            <div className="pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center justify-between px-3">
-              <button
-                type="button"
-                aria-label="Предыдущая программа"
-                disabled={!canGoPrevious}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onNavigate(-1);
-                }}
-                className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-[var(--color-ink)] shadow-md transition disabled:opacity-35"
-                title="Предыдущая программа"
-              >
-                <ChevronLeft className="h-5 w-5" strokeWidth={2.4} />
-              </button>
-              <button
-                type="button"
-                aria-label="Следующая программа"
-                disabled={!canGoNext}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onNavigate(1);
-                }}
-                className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-[var(--color-ink)] shadow-md transition disabled:opacity-35"
-                title="Следующая программа"
-              >
-                <ChevronRight className="h-5 w-5" strokeWidth={2.4} />
-              </button>
-            </div>
           )}
           <button
             onClick={onClose}
@@ -796,6 +766,38 @@ function ProgramModal({
           </a>
         </div>
       </motion.div>
+
+      {/* Floating navigation arrows — stay visible while scrolling modal */}
+      {total > 1 && (
+        <div className="pointer-events-none fixed inset-y-0 left-0 right-0 z-[60] flex items-center justify-between px-2 sm:px-5">
+          <button
+            type="button"
+            aria-label="Предыдущая программа"
+            disabled={!canGoPrevious}
+            onClick={(e) => {
+              e.stopPropagation();
+              onNavigate(-1);
+            }}
+            className="pointer-events-auto flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-white/95 text-[var(--color-ink)] shadow-[0_10px_30px_rgba(0,0,0,0.25)] backdrop-blur transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Предыдущая программа"
+          >
+            <ChevronLeft className="h-7 w-7 sm:h-8 sm:w-8" strokeWidth={2.6} />
+          </button>
+          <button
+            type="button"
+            aria-label="Следующая программа"
+            disabled={!canGoNext}
+            onClick={(e) => {
+              e.stopPropagation();
+              onNavigate(1);
+            }}
+            className="pointer-events-auto flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-white/95 text-[var(--color-ink)] shadow-[0_10px_30px_rgba(0,0,0,0.25)] backdrop-blur transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Следующая программа"
+          >
+            <ChevronRight className="h-7 w-7 sm:h-8 sm:w-8" strokeWidth={2.6} />
+          </button>
+        </div>
+      )}
     </motion.div>
   );
 }
