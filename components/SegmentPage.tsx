@@ -1,7 +1,6 @@
 import { Header } from "./Header";
 import { Hero } from "./Hero";
 import { ProgramsSection } from "./ProgramsSection";
-import { AddonsGrid } from "./AddonsGrid";
 import { HowItWorks } from "./HowItWorks";
 import { Trust } from "./Trust";
 import { Faq } from "./Faq";
@@ -31,7 +30,6 @@ export function SegmentPage({ segment, title, emojiOverride }: Props) {
         programs={PROGRAMS}
         heroes={HEROES}
       />
-      <AddonsGrid />
       <HowItWorks />
       <Trust />
       <Faq />

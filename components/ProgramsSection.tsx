@@ -7,6 +7,7 @@ import type { FilterState, Hero, Program, SegmentId } from "@/lib/types";
 import { filterHeroes, filterPrograms } from "@/lib/filtering";
 import { sortHeroes } from "@/lib/heroOrder";
 import { whatsappLink, WA_MESSAGES } from "@/lib/whatsapp";
+import { ADDONS } from "@/data/addons";
 import { getHeroEmoji, getHeroImage } from "@/data/heroes";
 
 type Props = {
@@ -14,6 +15,12 @@ type Props = {
   accent: string;
   programs: Program[];
   heroes: Hero[];
+};
+
+type AddonItem = (typeof ADDONS)[number];
+type HeroChoice = {
+  label: string;
+  hero: Hero;
 };
 
 const KIDS_OPTIONS = [
@@ -30,6 +37,13 @@ const LANGUAGE_OPTIONS = [
   { value: "en" as const, label: "Английский" },
   { value: "mixed" as const, label: "Смешанный" },
 ];
+
+function heroChoiceLabel(label: string): string {
+  const normalized = label.toLowerCase();
+  if (normalized.includes("ростовая")) return "Ростовая кукла";
+  if (normalized.includes("ведущ") || normalized.includes("герой")) return "Образ для ведущего";
+  return label;
+}
 
 export function ProgramsSection({ segment, accent, programs, heroes }: Props) {
   const [filters, setFilters] = useState<FilterState>({
@@ -404,6 +418,34 @@ function ProgramModal({
   const APPLE_EASE = [0.32, 0.72, 0, 1] as const;
   const swipeStartRef = useRef<{ x: number; y: number; canClose: boolean } | null>(null);
   const closeTrackingCleanupRef = useRef<(() => void) | null>(null);
+  const [selectedHeroByProgram, setSelectedHeroByProgram] = useState<Record<string, Record<number, Hero>>>({});
+  const [selectedAddonIdsByProgram, setSelectedAddonIdsByProgram] = useState<Record<string, string[]>>({});
+  const recommendedAddons =
+    program.recommendedAddonIds
+      ?.map((id) => ADDONS.find((addon) => addon.id === id))
+      .filter((addon): addon is AddonItem => Boolean(addon)) ?? [];
+  const selectedHeroBySlot = selectedHeroByProgram[program.id] ?? {};
+  const selectedAddonIds = selectedAddonIdsByProgram[program.id] ?? [];
+  const selectedHeroChoices = program.heroSlots
+    .map((slot, slotIdx) => {
+      const hero = selectedHeroBySlot[slotIdx];
+      return hero ? { label: heroChoiceLabel(slot.label), hero } : null;
+    })
+    .filter((choice): choice is HeroChoice => Boolean(choice));
+  const selectedAddons = recommendedAddons.filter((addon) => selectedAddonIds.includes(addon.id));
+  const totalPriceFrom =
+    program.priceFrom + selectedAddons.reduce((sum, addon) => sum + addon.priceFrom, 0);
+  const hasCustomChoice = selectedHeroChoices.length > 0 || selectedAddons.length > 0;
+  const orderMessage = WA_MESSAGES.programOrder({
+    programName: program.title,
+    durationLabel: program.durationLabel,
+    heroChoices: selectedHeroChoices.map((choice) => ({
+      label: choice.label,
+      name: choice.hero.name,
+    })),
+    addons: selectedAddons.map((addon) => addon.name),
+    totalPriceFrom,
+  });
 
   useEffect(() => {
     return () => {
@@ -746,9 +788,20 @@ function ProgramModal({
                 key={slotIdx}
                 label={slot.label}
                 heroes={slotHeroes}
-                programName={program.title}
                 accent={accent}
                 defaultOpen={slotIdx === 0}
+                selectedHeroId={selectedHeroBySlot[slotIdx]?.id ?? null}
+                onSelectHero={(hero) => {
+                  setSelectedHeroByProgram((current) => {
+                    const programHeroes = current[program.id] ?? {};
+                    if (programHeroes[slotIdx]?.id === hero.id) {
+                      const next = { ...programHeroes };
+                      delete next[slotIdx];
+                      return { ...current, [program.id]: next };
+                    }
+                    return { ...current, [program.id]: { ...programHeroes, [slotIdx]: hero } };
+                  });
+                }}
               />
             );
           })}
@@ -770,14 +823,44 @@ function ProgramModal({
             </div>
           )}
 
+          {recommendedAddons.length > 0 && (
+            <RecommendedAddonsPanel
+              addons={recommendedAddons}
+              accent={accent}
+              selectedAddonIds={selectedAddonIds}
+              onToggleAddon={(addonId) => {
+                setSelectedAddonIdsByProgram((current) => {
+                  const programAddonIds = current[program.id] ?? [];
+                  const nextAddonIds = programAddonIds.includes(addonId)
+                    ? programAddonIds.filter((id) => id !== addonId)
+                    : [...programAddonIds, addonId];
+                  return { ...current, [program.id]: nextAddonIds };
+                });
+              }}
+            />
+          )}
+
+          {hasCustomChoice && (
+            <ProgramChoiceSummary
+              programName={program.title}
+              durationLabel={program.durationLabel}
+              heroChoices={selectedHeroChoices}
+              addons={selectedAddons}
+              totalPriceFrom={totalPriceFrom}
+              accent={accent}
+            />
+          )}
+
           {/* WhatsApp main CTA */}
           <a
-            href={whatsappLink(WA_MESSAGES.program(program.title))}
+            href={whatsappLink(orderMessage)}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-7 w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-whatsapp)] px-5 py-4 text-base font-semibold text-white shadow-lg transition active:scale-[0.98]"
           >
-            💬 Написать менеджеру про эту программу
+            {hasCustomChoice
+              ? "Написать менеджеру с этим выбором"
+              : "Написать менеджеру про эту программу"}
           </a>
         </div>
           </motion.div>
@@ -853,6 +936,162 @@ function ProgramModal({
   );
 }
 
+function RecommendedAddonsPanel({
+  addons,
+  accent,
+  selectedAddonIds,
+  onToggleAddon,
+}: {
+  addons: AddonItem[];
+  accent: string;
+  selectedAddonIds: string[];
+  onToggleAddon: (addonId: string) => void;
+}) {
+  return (
+    <div
+      className="mt-6 rounded-3xl p-4"
+      style={{
+        background: `linear-gradient(135deg, ${accent}18 0%, #8b5cf614 100%)`,
+        border: `1px solid ${accent}28`,
+      }}
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-lg text-white shadow-sm"
+          style={{ background: `linear-gradient(135deg, ${accent}, #8b5cf6)` }}
+        >
+          +
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-base font-bold leading-tight">Можно добавить к празднику</h3>
+          <p className="mt-1 text-xs leading-snug text-[var(--color-ink-soft)]">
+            Опции, которые хорошо подходят к этой программе
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        {addons.map((addon) => {
+          const selected = selectedAddonIds.includes(addon.id);
+          return (
+          <button
+            key={addon.id}
+            type="button"
+            onClick={() => onToggleAddon(addon.id)}
+            className="relative rounded-2xl bg-white p-3 text-center shadow-[0_10px_30px_rgba(15,15,20,0.06)] transition active:scale-[0.98] border"
+            style={{
+              borderColor: selected ? accent : "transparent",
+              boxShadow: selected
+                ? `0 0 0 2px ${accent}22, 0 14px 34px rgba(15,15,20,0.10)`
+                : "0 10px 30px rgba(15,15,20,0.06)",
+            }}
+          >
+            {selected && (
+              <span
+                className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full text-white"
+                style={{ backgroundColor: accent }}
+              >
+                <Check className="h-4 w-4" strokeWidth={2.8} />
+              </span>
+            )}
+            <div className="mx-auto flex h-20 items-center justify-center">
+              {addon.icon ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={addon.icon}
+                  alt={addon.name}
+                  className="h-full w-full object-contain"
+                />
+              ) : (
+                <span className="text-4xl">{addon.emoji}</span>
+              )}
+            </div>
+            <div className="mt-2 min-h-[34px] text-[13px] font-bold leading-tight text-[var(--color-ink)]">
+              {addon.name}
+            </div>
+            <div className="mt-1 text-xs font-medium text-[var(--color-ink-soft)]">
+              от {addon.priceFrom.toLocaleString("ru-RU")} ₪
+            </div>
+          </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ProgramChoiceSummary({
+  programName,
+  durationLabel,
+  heroChoices,
+  addons,
+  totalPriceFrom,
+  accent,
+}: {
+  programName: string;
+  durationLabel: string;
+  heroChoices: HeroChoice[];
+  addons: AddonItem[];
+  totalPriceFrom: number;
+  accent: string;
+}) {
+  return (
+    <div
+      className="mt-6 rounded-3xl p-4"
+      style={{
+        background: "linear-gradient(135deg, rgba(255,255,255,0.92), rgba(255,255,255,0.72))",
+        border: `1px solid ${accent}35`,
+        boxShadow: `0 16px 44px ${accent}18`,
+      }}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-base font-bold">Мой праздник</h3>
+        <span
+          className="rounded-full px-3 py-1 text-[11px] font-semibold text-white"
+          style={{ backgroundColor: accent }}
+        >
+          Выбрано
+        </span>
+      </div>
+
+      <div className="mt-4 space-y-2.5 text-sm">
+        <SummaryRow label="Программа" value={`${programName}, ${durationLabel}`} />
+        {heroChoices.map((choice) => (
+          <SummaryRow key={choice.hero.id} label={choice.label} value={choice.hero.name} />
+        ))}
+        {addons.length > 0 && (
+          <SummaryRow
+            label={addons.length === 1 ? "Дополнительная опция" : "Дополнительные опции"}
+            value={addons.map((addon) => addon.name).join(", ")}
+          />
+        )}
+        <div
+          className="flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-white"
+          style={{ background: `linear-gradient(135deg, ${accent}, #8b5cf6)` }}
+        >
+          <span className="text-xs font-medium opacity-90">Итого</span>
+          <span className="text-base font-bold tabular-nums">
+            от {totalPriceFrom.toLocaleString("ru-RU")} ₪
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-2xl bg-white/75 px-3 py-2.5 shadow-sm">
+      <span className="text-xs font-medium leading-snug text-[var(--color-ink-soft)]">
+        {label}
+      </span>
+      <span className="max-w-[58%] text-right text-sm font-bold leading-snug text-[var(--color-ink)]">
+        {value}
+      </span>
+    </div>
+  );
+}
+
 function Stat({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
   return (
     <div className="rounded-2xl bg-zinc-50 p-3 text-center">
@@ -866,17 +1105,20 @@ function Stat({ icon, value, label }: { icon: React.ReactNode; value: string; la
 function HeroSlotPanel({
   label,
   heroes,
-  programName,
   accent,
   defaultOpen,
+  selectedHeroId,
+  onSelectHero,
 }: {
   label: string;
   heroes: Hero[];
-  programName: string;
   accent: string;
   defaultOpen: boolean;
+  selectedHeroId: string | null;
+  onSelectHero: (hero: Hero) => void;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const selectedHero = heroes.find((hero) => hero.id === selectedHeroId);
   return (
     <div className="mt-6 border border-[var(--color-line)] rounded-2xl overflow-hidden">
       <button
@@ -885,8 +1127,11 @@ function HeroSlotPanel({
       >
         <span className="text-[15px] font-semibold">{label}</span>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-[var(--color-ink-soft)]">
-            {heroes.length}
+          <span
+            className="max-w-[150px] truncate text-xs font-medium"
+            style={selectedHero ? { color: accent } : undefined}
+          >
+            {selectedHero?.name ?? heroes.length}
           </span>
           <ChevronDown
             className={`w-5 h-5 text-[var(--color-ink-soft)] transition-transform ${
@@ -897,14 +1142,29 @@ function HeroSlotPanel({
       </button>
       {open && (
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 p-3 bg-zinc-50/60">
-          {heroes.map((h) => (
-            <a
+          {heroes.map((h) => {
+            const selected = selectedHeroId === h.id;
+            return (
+            <button
               key={h.id}
-              href={whatsappLink(WA_MESSAGES.programWithHero(programName, h.name))}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-xl bg-white pt-1 pb-2 px-1.5 text-center hover:shadow-md transition group"
+              type="button"
+              onClick={() => onSelectHero(h)}
+              className="relative rounded-xl bg-white pt-1 pb-2 px-1.5 text-center hover:shadow-md transition group border"
+              style={{
+                borderColor: selected ? accent : "transparent",
+                boxShadow: selected
+                  ? `0 0 0 2px ${accent}22, 0 10px 24px rgba(15,15,20,0.10)`
+                  : undefined,
+              }}
             >
+              {selected && (
+                <span
+                  className="absolute right-1.5 top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full text-white"
+                  style={{ backgroundColor: accent }}
+                >
+                  <Check className="h-3.5 w-3.5" strokeWidth={2.8} />
+                </span>
+              )}
               <div
                 className="w-full h-[88px] flex items-center justify-center"
                 style={{ filter: `drop-shadow(0 4px 12px ${accent}40)` }}
@@ -923,8 +1183,9 @@ function HeroSlotPanel({
               <div className="mt-0.5 text-[11px] leading-tight font-medium line-clamp-2 min-h-[28px] flex items-center justify-center">
                 {h.name}
               </div>
-            </a>
-          ))}
+            </button>
+            );
+          })}
         </div>
       )}
     </div>

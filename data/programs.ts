@@ -2,6 +2,8 @@ import type { Program } from "@/lib/types";
 
 const BUBBLE_MACHINE_BONUS =
   "Мыльная машинка — сказочная атмосфера в финале (только в помещении)";
+const BASIC_PARTY_ADDONS = ["bubbles-show", "confetti", "pinata"];
+const CONFETTI_ONLY_ADDONS = ["confetti"];
 
 export const PROGRAMS: Program[] = [
 {
@@ -97,6 +99,7 @@ export const PROGRAMS: Program[] = [
       "Подарок каждому ребёнку",
     ],
     bonus: BUBBLE_MACHINE_BONUS,
+    recommendedAddonIds: ["bubbles-show", "confetti"],
     gradientFrom: "from-sky-200",
     gradientTo: "to-sky-50",
     cover: "/programs/standart.webp",
@@ -210,6 +213,7 @@ export const PROGRAMS: Program[] = [
       "Подарок каждому ребёнку",
     ],
     bonus: BUBBLE_MACHINE_BONUS,
+    recommendedAddonIds: BASIC_PARTY_ADDONS,
     videos: [
       "https://youtu.be/p0sH-U2WNKw",
       "https://youtu.be/EMeUFC8GhYA",
@@ -255,6 +259,7 @@ export const PROGRAMS: Program[] = [
       "Торжественный вынос торта",
     ],
     bonus: BUBBLE_MACHINE_BONUS,
+    recommendedAddonIds: BASIC_PARTY_ADDONS,
     gradientFrom: "from-pink-300",
     gradientTo: "to-cyan-100",
     cover: "/programs/tiktok.png",
@@ -325,6 +330,7 @@ export const PROGRAMS: Program[] = [
       "Подарок каждому ребёнку",
     ],
     bonus: BUBBLE_MACHINE_BONUS,
+    recommendedAddonIds: CONFETTI_ONLY_ADDONS,
     videos: ["https://youtu.be/Uoh9AsnJPuU"],
     gradientFrom: "from-purple-300",
     gradientTo: "to-fuchsia-100",
@@ -360,6 +366,7 @@ export const PROGRAMS: Program[] = [
     ],
     note: "Только в помещении, где можно сделать затемнение: закрыть окна или шторы",
     bonus: BUBBLE_MACHINE_BONUS,
+    recommendedAddonIds: BASIC_PARTY_ADDONS,
     gradientFrom: "from-violet-400",
     gradientTo: "to-fuchsia-100",
     cover: "/programs/neon.png",
@@ -375,9 +382,10 @@ export const PROGRAMS: Program[] = [
     priceFrom: 2000,
     currency: "₪",
     maxKids: null,
-    languages: ["ru", "he"],
+    languages: ["ru"],
     locations: ["indoor", "outdoor"],
     segments: ["boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
+    ruOnly: true,
     heroSlots: [],
     includes: [
       "Распределение на факультеты",
@@ -393,6 +401,7 @@ export const PROGRAMS: Program[] = [
       "Подарок каждому ребёнку",
     ],
     bonus: BUBBLE_MACHINE_BONUS,
+    recommendedAddonIds: BASIC_PARTY_ADDONS,
     gradientFrom: "from-red-400",
     gradientTo: "to-yellow-100",
     cover: "/programs/harry-potter.png",
@@ -458,6 +467,7 @@ export const PROGRAMS: Program[] = [
       "Подарок каждому ребёнку",
     ],
     bonus: BUBBLE_MACHINE_BONUS,
+    recommendedAddonIds: BASIC_PARTY_ADDONS,
     gradientFrom: "from-pink-400",
     gradientTo: "to-rose-100",
     cover: "/programs/squid-game.jpg",
@@ -670,6 +680,7 @@ export const PROGRAMS: Program[] = [
       "Подарок каждому ребёнку",
     ],
     bonus: BUBBLE_MACHINE_BONUS,
+    recommendedAddonIds: BASIC_PARTY_ADDONS,
     videos: ["https://www.youtube.com/watch?v=LF7ax1Oeja8"],
     gradientFrom: "from-cyan-300",
     gradientTo: "to-blue-100",
@@ -706,6 +717,7 @@ export const PROGRAMS: Program[] = [
       "Финальная дискотека с конфетти-шоу",
     ],
     bonus: BUBBLE_MACHINE_BONUS,
+    recommendedAddonIds: BASIC_PARTY_ADDONS,
     gradientFrom: "from-indigo-400",
     gradientTo: "to-blue-100",
     cover: "/programs/techno.png",

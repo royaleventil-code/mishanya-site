@@ -35,6 +35,7 @@ export type Program = {
   bundled?: string[];
   bonus?: string;
   note?: string;
+  recommendedAddonIds?: string[];
   videos?: string[];
   gradientFrom: string;
   gradientTo: string;
@@ -48,6 +49,9 @@ export type Hero = {
   kind: HeroKind;
   segments: SegmentId[];
   languages: Language[];
+  photo?: string;
+  gallery?: string[];
+  description?: string;
 };
 
 export type Addon = {
