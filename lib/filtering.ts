@@ -8,13 +8,17 @@ export function filterPrograms(
   return programs.filter((p) => {
     if (!p.segments.includes(segment)) return false;
 
-    if (filters.kidsCount === "small" && p.maxKids !== null && p.maxKids < 15) return false;
+    if (filters.kidsCount === "small" && (p.maxKids === null || p.maxKids > 15)) return false;
     if (filters.kidsCount === "large" && p.maxKids !== null && p.maxKids <= 15) return false;
     if (filters.location && !p.locations.includes(filters.location)) return false;
 
     if (filters.language === "mixed") {
       if (!p.languages.includes("ru") || !p.languages.includes("he")) return false;
-    } else if (filters.language === "ru" || filters.language === "he") {
+    } else if (
+      filters.language === "ru" ||
+      filters.language === "he" ||
+      filters.language === "en"
+    ) {
       if (!p.languages.includes(filters.language)) return false;
     }
 

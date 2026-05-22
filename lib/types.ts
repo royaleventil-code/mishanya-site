@@ -34,6 +34,7 @@ export type Program = {
   includesHighlight?: string;
   bundled?: string[];
   bonus?: string;
+  note?: string;
   videos?: string[];
   gradientFrom: string;
   gradientTo: string;

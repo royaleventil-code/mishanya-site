@@ -2,7 +2,8 @@ import type { Gender, SegmentId } from "./types";
 
 export function segmentFromAge(age: number, gender: Gender): SegmentId {
   if (age <= 3) return "baby";
-  if (age <= 6) return gender === "boy" ? "boy-4-6" : "girl-4-6";
+  if (gender === "boy") return age <= 5 ? "boy-4-6" : "boy-6plus";
+  if (age <= 6) return "girl-4-6";
   return gender === "boy" ? "boy-6plus" : "girl-6plus";
 }
 

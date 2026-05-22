@@ -2,9 +2,9 @@ import Link from "next/link";
 
 const SEGMENT_LINKS = [
   { href: "/baby", label: "Малыши 1–3", emoji: "🍼", color: "#ff9f0a" },
-  { href: "/boy/5", label: "Мальчик 4–6", emoji: "🚀", color: "#0a84ff" },
+  { href: "/boy/5", label: "Мальчик 4–5", emoji: "🚀", color: "#0a84ff" },
   { href: "/girl/5", label: "Девочка 4–6", emoji: "💕", color: "#ff375f" },
-  { href: "/boy/8", label: "Мальчик 7+", emoji: "🚀", color: "#0a84ff" },
+  { href: "/boy/6", label: "Мальчик 6–10", emoji: "🚀", color: "#0a84ff" },
   { href: "/girl/8", label: "Девочка 7+", emoji: "💕", color: "#ff375f" },
   { href: "/all", label: "Все программы", emoji: "✨", color: "#5e5ce6" },
 ];

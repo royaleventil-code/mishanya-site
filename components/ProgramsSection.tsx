@@ -204,7 +204,9 @@ function FilterDropdown<T extends string>({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full rounded-full px-3 py-2.5 text-sm font-medium border transition active:scale-[0.97] flex items-center justify-between gap-1.5"
+        className={`relative z-20 w-full px-3 py-2.5 text-sm font-medium border transition active:scale-[0.97] flex items-center justify-between gap-1.5 ${
+          open ? "rounded-t-2xl rounded-b-none" : "rounded-full"
+        }`}
         style={
           isActive
             ? { backgroundColor: accent, borderColor: accent, color: "white" }
@@ -223,7 +225,7 @@ function FilterDropdown<T extends string>({
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 right-0 mt-2 z-30 rounded-2xl bg-white shadow-[0_16px_40px_rgba(15,15,20,0.15)] border border-[var(--color-line)] overflow-hidden">
+        <div className="absolute top-full left-0 right-0 -mt-px z-20 rounded-t-none rounded-b-2xl bg-white shadow-[0_16px_40px_rgba(15,15,20,0.15)] border border-t-0 border-[var(--color-line)] overflow-hidden">
           {isActive && (
             <button
               type="button"
@@ -629,6 +631,16 @@ function ProgramModal({
               label="детей"
             />
           </div>
+
+          {program.note && (
+            <div
+              className="mt-3 rounded-2xl p-4 text-sm"
+              style={{ background: `${accent}14`, color: "var(--color-ink)" }}
+            >
+              <span className="font-medium">Важно: </span>
+              {program.note}
+            </div>
+          )}
 
           {/* Liquid Glass price tile */}
           <div
