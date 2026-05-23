@@ -13,6 +13,7 @@ export type Gender = "boy" | "girl";
 export type HeroSlot = {
   label: string;
   kind: HeroKind;
+  excludedHeroIds?: string[];
 };
 
 export type Program = {

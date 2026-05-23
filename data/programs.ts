@@ -193,10 +193,7 @@ export const PROGRAMS: Program[] = [
     locations: ["indoor", "outdoor"],
     segments: ["baby", "boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
     ruOnly: true,
-    heroSlots: [
-      { label: "Образ ведущего", kind: "costume" },
-      { label: "Ростовая кукла на выбор", kind: "mascot" },
-    ],
+    heroSlots: [],
     includes: [
       "Встреча гостей",
       "Авторское ведение Мишани",
@@ -236,10 +233,7 @@ export const PROGRAMS: Program[] = [
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
     segments: ["boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
-    heroSlots: [
-      { label: "Первый TikTok-ведущий", kind: "costume" },
-      { label: "Второй TikTok-ведущий", kind: "costume" },
-    ],
+    heroSlots: [],
     includes: [
       "2 TikTok-ведущих в ярких образах",
       "Встреча гостей",
@@ -313,7 +307,9 @@ export const PROGRAMS: Program[] = [
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
     segments: ["boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
-    heroSlots: [{ label: "Ростовая кукла на выбор", kind: "mascot" }],
+    heroSlots: [
+      { label: "Ростовая кукла на выбор", kind: "mascot", excludedHeroIds: ["bumblebee-new"] },
+    ],
     includes: [
       "Фокусная программа",
       "Фокусы с голубями: появляются и исчезают в неожиданных местах",

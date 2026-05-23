@@ -774,9 +774,10 @@ function ProgramModal({
 
           {/* Hero slots */}
           {program.heroSlots.map((slot, slotIdx) => {
+            const excludedHeroIds = new Set(slot.excludedHeroIds ?? []);
             const slotHeroes = sortHeroes(
               filterHeroes(
-                heroes.filter((h) => h.kind === slot.kind),
+                heroes.filter((h) => h.kind === slot.kind && !excludedHeroIds.has(h.id)),
                 segment,
                 languageFilter,
               ),
