@@ -57,6 +57,7 @@ export function heroTitle(segment: SegmentId, age?: number): string {
   if (segment === "baby") return "Программы для малышей";
   if (segment === "all") return "Все программы";
   const ageNum = age ?? (segment.endsWith("4-6") ? 5 : 8);
+  const ageLabel = ageNum === 4 ? "4 года" : `${ageNum} лет`;
   const child = segment.startsWith("boy") ? "мальчика" : "девочки";
-  return `Программы для ${child} ${ageNum} лет`;
+  return `Программы для ${child} ${ageLabel}`;
 }

@@ -1,46 +1,208 @@
 import Link from "next/link";
+import { CheckCircle2, ChevronRight, Circle, Clock3 } from "lucide-react";
+import { PROGRAM_STATUSES, type ProgramStatus } from "@/data/program-status";
 
-const SEGMENT_LINKS = [
-  { href: "/baby", label: "Малыши 1–3", emoji: "🍼", color: "#ff9f0a" },
-  { href: "/boy/5", label: "Мальчик 4–5", emoji: "🚀", color: "#0a84ff" },
-  { href: "/girl/5", label: "Девочка 4–6", emoji: "💕", color: "#ff375f" },
-  { href: "/boy/6", label: "Мальчик 6–10", emoji: "🚀", color: "#0a84ff" },
-  { href: "/girl/8", label: "Девочка 7+", emoji: "💕", color: "#ff375f" },
-  { href: "/all", label: "Все программы", emoji: "✨", color: "#5e5ce6" },
+const AGE_OPTIONS = [4, 5, 6, 7, 8, 9, 10] as const;
+
+function ageLabel(age: number): string {
+  return age === 4 ? "4 года" : `${age} лет`;
+}
+
+type WorkItem = {
+  id: string;
+  label: string;
+  href: string;
+};
+
+const WORK_GROUPS: {
+  title: string;
+  subtitle: string;
+  color: string;
+  items: WorkItem[];
+}[] = [
+  {
+    title: "Малыши",
+    subtitle: "1 программа",
+    color: "#ff9f0a",
+    items: [{ id: "baby", label: "Малыши 1-3", href: "/baby" }],
+  },
+  {
+    title: "Мальчики",
+    subtitle: "7 программ",
+    color: "#0a84ff",
+    items: AGE_OPTIONS.map((age) => ({
+      id: `boy-${age}`,
+      label: `Мальчики ${ageLabel(age)}`,
+      href: `/boy/${age}`,
+    })),
+  },
+  {
+    title: "Девочки",
+    subtitle: "7 программ",
+    color: "#ff375f",
+    items: AGE_OPTIONS.map((age) => ({
+      id: `girl-${age}`,
+      label: `Девочки ${ageLabel(age)}`,
+      href: `/girl/${age}`,
+    })),
+  },
 ];
+
+const TOTAL_COUNT = WORK_GROUPS.reduce((sum, group) => sum + group.items.length, 0);
+const READY_COUNT = Object.values(PROGRAM_STATUSES).filter((status) => status === "done").length;
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col">
-      <div className="mx-auto max-w-3xl px-6 py-16">
-        <div className="text-center mb-12">
-          <span className="text-5xl">🎈</span>
-          <h1 className="mt-4 text-3xl sm:text-4xl font-bold tracking-tight">
-            Мишаня в Стране Чудес
-          </h1>
-          <p className="mt-3 text-base text-[var(--color-ink-soft)]">
-            Выберите возраст ребёнка, чтобы увидеть подходящие программы
-          </p>
+    <main className="min-h-screen bg-[var(--color-canvas)]">
+      <div className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-6 sm:py-10">
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-[var(--color-ink-soft)]">
+              Рабочий список
+            </p>
+            <h1 className="mt-1 text-3xl font-bold tracking-tight">
+              Программы Мишани
+            </h1>
+            <p className="mt-2 text-sm leading-6 text-[var(--color-ink-soft)]">
+              Идём по списку, правим каждую программу и отмечаем готовность.
+            </p>
+          </div>
+          <div className="shrink-0 rounded-2xl bg-white px-4 py-3 text-center shadow-[0_12px_32px_rgba(15,15,20,0.06)]">
+            <div className="text-2xl font-bold tabular-nums">
+              {READY_COUNT}/{TOTAL_COUNT}
+            </div>
+            <div className="text-[11px] font-medium text-[var(--color-ink-soft)]">
+              готово
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          {SEGMENT_LINKS.map((s) => (
-            <Link
-              key={s.href}
-              href={s.href}
-              className="group flex flex-col items-center justify-center rounded-3xl bg-white p-6 shadow-[0_16px_40px_rgba(15,15,20,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(15,15,20,0.12)]"
-              style={{ borderTop: `3px solid ${s.color}` }}
-            >
-              <span className="text-4xl">{s.emoji}</span>
-              <span className="mt-3 text-sm font-medium">{s.label}</span>
-            </Link>
-          ))}
+        <div className="mb-6 grid grid-cols-3 gap-2">
+          <LegendItem status="todo" />
+          <LegendItem status="in-progress" />
+          <LegendItem status="done" />
         </div>
 
-        <p className="mt-12 text-center text-xs text-[var(--color-ink-soft)]">
-          MVP-каталог · WhatsApp +972 54-616-32-60
-        </p>
+        <div className="space-y-5">
+          {WORK_GROUPS.map((group) => {
+            const groupReady = group.items.filter(
+              (item) => PROGRAM_STATUSES[item.id] === "done",
+            ).length;
+
+            return (
+              <section
+                key={group.title}
+                className="overflow-hidden rounded-3xl bg-white shadow-[0_16px_40px_rgba(15,15,20,0.06)]"
+              >
+                <div
+                  className="flex items-center justify-between gap-3 border-b border-[var(--color-line)] px-5 py-4"
+                  style={{ borderTop: `4px solid ${group.color}` }}
+                >
+                  <div>
+                    <h2 className="text-xl font-bold tracking-tight">{group.title}</h2>
+                    <p className="mt-0.5 text-sm text-[var(--color-ink-soft)]">
+                      {group.subtitle}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold tabular-nums text-[var(--color-ink-soft)]">
+                    {groupReady}/{group.items.length}
+                  </span>
+                </div>
+
+                <div className="divide-y divide-[var(--color-line)]">
+                  {group.items.map((item) => (
+                    <ProgramWorkRow
+                      key={item.id}
+                      item={item}
+                      status={PROGRAM_STATUSES[item.id] ?? "todo"}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </div>
       </div>
     </main>
   );
+}
+
+function ProgramWorkRow({ item, status }: { item: WorkItem; status: ProgramStatus }) {
+  const isDone = status === "done";
+  const isInProgress = status === "in-progress";
+
+  return (
+    <Link
+      href={item.href}
+      className={`group flex min-h-[64px] items-center justify-between gap-3 px-5 py-3 transition active:scale-[0.995] ${
+        isDone
+          ? "bg-emerald-50/80 hover:bg-emerald-50"
+          : isInProgress
+            ? "bg-amber-50/80 hover:bg-amber-50"
+            : "bg-white hover:bg-zinc-50"
+      }`}
+    >
+      <span className="flex min-w-0 items-center gap-3">
+        <StatusIcon status={status} />
+        <span className="min-w-0">
+          <span className="block truncate text-base font-semibold">{item.label}</span>
+          <span className="mt-0.5 block text-xs text-[var(--color-ink-soft)]">
+            {item.href}
+          </span>
+        </span>
+      </span>
+      <span className="flex shrink-0 items-center gap-2">
+        <StatusBadge status={status} />
+        <ChevronRight
+          className="h-5 w-5 text-[var(--color-ink-soft)] transition group-hover:translate-x-0.5"
+          strokeWidth={2.4}
+        />
+      </span>
+    </Link>
+  );
+}
+
+function LegendItem({ status }: { status: ProgramStatus }) {
+  return (
+    <div className="flex items-center justify-center gap-1.5 rounded-2xl bg-white px-2.5 py-2 text-xs font-semibold shadow-[0_10px_24px_rgba(15,15,20,0.04)]">
+      <StatusIcon status={status} small />
+      <span className="truncate">{statusLabel(status)}</span>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: ProgramStatus }) {
+  return (
+    <span
+      className={`hidden rounded-full px-3 py-1 text-xs font-semibold sm:inline-flex ${statusBadgeClass(status)}`}
+    >
+      {statusLabel(status)}
+    </span>
+  );
+}
+
+function StatusIcon({ status, small = false }: { status: ProgramStatus; small?: boolean }) {
+  const className = small ? "h-4 w-4 shrink-0" : "h-6 w-6 shrink-0";
+
+  if (status === "done") {
+    return <CheckCircle2 className={`${className} text-emerald-600`} strokeWidth={2.6} />;
+  }
+
+  if (status === "in-progress") {
+    return <Clock3 className={`${className} text-amber-600`} strokeWidth={2.5} />;
+  }
+
+  return <Circle className={`${className} text-zinc-400`} strokeWidth={2.4} />;
+}
+
+function statusLabel(status: ProgramStatus): string {
+  if (status === "done") return "Готово";
+  if (status === "in-progress") return "В работе";
+  return "Не готово";
+}
+
+function statusBadgeClass(status: ProgramStatus): string {
+  if (status === "done") return "bg-emerald-100 text-emerald-700";
+  if (status === "in-progress") return "bg-amber-100 text-amber-700";
+  return "bg-zinc-100 text-zinc-600";
 }
