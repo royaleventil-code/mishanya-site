@@ -299,7 +299,7 @@ function ProgramCard({
         style={
           program.cover
             ? { background: "white" }
-            : { background: `linear-gradient(135deg, ${accent}33 0%, #8b5cf61f 60%, ${accent}0a 100%)` }
+            : { background: "linear-gradient(135deg, rgba(255,255,255,0.92), rgba(244,242,238,0.78))" }
         }
       >
         {!program.cover && (
@@ -308,7 +308,7 @@ function ProgramCard({
               aria-hidden
               className="absolute inset-0 opacity-60 pointer-events-none"
               style={{
-                background: `radial-gradient(circle at 50% 55%, ${accent}40, transparent 65%)`,
+                background: "radial-gradient(circle at 50% 55%, rgba(255,255,255,0.82), transparent 65%)",
               }}
             />
             <span aria-hidden className="absolute top-5 left-6 text-[var(--color-ink)]/30 text-sm">✦</span>
@@ -326,7 +326,7 @@ function ProgramCard({
             style={{ objectPosition: "center 30%" }}
           />
         ) : (
-          <span className="relative z-10 text-7xl" style={{ filter: `drop-shadow(0 10px 28px ${accent}55)` }}>
+          <span className="relative z-10 text-7xl" style={{ filter: "drop-shadow(0 10px 28px rgba(15,15,20,0.12))" }}>
             {program.emoji}
           </span>
         )}
@@ -349,13 +349,8 @@ function ProgramCard({
 
         <div className="mt-3 flex items-center justify-center flex-wrap gap-x-3 gap-y-2">
           {/* Price pill */}
-          <div
-            className="inline-flex items-baseline gap-1 rounded-full px-3 py-1.5 text-sm font-bold text-white shadow-sm"
-            style={{
-              background: `linear-gradient(135deg, ${accent} 0%, #8b5cf6 100%)`,
-            }}
-          >
-            <span className="text-[10px] font-medium opacity-80">от</span>
+          <div className="apple-glass inline-flex items-baseline gap-1 rounded-full px-3 py-1.5 text-sm font-bold text-[var(--color-ink)]">
+            <span className="text-[10px] font-medium opacity-60">от</span>
             {program.priceFrom.toLocaleString("ru-RU")} ₪
           </div>
 
@@ -373,10 +368,7 @@ function ProgramCard({
         </div>
 
         <div
-          className="mt-4 inline-flex w-full items-center justify-center gap-1 rounded-full py-2.5 text-sm font-semibold text-white shadow-sm transition group-hover:shadow-md"
-          style={{
-            background: `linear-gradient(135deg, ${accent} 0%, #8b5cf6 100%)`,
-          }}
+          className="apple-glass-strong mt-4 inline-flex w-full items-center justify-center gap-1 rounded-full py-2.5 text-sm font-semibold text-[var(--color-ink)] transition group-hover:bg-white"
         >
           Подробнее
           <span className="transition group-hover:translate-x-0.5">→</span>
@@ -625,7 +617,7 @@ function ProgramModal({
           style={
             program.cover
               ? { background: "white" }
-              : { background: `linear-gradient(135deg, ${accent}33 0%, ${accent}0d 100%)` }
+              : { background: "linear-gradient(135deg, rgba(255,255,255,0.92), rgba(244,242,238,0.78))" }
           }
         >
           {program.cover ? (
@@ -637,7 +629,7 @@ function ProgramModal({
               style={{ objectPosition: "center 30%" }}
             />
           ) : (
-            <span className="text-7xl sm:text-8xl" style={{ filter: `drop-shadow(0 8px 24px ${accent}55)` }}>
+            <span className="text-7xl sm:text-8xl" style={{ filter: "drop-shadow(0 8px 24px rgba(15,15,20,0.12))" }}>
               {program.emoji}
             </span>
           )}
@@ -684,16 +676,9 @@ function ProgramModal({
             </div>
           )}
 
-          {/* Liquid Glass price tile */}
+          {/* Glass price tile */}
           <div
             className="mt-2 mx-auto w-[85%] rounded-2xl p-4 text-center relative overflow-hidden liquid-glass"
-            style={{
-              ['--lg-tint-a' as never]: `${accent}cc`,
-              ['--lg-tint-b' as never]: "#8b5cf6cc",
-              ['--lg-glow' as never]: `${accent}40`,
-              backdropFilter: "blur(28px) saturate(180%)",
-              WebkitBackdropFilter: "blur(28px) saturate(180%)",
-            }}
           >
             {/* refraction highlights */}
             <span
@@ -704,9 +689,9 @@ function ProgramModal({
             <span
               aria-hidden
               className="absolute -bottom-16 -right-10 w-40 h-40 rounded-full opacity-30 blur-3xl"
-              style={{ background: accent }}
+              style={{ background: "rgba(226,223,218,0.72)" }}
             />
-            <div className="relative" style={{ color: "white", textShadow: "0 2px 6px rgba(15,15,20,0.4)" }}>
+            <div className="relative text-[var(--color-ink)]">
               <div className="text-xs uppercase tracking-wider opacity-90 font-medium">
                 Стоимость от
               </div>
@@ -722,10 +707,8 @@ function ProgramModal({
             <h3 className="text-base font-semibold mb-3 px-1">Что входит</h3>
             {program.includesHighlight && (
               <div
-                className="mb-3 rounded-2xl px-4 py-3 text-[15px] font-semibold"
+                className="apple-glass mb-3 rounded-2xl px-4 py-3 text-[15px] font-semibold"
                 style={{
-                  background: `linear-gradient(135deg, ${accent}1f, ${accent}0a)`,
-                  border: `1px solid ${accent}40`,
                   color: "var(--color-ink)",
                 }}
               >
@@ -848,7 +831,6 @@ function ProgramModal({
               heroChoices={selectedHeroChoices}
               addons={selectedAddons}
               totalPriceFrom={totalPriceFrom}
-              accent={accent}
             />
           )}
 
@@ -949,18 +931,9 @@ function RecommendedAddonsPanel({
   onToggleAddon: (addonId: string) => void;
 }) {
   return (
-    <div
-      className="mt-6 rounded-3xl p-4"
-      style={{
-        background: `linear-gradient(135deg, ${accent}18 0%, #8b5cf614 100%)`,
-        border: `1px solid ${accent}28`,
-      }}
-    >
+    <div className="apple-glass mt-6 rounded-3xl p-4">
       <div className="flex items-start gap-3">
-        <div
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-lg text-white shadow-sm"
-          style={{ background: `linear-gradient(135deg, ${accent}, #8b5cf6)` }}
-        >
+        <div className="apple-glass-strong flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-lg font-semibold text-[var(--color-ink)]">
           +
         </div>
         <div className="min-w-0">
@@ -1027,30 +1000,18 @@ function ProgramChoiceSummary({
   heroChoices,
   addons,
   totalPriceFrom,
-  accent,
 }: {
   programName: string;
   durationLabel: string;
   heroChoices: HeroChoice[];
   addons: AddonItem[];
   totalPriceFrom: number;
-  accent: string;
 }) {
   return (
-    <div
-      className="mt-6 rounded-3xl p-4"
-      style={{
-        background: "linear-gradient(135deg, rgba(255,255,255,0.92), rgba(255,255,255,0.72))",
-        border: `1px solid ${accent}35`,
-        boxShadow: `0 16px 44px ${accent}18`,
-      }}
-    >
+    <div className="apple-glass mt-6 rounded-3xl p-4">
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-base font-bold">Мой праздник</h3>
-        <span
-          className="rounded-full px-3 py-1 text-[11px] font-semibold text-white"
-          style={{ backgroundColor: accent }}
-        >
+        <span className="apple-glass-strong rounded-full px-3 py-1 text-[11px] font-semibold text-[var(--color-ink)]">
           Выбрано
         </span>
       </div>
@@ -1066,11 +1027,8 @@ function ProgramChoiceSummary({
             value={addons.map((addon) => addon.name).join(", ")}
           />
         )}
-        <div
-          className="flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-white"
-          style={{ background: `linear-gradient(135deg, ${accent}, #8b5cf6)` }}
-        >
-          <span className="text-xs font-medium opacity-90">Итого</span>
+        <div className="apple-glass-strong flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-[var(--color-ink)]">
+          <span className="text-xs font-medium opacity-70">Итого</span>
           <span className="text-base font-bold tabular-nums">
             от {totalPriceFrom.toLocaleString("ru-RU")} ₪
           </span>
@@ -1095,7 +1053,7 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 
 function Stat({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
   return (
-    <div className="rounded-2xl bg-zinc-50 p-3 text-center">
+    <div className="apple-glass rounded-2xl p-3 text-center">
       <div className="flex justify-center text-[var(--color-ink-soft)]">{icon}</div>
       <div className="mt-1.5 text-sm font-semibold leading-tight">{value}</div>
       <div className="mt-0.5 text-[11px] text-[var(--color-ink-soft)]">{label}</div>

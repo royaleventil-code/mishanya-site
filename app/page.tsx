@@ -2,10 +2,12 @@ import Link from "next/link";
 import { CheckCircle2, ChevronRight, Circle, Clock3 } from "lucide-react";
 import { PROGRAM_STATUSES, type ProgramStatus } from "@/data/program-status";
 
-const AGE_OPTIONS = [4, 5, 6, 7, 8, 9, 10] as const;
+const AGE_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
 
 function ageLabel(age: number): string {
-  return age === 4 ? "4 года" : `${age} лет`;
+  if (age === 1) return "1 год";
+  if (age >= 2 && age <= 4) return `${age} года`;
+  return `${age} лет`;
 }
 
 type WorkItem = {
@@ -21,14 +23,8 @@ const WORK_GROUPS: {
   items: WorkItem[];
 }[] = [
   {
-    title: "Малыши",
-    subtitle: "1 программа",
-    color: "#ff9f0a",
-    items: [{ id: "baby", label: "Малыши 1-3", href: "/baby" }],
-  },
-  {
     title: "Мальчики",
-    subtitle: "7 программ",
+    subtitle: "10 программ",
     color: "#0a84ff",
     items: AGE_OPTIONS.map((age) => ({
       id: `boy-${age}`,
@@ -38,13 +34,19 @@ const WORK_GROUPS: {
   },
   {
     title: "Девочки",
-    subtitle: "7 программ",
+    subtitle: "10 программ",
     color: "#ff375f",
     items: AGE_OPTIONS.map((age) => ({
       id: `girl-${age}`,
       label: `Девочки ${ageLabel(age)}`,
       href: `/girl/${age}`,
     })),
+  },
+  {
+    title: "Общий каталог",
+    subtitle: "все программы",
+    color: "#5e5ce6",
+    items: [{ id: "all", label: "Все программы", href: "/all" }],
   },
 ];
 

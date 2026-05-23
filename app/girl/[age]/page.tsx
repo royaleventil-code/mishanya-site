@@ -5,7 +5,7 @@ import { segmentFromAge, heroTitle } from "@/lib/segments";
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return Array.from({ length: 7 }, (_, i) => ({ age: String(i + 4) }));
+  return Array.from({ length: 10 }, (_, i) => ({ age: String(i + 1) }));
 }
 
 export default async function GirlAgePage({
@@ -15,8 +15,8 @@ export default async function GirlAgePage({
 }) {
   const { age } = await params;
   const ageNum = Number.parseInt(age, 10);
-  if (!Number.isFinite(ageNum) || ageNum < 4 || ageNum > 10) notFound();
+  if (!Number.isFinite(ageNum) || ageNum < 1 || ageNum > 10) notFound();
 
   const segment = segmentFromAge(ageNum, "girl");
-  return <SegmentPage segment={segment} title={heroTitle(segment, ageNum)} />;
+  return <SegmentPage segment={segment} title={heroTitle(segment, ageNum, "girl")} />;
 }

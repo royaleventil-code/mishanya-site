@@ -8,8 +8,8 @@ type Props = {
   accent: string;
 };
 
-export function Hero({ title, accent }: Props) {
-  const match = title.match(/^(.*?)\s*(\d+)\s*(лет|года)\s*$/i);
+export function Hero({ title }: Props) {
+  const match = title.match(/^(.*?)\s*(\d+)\s*(лет|года|год)\s*$/i);
   const [rotation, setRotation] = useState(0);
 
   useEffect(() => {
@@ -29,21 +29,21 @@ export function Hero({ title, accent }: Props) {
 
   const Decorations = (
     <>
-      {/* gradient blobs */}
+      {/* soft neutral wash */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-10 -right-16 w-72 h-72 rounded-full opacity-30 blur-3xl"
-        style={{ background: `radial-gradient(circle, ${accent}, transparent 60%)` }}
+        className="pointer-events-none absolute -top-10 -right-16 w-72 h-72 rounded-full opacity-45 blur-3xl"
+        style={{ background: "radial-gradient(circle, rgba(211,205,196,0.62), transparent 62%)" }}
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -bottom-10 -left-16 w-72 h-72 rounded-full opacity-25 blur-3xl"
-        style={{ background: "radial-gradient(circle, #8b5cf6, transparent 60%)" }}
+        className="pointer-events-none absolute -bottom-10 -left-16 w-72 h-72 rounded-full opacity-40 blur-3xl"
+        style={{ background: "radial-gradient(circle, rgba(226,223,218,0.74), transparent 62%)" }}
       />
       {/* floating dots */}
-      <span aria-hidden className="float-dot float-dot-1" style={{ background: accent }} />
-      <span aria-hidden className="float-dot float-dot-2" style={{ background: "#8b5cf6" }} />
-      <span aria-hidden className="float-dot float-dot-3" style={{ background: "#ec4899" }} />
+      <span aria-hidden className="float-dot float-dot-1" style={{ background: "#c7bfae" }} />
+      <span aria-hidden className="float-dot float-dot-2" style={{ background: "#aeb7b5" }} />
+      <span aria-hidden className="float-dot float-dot-3" style={{ background: "#d4cdc3" }} />
       <span aria-hidden className="float-star float-star-1">✦</span>
       <span aria-hidden className="float-star float-star-2">✦</span>
     </>

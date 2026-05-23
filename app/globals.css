@@ -20,6 +20,10 @@
 
   --shadow-card: 0 16px 40px rgba(15, 15, 20, 0.06);
   --shadow-card-hover: 0 24px 60px rgba(15, 15, 20, 0.12);
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-bg-strong: rgba(255, 255, 255, 0.86);
+  --glass-border: rgba(15, 15, 20, 0.08);
+  --glass-shadow: 0 10px 24px rgba(15, 15, 20, 0.08);
 }
 
 html,
@@ -58,19 +62,39 @@ html {
 }
 
 @layer utilities {
-  /* Liquid Glass tile (iOS 26 style: translucent tint + frosted blur + edge highlight) */
+  /* Neutral Apple-style glass surfaces */
+  .apple-glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    border: 1px solid var(--glass-border);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.78),
+      var(--glass-shadow);
+  }
+
+  .apple-glass-strong {
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(24px) saturate(170%);
+    -webkit-backdrop-filter: blur(24px) saturate(170%);
+    border: 1px solid rgba(15, 15, 20, 0.1);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.85),
+      0 12px 28px rgba(15, 15, 20, 0.1);
+  }
+
   .liquid-glass {
     background:
-      linear-gradient(135deg, var(--lg-tint-a, rgba(10, 132, 255, 0.55)) 0%, var(--lg-tint-b, rgba(139, 92, 246, 0.55)) 100%),
-      radial-gradient(120% 80% at 30% 20%, rgba(255, 255, 255, 0.45), transparent 55%);
+      linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.58)),
+      radial-gradient(120% 80% at 30% 12%, rgba(255, 255, 255, 0.86), transparent 56%);
     background-blend-mode: normal, overlay;
-    backdrop-filter: blur(28px) saturate(180%);
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(28px) saturate(165%);
+    -webkit-backdrop-filter: blur(28px) saturate(165%);
+    border: 1px solid rgba(15, 15, 20, 0.08);
     box-shadow:
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.55),
-      inset 0 -1px 0 0 rgba(15, 15, 20, 0.1),
-      0 10px 28px var(--lg-glow, rgba(10, 132, 255, 0.25));
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.82),
+      inset 0 -1px 0 0 rgba(15, 15, 20, 0.05),
+      0 14px 34px rgba(15, 15, 20, 0.1);
   }
 
   /* Floating decorations in hero */
@@ -90,10 +114,10 @@ html {
   .float-star {
     position: absolute;
     font-size: 22px;
-    color: #ffd23f;
-    opacity: 0.7;
+    color: #b9ad98;
+    opacity: 0.45;
     pointer-events: none;
-    text-shadow: 0 0 12px rgba(255, 210, 63, 0.6);
+    text-shadow: 0 0 12px rgba(185, 173, 152, 0.25);
   }
   .float-star-1 { top: 12%; left: 42%; animation: float-b 6s ease-in-out infinite; }
   .float-star-2 { bottom: 14%; right: 12%; font-size: 16px; animation: float-a 9s ease-in-out infinite 0.8s; }

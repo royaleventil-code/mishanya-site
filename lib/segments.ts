@@ -53,11 +53,22 @@ export const SEGMENTS: Record<SegmentId, SegmentConfig> = {
   },
 };
 
-export function heroTitle(segment: SegmentId, age?: number): string {
-  if (segment === "baby") return "Программы для малышей";
+function ageLabel(age: number): string {
+  if (age === 1) return "1 год";
+  if (age >= 2 && age <= 4) return `${age} года`;
+  return `${age} лет`;
+}
+
+export function heroTitle(segment: SegmentId, age?: number, gender?: Gender): string {
+  if (segment === "baby") {
+    if (age && gender) {
+      const child = gender === "boy" ? "мальчика" : "девочки";
+      return `Программы для ${child} ${ageLabel(age)}`;
+    }
+    return "Программы для малышей";
+  }
   if (segment === "all") return "Все программы";
   const ageNum = age ?? (segment.endsWith("4-6") ? 5 : 8);
-  const ageLabel = ageNum === 4 ? "4 года" : `${ageNum} лет`;
   const child = segment.startsWith("boy") ? "мальчика" : "девочки";
-  return `Программы для ${child} ${ageLabel}`;
+  return `Программы для ${child} ${ageLabel(ageNum)}`;
 }
