@@ -1,5 +1,11 @@
 import type { Hero, SegmentId } from "./types";
 
+const MASCOT_ORDER = [
+  "marshall-mascot",
+  "sonic-mascot",
+  "stitch-mascot",
+];
+
 const BOYS_ORDER = [
   "spiderman",
   "captain-america",
@@ -25,13 +31,20 @@ const BOYS_ORDER = [
 ];
 
 export const HERO_ORDER: Partial<Record<SegmentId, string[]>> = {
-  "boy-4-6": BOYS_ORDER,
-  "boy-6plus": BOYS_ORDER,
+  baby: MASCOT_ORDER,
+  "boy-4-6": [...MASCOT_ORDER, ...BOYS_ORDER],
+  "boy-6plus": [...MASCOT_ORDER, ...BOYS_ORDER],
+  "girl-4-6": MASCOT_ORDER,
+  "girl-6plus": MASCOT_ORDER,
+  all: MASCOT_ORDER,
 };
 
-export function sortHeroes(heroes: Hero[], segment: SegmentId): Hero[] {
-  const order = HERO_ORDER[segment];
-  if (!order) return heroes;
+export function sortHeroes(
+  heroes: Hero[],
+  segment: SegmentId,
+  orderedHeroIds: string[] = [],
+): Hero[] {
+  const order = [...orderedHeroIds, ...(HERO_ORDER[segment] ?? [])];
   const indexOf = (id: string) => {
     const idx = order.indexOf(id);
     return idx === -1 ? Number.MAX_SAFE_INTEGER : idx;

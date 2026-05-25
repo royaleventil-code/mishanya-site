@@ -4,6 +4,47 @@ const BUBBLE_MACHINE_BONUS =
   "Мыльная машинка — сказочная атмосфера в финале (только в помещении)";
 const BASIC_PARTY_ADDONS = ["bubbles-show", "confetti", "pinata"];
 const CONFETTI_ONLY_ADDONS = ["confetti"];
+const SHOW_PARTY_ADDONS = ["bubbles-show", "confetti"];
+const MAIN_PROGRAM_EXCLUDED_HERO_IDS = [
+  "aurora",
+  "batman",
+  "barbie",
+  "belle",
+  "anna",
+  "unicorn",
+  "ladybug",
+  "lol-unicorn",
+  "lol-bee",
+  "mashenka",
+  "minnie-mouse",
+  "pony-dash",
+  "pony-twilight",
+  "popit-girl",
+  "rapunzel",
+  "kpop-rumi",
+  "mermaid",
+  "cinderella",
+  "troll-poppy",
+  "troll-branch",
+  "tinker-bell",
+  "fixiki-girl",
+  "elsa",
+];
+const MAIN_PROGRAM_ORDERED_HERO_IDS = [
+  "spiderman",
+  "racer",
+  "captain-america",
+  "stitch",
+  "pj-gekko",
+  "pj-catboy",
+  "mickey-mouse",
+  "sky",
+];
+const MAIN_PROGRAM_HERO_SLOT_SETTINGS = {
+  includedHeroIds: ["bumblebee"],
+  excludedHeroIds: MAIN_PROGRAM_EXCLUDED_HERO_IDS,
+  orderedHeroIds: MAIN_PROGRAM_ORDERED_HERO_IDS,
+};
 
 export const PROGRAMS: Program[] = [
 {
@@ -20,7 +61,13 @@ export const PROGRAMS: Program[] = [
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
     segments: ["baby", "boy-4-6", "girl-4-6", "all"],
-    heroSlots: [{ label: "Герой на выбор", kind: "costume" }],
+    heroSlots: [
+      {
+        label: "Герой на выбор",
+        kind: "costume",
+        ...MAIN_PROGRAM_HERO_SLOT_SETTINGS,
+      },
+    ],
     includes: [
       "Ведущий в выбранном образе",
       "Знакомство с детьми и лёгкий разогрев",
@@ -33,6 +80,7 @@ export const PROGRAMS: Program[] = [
       "Музыка и игровой реквизит",
       "Торжественный вынос торта 🎂",
     ],
+    recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-sky-200",
     gradientTo: "to-sky-50",
     cover: "/programs/mini.png",
@@ -51,7 +99,7 @@ export const PROGRAMS: Program[] = [
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
     segments: ["baby", "boy-4-6", "girl-4-6", "all"],
-    heroSlots: [{ label: "Герой на выбор", kind: "costume" }],
+    heroSlots: [{ label: "Герой на выбор", kind: "costume", ...MAIN_PROGRAM_HERO_SLOT_SETTINGS }],
     includes: [
       "Ведущий в выбранном образе",
       "Знакомство с гостями",
@@ -66,6 +114,7 @@ export const PROGRAMS: Program[] = [
       "Торжественный вынос торта 🎂",
       "Подарок каждому ребёнку",
     ],
+    recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-sky-200",
     gradientTo: "to-sky-50",
     cover: "/programs/start.png",
@@ -84,7 +133,7 @@ export const PROGRAMS: Program[] = [
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
     segments: ["baby", "boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
-    heroSlots: [{ label: "Герой на выбор", kind: "costume" }],
+    heroSlots: [{ label: "Герой на выбор", kind: "costume", ...MAIN_PROGRAM_HERO_SLOT_SETTINGS }],
     includes: [
       "Герой на выбор",
       "Встреча и знакомство с детьми",
@@ -99,7 +148,7 @@ export const PROGRAMS: Program[] = [
       "Подарок каждому ребёнку",
     ],
     bonus: BUBBLE_MACHINE_BONUS,
-    recommendedAddonIds: ["bubbles-show", "confetti"],
+    recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-sky-200",
     gradientTo: "to-sky-50",
     cover: "/programs/standart.webp",
@@ -119,7 +168,7 @@ export const PROGRAMS: Program[] = [
     locations: ["indoor", "outdoor"],
     segments: ["baby", "boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
     heroSlots: [
-      { label: "Образ ведущего", kind: "costume" },
+      { label: "Образ ведущего", kind: "costume", ...MAIN_PROGRAM_HERO_SLOT_SETTINGS },
       { label: "Ростовая кукла на выбор", kind: "mascot" },
     ],
     includes: [
@@ -136,6 +185,7 @@ export const PROGRAMS: Program[] = [
       "Красивый вынос торта с любимым героем 🎂",
     ],
     bonus: BUBBLE_MACHINE_BONUS,
+    recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-blue-300",
     gradientTo: "to-indigo-100",
     cover: "/programs/super-heroes.png",
@@ -193,7 +243,7 @@ export const PROGRAMS: Program[] = [
     locations: ["indoor", "outdoor"],
     segments: ["baby", "boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
     ruOnly: true,
-    heroSlots: [],
+    heroSlots: [{ label: "Ростовая кукла на выбор", kind: "mascot" }],
     includes: [
       "Встреча гостей",
       "Авторское ведение Мишани",
@@ -210,7 +260,7 @@ export const PROGRAMS: Program[] = [
       "Подарок каждому ребёнку",
     ],
     bonus: BUBBLE_MACHINE_BONUS,
-    recommendedAddonIds: BASIC_PARTY_ADDONS,
+    recommendedAddonIds: SHOW_PARTY_ADDONS,
     videos: [
       "https://youtu.be/p0sH-U2WNKw",
       "https://youtu.be/EMeUFC8GhYA",
@@ -482,18 +532,14 @@ export const PROGRAMS: Program[] = [
     languages: ["ru", "he"],
     locations: ["outdoor"],
     segments: ["baby", "boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
-    heroSlots: [
-      { label: "Образ ведущего", kind: "costume" },
-      { label: "Любимый персонаж", kind: "costume" },
-    ],
+    heroSlots: [],
     includes: [
       "Пенная пушка",
       "Огромные облака пены",
       "Танцы в пене",
       "Игры на улице",
       "Весёлые конкурсы",
-      "Ведущий в образе на выбор",
-      "Любимый персонаж на выбор",
+      "Ведущий в своём образе",
       "Музыкальное сопровождение",
       "Торжественный вынос торта",
       "Подарок каждому ребёнку",
@@ -518,7 +564,7 @@ export const PROGRAMS: Program[] = [
     locations: ["indoor", "outdoor"],
     segments: ["baby", "boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
     heroSlots: [
-      { label: "Образ ведущего", kind: "costume" },
+      { label: "Образ ведущего", kind: "costume", ...MAIN_PROGRAM_HERO_SLOT_SETTINGS },
       { label: "Ростовая кукла на выбор", kind: "mascot" },
     ],
     includesHighlight: "Расширенная VIP-программа на 2 часа",
@@ -558,7 +604,7 @@ export const PROGRAMS: Program[] = [
     locations: ["indoor", "outdoor"],
     segments: ["baby", "boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
     heroSlots: [
-      { label: "Образ ведущего", kind: "costume" },
+      { label: "Образ ведущего", kind: "costume", ...MAIN_PROGRAM_HERO_SLOT_SETTINGS },
       { label: "Ростовая кукла на выбор", kind: "mascot" },
     ],
     includesHighlight: "Команда из 5 человек: ведущие, аниматоры, персонажи, шоу",
@@ -632,6 +678,7 @@ export const PROGRAMS: Program[] = [
     segments: ["baby", "girl-4-6", "girl-6plus", "all"],
     ruOnly: true,
     heroSlots: [{ label: "Дополнительный герой", kind: "costume" }],
+    hiddenFor: [{ segment: "baby", gender: "boy" }],
     includes: [
       "Ведущая в образе Барби",
       "Beauty-мастерская",

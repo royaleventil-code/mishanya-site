@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Baby, Banknote, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Users, X } from "lucide-react";
-import type { FilterState, Hero, Program, SegmentId } from "@/lib/types";
+import type { AudienceContext, FilterState, Hero, Program, SegmentId } from "@/lib/types";
 import { filterHeroes, filterPrograms } from "@/lib/filtering";
 import { sortHeroes } from "@/lib/heroOrder";
 import { whatsappLink, WA_MESSAGES } from "@/lib/whatsapp";
@@ -15,6 +15,7 @@ type Props = {
   accent: string;
   programs: Program[];
   heroes: Hero[];
+  audience?: AudienceContext;
 };
 
 type AddonItem = (typeof ADDONS)[number];
@@ -45,7 +46,7 @@ function heroChoiceLabel(label: string): string {
   return label;
 }
 
-export function ProgramsSection({ segment, accent, programs, heroes }: Props) {
+export function ProgramsSection({ segment, accent, programs, heroes, audience }: Props) {
   const [filters, setFilters] = useState<FilterState>({
     kidsCount: null,
     location: null,
@@ -55,12 +56,12 @@ export function ProgramsSection({ segment, accent, programs, heroes }: Props) {
   const [slideDirection, setSlideDirection] = useState<-1 | 1>(1);
 
   const visibleProgramsBase = useMemo(
-    () => programs.filter((p) => p.segments.includes(segment)),
-    [programs, segment],
+    () => filterPrograms(programs, segment, { kidsCount: null, location: null, language: null }, audience),
+    [programs, segment, audience],
   );
   const visiblePrograms = useMemo(
-    () => filterPrograms(programs, segment, filters),
-    [programs, segment, filters],
+    () => filterPrograms(programs, segment, filters, audience),
+    [programs, segment, filters, audience],
   );
 
   const selectedIndex = selectedId
@@ -159,6 +160,7 @@ export function ProgramsSection({ segment, accent, programs, heroes }: Props) {
             accent={accent}
             segment={segment}
             heroes={heroes}
+            audience={audience}
             languageFilter={filters.language}
             position={selectedIndex + 1}
             total={visiblePrograms.length}
@@ -385,6 +387,7 @@ function ProgramModal({
   accent,
   segment,
   heroes,
+  audience,
   languageFilter,
   position,
   total,
@@ -398,6 +401,7 @@ function ProgramModal({
   accent: string;
   segment: SegmentId;
   heroes: Hero[];
+  audience?: AudienceContext;
   languageFilter: FilterState["language"];
   position: number;
   total: number;
@@ -763,8 +767,12 @@ function ProgramModal({
                 heroes.filter((h) => h.kind === slot.kind && !excludedHeroIds.has(h.id)),
                 segment,
                 languageFilter,
+                slot.includedHeroIds,
+                audience,
+                slot.onlyHeroIds,
               ),
               segment,
+              slot.orderedHeroIds,
             );
             if (slotHeroes.length === 0) return null;
             return (

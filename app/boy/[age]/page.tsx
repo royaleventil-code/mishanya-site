@@ -18,5 +18,11 @@ export default async function BoyAgePage({
   if (!Number.isFinite(ageNum) || ageNum < 1 || ageNum > 10) notFound();
 
   const segment = segmentFromAge(ageNum, "boy");
-  return <SegmentPage segment={segment} title={heroTitle(segment, ageNum, "boy")} />;
+  return (
+    <SegmentPage
+      segment={segment}
+      title={heroTitle(segment, ageNum, "boy")}
+      audience={{ age: ageNum, gender: "boy" }}
+    />
+  );
 }

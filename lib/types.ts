@@ -13,7 +13,21 @@ export type Gender = "boy" | "girl";
 export type HeroSlot = {
   label: string;
   kind: HeroKind;
+  includedHeroIds?: string[];
+  onlyHeroIds?: string[];
   excludedHeroIds?: string[];
+  orderedHeroIds?: string[];
+};
+
+export type AudienceContext = {
+  age?: number;
+  gender?: Gender;
+};
+
+export type ProgramVisibilityRule = AudienceContext & {
+  segment?: SegmentId;
+  minAge?: number;
+  maxAge?: number;
 };
 
 export type Program = {
@@ -42,6 +56,7 @@ export type Program = {
   gradientTo: string;
   ruOnly?: boolean;
   cover?: string;
+  hiddenFor?: ProgramVisibilityRule[];
 };
 
 export type Hero = {
@@ -53,6 +68,7 @@ export type Hero = {
   photo?: string;
   gallery?: string[];
   description?: string;
+  hiddenFor?: ProgramVisibilityRule[];
 };
 
 export type Addon = {

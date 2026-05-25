@@ -1,6 +1,7 @@
 import { Header } from "./Header";
 import { Hero } from "./Hero";
 import { ProgramsSection } from "./ProgramsSection";
+import { SocialProofSection } from "./SocialProofSection";
 import { HowItWorks } from "./HowItWorks";
 import { Trust } from "./Trust";
 import { Faq } from "./Faq";
@@ -10,15 +11,16 @@ import { StickyMobileCta } from "./StickyMobileCta";
 import { PROGRAMS } from "@/data/programs";
 import { HEROES } from "@/data/heroes";
 import { SEGMENTS } from "@/lib/segments";
-import type { SegmentId } from "@/lib/types";
+import type { AudienceContext, SegmentId } from "@/lib/types";
 
 type Props = {
   segment: SegmentId;
   title: string;
   emojiOverride?: string;
+  audience?: AudienceContext;
 };
 
-export function SegmentPage({ segment, title, emojiOverride }: Props) {
+export function SegmentPage({ segment, title, emojiOverride, audience }: Props) {
   const cfg = SEGMENTS[segment];
   return (
     <>
@@ -29,7 +31,9 @@ export function SegmentPage({ segment, title, emojiOverride }: Props) {
         accent={cfg.accent}
         programs={PROGRAMS}
         heroes={HEROES}
+        audience={audience}
       />
+      {segment === "baby" && <SocialProofSection />}
       <HowItWorks />
       <Trust />
       <Faq />
