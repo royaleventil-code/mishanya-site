@@ -203,7 +203,8 @@ export const PROGRAMS: Program[] = [
     maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
-    segments: ["boy-6plus", "girl-6plus", "all"],
+    segments: ["boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
+    hiddenFor: [{ maxAge: 5 }],
     heroSlots: [],
     includes: [
       "Ведущий в образе профессора",
@@ -396,6 +397,7 @@ export const PROGRAMS: Program[] = [
     languages: ["ru", "he"],
     locations: ["indoor"],
     segments: ["boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
+    hiddenFor: [{ maxAge: 4 }],
     heroSlots: [],
     includes: [
       "Аниматоры в светящихся костюмах",
@@ -431,6 +433,7 @@ export const PROGRAMS: Program[] = [
     languages: ["ru"],
     locations: ["indoor", "outdoor"],
     segments: ["boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
+    hiddenFor: [{ maxAge: 4 }],
     ruOnly: true,
     heroSlots: [],
     includes: [
@@ -498,6 +501,7 @@ export const PROGRAMS: Program[] = [
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
     segments: ["boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
+    hiddenFor: [{ maxAge: 4 }],
     heroSlots: [],
     includes: [
       "Аниматор в чёрной маске",

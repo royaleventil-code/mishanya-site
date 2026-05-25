@@ -1,9 +1,9 @@
 export type ProgramStatus = "todo" | "in-progress" | "done";
 
 export const PROGRAM_STATUSES: Record<string, ProgramStatus> = {
-  "boy-1": "todo",
-  "boy-2": "todo",
-  "boy-3": "todo",
+  "boy-1": "done",
+  "boy-2": "done",
+  "boy-3": "done",
   "boy-4": "todo",
   "boy-5": "todo",
   "boy-6": "todo",
