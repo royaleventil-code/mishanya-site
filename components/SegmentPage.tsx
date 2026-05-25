@@ -33,7 +33,7 @@ export function SegmentPage({ segment, title, emojiOverride, audience }: Props) 
         heroes={HEROES}
         audience={audience}
       />
-      {segment === "baby" && <SocialProofSection />}
+      <SocialProofSection />
       <HowItWorks />
       <Trust />
       <Faq />

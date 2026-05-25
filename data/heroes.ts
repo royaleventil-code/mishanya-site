@@ -130,7 +130,6 @@ export function getHeroImage(id: string): string | null {
     stitch: "/heroes/stitch.png",
     "fixiki-boy": "/heroes/fixiki-boy.png",
     "popit-boy": "/heroes/popit-boy.png",
-    "among-us-mascot": "/heroes/among-us-mascot.png",
     "bunny": "/heroes/bunny.png",
     "dj-marshmello": "/heroes/dj-marshmello.png",
     "huggy-wuggy-mascot": "/heroes/huggy-wuggy-mascot.png",

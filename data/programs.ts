@@ -284,6 +284,7 @@ export const PROGRAMS: Program[] = [
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
     segments: ["boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
+    hiddenFor: [{ maxAge: 5 }],
     heroSlots: [],
     includes: [
       "2 TikTok-ведущих в ярких образах",
@@ -397,7 +398,7 @@ export const PROGRAMS: Program[] = [
     languages: ["ru", "he"],
     locations: ["indoor"],
     segments: ["boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
-    hiddenFor: [{ maxAge: 4 }],
+    hiddenFor: [{ maxAge: 5 }],
     heroSlots: [],
     includes: [
       "Аниматоры в светящихся костюмах",
