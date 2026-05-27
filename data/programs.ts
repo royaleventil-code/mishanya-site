@@ -537,7 +537,7 @@ export const PROGRAMS: Program[] = [
     locations: ["indoor", "outdoor"],
     segments: ["boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
     heroSlots: [
-      { label: "Ростовая кукла на выбор", kind: "mascot", excludedHeroIds: ["bumblebee-new"] },
+      { label: "Ростовая кукла на выбор", kind: "mascot" },
     ],
     includes: [
       "Фокусная программа",

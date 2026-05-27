@@ -109,7 +109,6 @@ const GIRL_MASCOT_HERO_IDS = {
     "stitch-mascot",
     "sonic-mascot",
     "jerry",
-    "luntik",
     "minion",
     "masha-bear-inflatable",
     "nu-pogodi-hare",
