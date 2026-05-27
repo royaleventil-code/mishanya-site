@@ -25,6 +25,9 @@ export function filterPrograms(
 ): Program[] {
   return programs.filter((p) => {
     if (!p.segments.includes(segment)) return false;
+    if (p.showFor && !p.showFor.some((rule) => matchesVisibilityRule(rule, segment, audience))) {
+      return false;
+    }
     if (p.hiddenFor?.some((rule) => matchesVisibilityRule(rule, segment, audience))) {
       return false;
     }

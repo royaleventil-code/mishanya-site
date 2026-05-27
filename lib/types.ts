@@ -56,6 +56,7 @@ export type Program = {
   gradientTo: string;
   ruOnly?: boolean;
   cover?: string;
+  showFor?: ProgramVisibilityRule[];
   hiddenFor?: ProgramVisibilityRule[];
 };
 
