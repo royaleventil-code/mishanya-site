@@ -9,7 +9,6 @@ const MAIN_PROGRAM_EXCLUDED_HERO_IDS = [
   "aurora",
   "batman",
   "barbie",
-  "belle",
   "anna",
   "unicorn",
   "ladybug",

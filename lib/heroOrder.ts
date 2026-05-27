@@ -19,7 +19,6 @@ const BOYS_ORDER = [
   "fixiki-boy",
   "pirate",
   "squid-soldier",
-  "mario",
   "dinosaur",
   "deadpool",
   "pj-gekko",
