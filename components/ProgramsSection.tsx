@@ -46,6 +46,10 @@ const GIRL_COSTUME_HERO_IDS = {
     "cat-noir",
     "popit-girl",
     "tinker-bell",
+    "pj-gekko",
+    "racer",
+    "troll-branch",
+    "fixiki-boy",
   ],
   middle: [
     "elsa",
@@ -72,6 +76,11 @@ const GIRL_COSTUME_HERO_IDS = {
     "popit-girl",
     "troll-poppy",
     "tinker-bell",
+    "racer",
+    "dinosaur",
+    "pj-catboy",
+    "troll-branch",
+    "fixiki-boy",
   ],
   older: [
     "kpop-rumi",
@@ -93,6 +102,12 @@ const GIRL_COSTUME_HERO_IDS = {
     "lol-unicorn",
     "popit-girl",
     "mermaid",
+    "harry-potter",
+    "hermione",
+    "dinosaur",
+    "marvel",
+    "mickey-mouse",
+    "tiktoker-boy",
   ],
 } as const;
 
@@ -128,6 +143,9 @@ const GIRL_MASCOT_HERO_IDS = {
     "jerry",
     "minion",
     "sonic-mascot",
+    "dj-marshmello",
+    "mickey-mouse-mascot",
+    "masha-bear-inflatable",
   ],
   older: [
     "dj-marshmello",
@@ -143,6 +161,8 @@ const GIRL_MASCOT_HERO_IDS = {
     "olaf",
     "pikachu-mascot",
     "sonic-mascot",
+    "mickey-mouse-mascot",
+    "huggy-wuggy-mascot",
   ],
 } as const;
 
@@ -855,7 +875,7 @@ function ProgramModal({
                 Стоимость от
               </div>
               <div className="mt-1 text-3xl sm:text-4xl font-bold tracking-tight tabular-nums">
-                {program.priceFrom.toLocaleString("ru-RU")} ₪
+                {totalPriceFrom.toLocaleString("ru-RU")} ₪
               </div>
               <Banknote className="w-5 h-5 mx-auto mt-1 opacity-90" strokeWidth={2.2} />
             </div>
@@ -987,6 +1007,11 @@ function ProgramModal({
                   const nextAddonIds = programAddonIds.includes(addonId)
                     ? programAddonIds.filter((id) => id !== addonId)
                     : [...programAddonIds, addonId];
+                  if (nextAddonIds.length === 0) {
+                    const next = { ...current };
+                    delete next[program.id];
+                    return next;
+                  }
                   return { ...current, [program.id]: nextAddonIds };
                 });
               }}

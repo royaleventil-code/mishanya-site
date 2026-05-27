@@ -297,6 +297,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-pink-300",
     gradientTo: "to-sky-100",
+    cover: "/programs/paw-patrol.jpg",
   },
 {
     id: "paw-patrol-toddler-boys",
@@ -334,6 +335,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-blue-300",
     gradientTo: "to-red-100",
+    cover: "/programs/paw-patrol.jpg",
   },
 {
     id: "kpop",
