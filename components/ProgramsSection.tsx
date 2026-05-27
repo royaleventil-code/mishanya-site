@@ -24,6 +24,136 @@ type HeroChoice = {
   hero: Hero;
 };
 
+const GIRL_COSTUME_HERO_IDS = {
+  baby: [
+    "pj-owlette",
+    "anna",
+    "barbie",
+    "belle",
+    "unicorn",
+    "cat-noir",
+    "ladybug",
+    "lol-unicorn",
+    "lol-bee",
+    "mashenka",
+    "minnie-mouse",
+    "popit-girl",
+    "rapunzel",
+    "kpop-rumi",
+    "mermaid",
+    "sky",
+    "stitch",
+    "troll-poppy",
+    "tinker-bell",
+    "fixiki-girl",
+    "elsa",
+  ],
+  middle: [
+    "pj-owlette",
+    "anna",
+    "barbie",
+    "belle",
+    "wednesday",
+    "hermione",
+    "unicorn",
+    "kpop-zoey",
+    "cat-noir",
+    "cruella",
+    "ladybug",
+    "lol-unicorn",
+    "lol-bee",
+    "minecraft-girl",
+    "mashenka",
+    "kpop-mira",
+    "minnie-mouse",
+    "popit-girl",
+    "rapunzel",
+    "kpop-rumi",
+    "mermaid",
+    "sky",
+    "stitch",
+    "troll-poppy",
+    "tinker-bell",
+    "fixiki-girl",
+    "elsa",
+  ],
+  older: [
+    "pj-owlette",
+    "anna",
+    "barbie",
+    "belle",
+    "wednesday",
+    "hermione",
+    "unicorn",
+    "kpop-zoey",
+    "cruella",
+    "ladybug",
+    "lol-unicorn",
+    "lol-bee",
+    "minecraft-girl",
+    "kpop-mira",
+    "minnie-mouse",
+    "popit-girl",
+    "kpop-rumi",
+    "mermaid",
+    "sky",
+    "stitch",
+    "tiktoker-girl",
+    "elsa",
+  ],
+} as const;
+
+const GIRL_MASCOT_HERO_IDS = {
+  baby: [
+    "jerry",
+    "unicorn-mascot",
+    "bunny",
+    "lol-unicorn-mascot",
+    "lol-bee-mascot",
+    "luntik",
+    "marshall-mascot",
+    "mickey-mouse-mascot",
+    "minnie-mouse-mascot",
+    "minion",
+    "masha-bear-inflatable",
+    "nu-pogodi-hare",
+    "olaf",
+    "sonic-mascot",
+    "stitch-mascot",
+    "tom",
+  ],
+  middle: [
+    "jerry",
+    "unicorn-mascot",
+    "bunny",
+    "kissy-missy",
+    "labubu",
+    "lol-unicorn-mascot",
+    "lol-bee-mascot",
+    "marshall-mascot",
+    "minnie-mouse-mascot",
+    "minion",
+    "olaf",
+    "sonic-mascot",
+    "stitch-mascot",
+  ],
+  older: [
+    "dj-marshmello",
+    "unicorn-mascot",
+    "bunny",
+    "kissy-missy",
+    "labubu",
+    "lol-unicorn-mascot",
+    "lol-bee-mascot",
+    "marshall-mascot",
+    "minnie-mouse-mascot",
+    "olaf",
+    "pikachu-mascot",
+    "sonic-mascot",
+    "stitch-mascot",
+  ],
+} as const;
+
 const KIDS_OPTIONS = [
   { value: "small" as const, label: "До 15" },
   { value: "large" as const, label: "Больше 15" },
@@ -44,6 +174,23 @@ function heroChoiceLabel(label: string): string {
   if (normalized.includes("ростовая")) return "Ростовая кукла";
   if (normalized.includes("ведущ") || normalized.includes("герой")) return "Образ для ведущего";
   return label;
+}
+
+function girlAgeGroup(audience?: AudienceContext): keyof typeof GIRL_COSTUME_HERO_IDS | null {
+  if (audience?.gender !== "girl" || typeof audience.age !== "number") return null;
+  if (audience.age >= 1 && audience.age <= 3) return "baby";
+  if (audience.age >= 4 && audience.age <= 6) return "middle";
+  if (audience.age >= 7 && audience.age <= 10) return "older";
+  return null;
+}
+
+function girlHeroIdsForSlot(
+  audience: AudienceContext | undefined,
+  kind: Hero["kind"],
+): string[] | null {
+  const ageGroup = girlAgeGroup(audience);
+  if (!ageGroup) return null;
+  return [...(kind === "costume" ? GIRL_COSTUME_HERO_IDS[ageGroup] : GIRL_MASCOT_HERO_IDS[ageGroup])];
 }
 
 export function ProgramsSection({ segment, accent, programs, heroes, audience }: Props) {
@@ -777,18 +924,24 @@ function ProgramModal({
 
           {/* Hero slots */}
           {program.heroSlots.map((slot, slotIdx) => {
-            const excludedHeroIds = new Set(slot.excludedHeroIds ?? []);
+            const girlHeroIds = girlHeroIdsForSlot(audience, slot.kind);
+            const onlyHeroIds = girlHeroIds
+              ? slot.onlyHeroIds?.length
+                ? girlHeroIds.filter((id) => slot.onlyHeroIds?.includes(id))
+                : girlHeroIds
+              : slot.onlyHeroIds;
+            const excludedHeroIds = new Set(girlHeroIds ? [] : slot.excludedHeroIds ?? []);
             const slotHeroes = sortHeroes(
               filterHeroes(
                 heroes.filter((h) => h.kind === slot.kind && !excludedHeroIds.has(h.id)),
                 segment,
                 languageFilter,
-                slot.includedHeroIds,
+                girlHeroIds ? [] : slot.includedHeroIds,
                 audience,
-                slot.onlyHeroIds,
+                onlyHeroIds,
               ),
               segment,
-              slot.orderedHeroIds,
+              girlHeroIds ?? slot.orderedHeroIds,
             );
             if (slotHeroes.length === 0) return null;
             return (
