@@ -30,6 +30,10 @@ export type ProgramVisibilityRule = AudienceContext & {
   maxAge?: number;
 };
 
+export type ProgramCoverRule = ProgramVisibilityRule & {
+  cover: string;
+};
+
 export type Program = {
   id: string;
   emoji: string;
@@ -56,6 +60,7 @@ export type Program = {
   gradientTo: string;
   ruOnly?: boolean;
   cover?: string;
+  audienceCovers?: ProgramCoverRule[];
   showFor?: ProgramVisibilityRule[];
   hiddenFor?: ProgramVisibilityRule[];
 };

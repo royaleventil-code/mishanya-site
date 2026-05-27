@@ -83,6 +83,7 @@ export const PROGRAMS: Program[] = [
     gradientFrom: "from-sky-200",
     gradientTo: "to-sky-50",
     cover: "/programs/mini.png",
+    audienceCovers: [{ gender: "girl", minAge: 1, maxAge: 3, cover: "/programs/mini-girls-1-3.png" }],
   },
 {
     id: "start",
@@ -117,6 +118,7 @@ export const PROGRAMS: Program[] = [
     gradientFrom: "from-sky-200",
     gradientTo: "to-sky-50",
     cover: "/programs/start.png",
+    audienceCovers: [{ gender: "girl", minAge: 1, maxAge: 3, cover: "/programs/start-girls-1-3.png" }],
   },
 {
     id: "standart",
@@ -151,6 +153,7 @@ export const PROGRAMS: Program[] = [
     gradientFrom: "from-sky-200",
     gradientTo: "to-sky-50",
     cover: "/programs/standart.webp",
+    audienceCovers: [{ gender: "girl", minAge: 1, maxAge: 3, cover: "/programs/standart-girls-1-3.png" }],
   },
 {
     id: "super-heroes",
@@ -188,6 +191,7 @@ export const PROGRAMS: Program[] = [
     gradientFrom: "from-blue-300",
     gradientTo: "to-indigo-100",
     cover: "/programs/super-heroes.png",
+    audienceCovers: [{ gender: "girl", minAge: 1, maxAge: 3, cover: "/programs/super-heroes-girls-1-3.png" }],
   },
 {
     id: "frozen-toddler-girls",
@@ -224,6 +228,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-sky-300",
     gradientTo: "to-blue-50",
+    cover: "/programs/frozen-toddler-girls.png",
   },
 {
     id: "unicorn-toddler-girls",
@@ -260,6 +265,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-fuchsia-300",
     gradientTo: "to-sky-100",
+    cover: "/programs/unicorn-toddler-girls.png",
   },
 {
     id: "paw-patrol-toddler-girls",

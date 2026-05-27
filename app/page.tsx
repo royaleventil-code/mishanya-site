@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, ChevronRight, Circle, Clock3 } from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronRight, Circle, Clock3 } from "lucide-react";
 import { PROGRAM_STATUSES, type ProgramStatus } from "@/data/program-status";
 
 const AGE_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
@@ -20,12 +20,14 @@ const WORK_GROUPS: {
   title: string;
   subtitle: string;
   color: string;
+  collapsedByDefault?: boolean;
   items: WorkItem[];
 }[] = [
   {
     title: "Мальчики",
     subtitle: "10 программ",
     color: "#0a84ff",
+    collapsedByDefault: true,
     items: AGE_OPTIONS.map((age) => ({
       id: `boy-${age}`,
       label: `Мальчики ${ageLabel(age)}`,
@@ -92,40 +94,62 @@ export default function Home() {
             ).length;
 
             return (
-              <section
+              <WorkGroupSection
                 key={group.title}
-                className="overflow-hidden rounded-3xl bg-white shadow-[0_16px_40px_rgba(15,15,20,0.06)]"
-              >
-                <div
-                  className="flex items-center justify-between gap-3 border-b border-[var(--color-line)] px-5 py-4"
-                  style={{ borderTop: `4px solid ${group.color}` }}
-                >
-                  <div>
-                    <h2 className="text-xl font-bold tracking-tight">{group.title}</h2>
-                    <p className="mt-0.5 text-sm text-[var(--color-ink-soft)]">
-                      {group.subtitle}
-                    </p>
-                  </div>
-                  <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold tabular-nums text-[var(--color-ink-soft)]">
-                    {groupReady}/{group.items.length}
-                  </span>
-                </div>
-
-                <div className="divide-y divide-[var(--color-line)]">
-                  {group.items.map((item) => (
-                    <ProgramWorkRow
-                      key={item.id}
-                      item={item}
-                      status={PROGRAM_STATUSES[item.id] ?? "todo"}
-                    />
-                  ))}
-                </div>
-              </section>
+                group={group}
+                groupReady={groupReady}
+              />
             );
           })}
         </div>
       </div>
     </main>
+  );
+}
+
+function WorkGroupSection({
+  group,
+  groupReady,
+}: {
+  group: (typeof WORK_GROUPS)[number];
+  groupReady: number;
+}) {
+  return (
+    <details
+      open={!group.collapsedByDefault}
+      className="group overflow-hidden rounded-3xl bg-white shadow-[0_16px_40px_rgba(15,15,20,0.06)]"
+    >
+      <summary
+        className="flex cursor-pointer list-none items-center justify-between gap-3 border-b border-[var(--color-line)] px-5 py-4 [&::-webkit-details-marker]:hidden"
+        style={{ borderTop: `4px solid ${group.color}` }}
+      >
+        <span>
+          <span className="block text-xl font-bold tracking-tight">{group.title}</span>
+          <span className="mt-0.5 block text-sm text-[var(--color-ink-soft)]">
+            {group.subtitle}
+          </span>
+        </span>
+        <span className="flex shrink-0 items-center gap-2">
+          <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold tabular-nums text-[var(--color-ink-soft)]">
+            {groupReady}/{group.items.length}
+          </span>
+          <ChevronDown
+            className="h-5 w-5 text-[var(--color-ink-soft)] transition group-open:rotate-180"
+            strokeWidth={2.4}
+          />
+        </span>
+      </summary>
+
+      <div className="divide-y divide-[var(--color-line)]">
+        {group.items.map((item) => (
+          <ProgramWorkRow
+            key={item.id}
+            item={item}
+            status={PROGRAM_STATUSES[item.id] ?? "todo"}
+          />
+        ))}
+      </div>
+    </details>
   );
 }
 

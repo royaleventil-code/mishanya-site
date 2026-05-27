@@ -205,6 +205,34 @@ function girlHeroIdsForSlot(
   return [...(kind === "costume" ? GIRL_COSTUME_HERO_IDS[ageGroup] : GIRL_MASCOT_HERO_IDS[ageGroup])];
 }
 
+function matchesAudienceCover(
+  rule: NonNullable<Program["audienceCovers"]>[number],
+  segment: SegmentId,
+  audience?: AudienceContext,
+): boolean {
+  if (rule.segment && rule.segment !== segment) return false;
+  if (rule.gender && rule.gender !== audience?.gender) return false;
+  if (rule.age !== undefined && rule.age !== audience?.age) return false;
+  if (rule.minAge !== undefined && (audience?.age === undefined || audience.age < rule.minAge)) {
+    return false;
+  }
+  if (rule.maxAge !== undefined && (audience?.age === undefined || audience.age > rule.maxAge)) {
+    return false;
+  }
+  return true;
+}
+
+function getProgramCover(
+  program: Program,
+  segment: SegmentId,
+  audience?: AudienceContext,
+): string | undefined {
+  return (
+    program.audienceCovers?.find((rule) => matchesAudienceCover(rule, segment, audience))?.cover ??
+    program.cover
+  );
+}
+
 export function ProgramsSection({ segment, accent, programs, heroes, audience }: Props) {
   const [filters, setFilters] = useState<FilterState>({
     kidsCount: null,
@@ -294,6 +322,8 @@ export function ProgramsSection({ segment, accent, programs, heroes, audience }:
             key={p.id}
             program={p}
             accent={accent}
+            segment={segment}
+            audience={audience}
             onOpen={() => setSelectedId(p.id)}
           />
         ))}
@@ -442,13 +472,18 @@ function FilterDropdown<T extends string>({
 function ProgramCard({
   program,
   accent,
+  segment,
+  audience,
   onOpen,
 }: {
   program: Program;
   accent: string;
+  segment: SegmentId;
+  audience?: AudienceContext;
   onOpen: () => void;
 }) {
   const indoorOnly = program.locations.length === 1 && program.locations[0] === "indoor";
+  const cover = getProgramCover(program, segment, audience);
 
   return (
     <button
@@ -460,12 +495,12 @@ function ProgramCard({
       <div
         className="relative h-44 sm:h-48 flex items-center justify-center overflow-hidden"
         style={
-          program.cover
+          cover
             ? { background: "white" }
             : { background: "linear-gradient(135deg, rgba(255,255,255,0.92), rgba(244,242,238,0.78))" }
         }
       >
-        {!program.cover && (
+        {!cover && (
           <>
             <div
               aria-hidden
@@ -480,10 +515,10 @@ function ProgramCard({
           </>
         )}
 
-        {program.cover ? (
+        {cover ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
-            src={program.cover}
+            src={cover}
             alt={program.title}
             className="relative z-10 w-full h-full object-cover"
             style={{ objectPosition: "center 30%" }}
@@ -591,6 +626,7 @@ function ProgramModal({
     program.recommendedAddonIds
       ?.map((id) => ADDONS.find((addon) => addon.id === id))
       .filter((addon): addon is AddonItem => Boolean(addon)) ?? [];
+  const cover = getProgramCover(program, segment, audience);
   const selectedHeroBySlot = selectedHeroByProgram[program.id] ?? {};
   const selectedAddonIds = selectedAddonIdsByProgram[program.id] ?? [];
   const selectedHeroChoices = program.heroSlots
@@ -791,15 +827,15 @@ function ProgramModal({
         <div
           className="relative h-48 sm:h-64 flex items-center justify-center rounded-t-3xl overflow-hidden"
           style={
-            program.cover
+            cover
               ? { background: "white" }
               : { background: "linear-gradient(135deg, rgba(255,255,255,0.92), rgba(244,242,238,0.78))" }
           }
         >
-          {program.cover ? (
+          {cover ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
-              src={program.cover}
+              src={cover}
               alt={program.title}
               className="w-full h-full object-cover"
               style={{ objectPosition: "center 30%" }}
