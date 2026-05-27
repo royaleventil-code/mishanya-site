@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Baby, Banknote, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Users, X } from "lucide-react";
+import { Baby, Banknote, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, MapPin, Users, X } from "lucide-react";
 import type { AudienceContext, FilterState, Hero, Program, SegmentId } from "@/lib/types";
 import { filterHeroes, filterPrograms } from "@/lib/filtering";
 import { sortHeroes } from "@/lib/heroOrder";
@@ -289,6 +289,8 @@ function ProgramCard({
   accent: string;
   onOpen: () => void;
 }) {
+  const indoorOnly = program.locations.length === 1 && program.locations[0] === "indoor";
+
   return (
     <button
       onClick={onOpen}
@@ -347,6 +349,16 @@ function ProgramCard({
           <p className="mt-1 text-xs text-[var(--color-ink-soft)] line-clamp-2">
             {program.tagline}
           </p>
+        )}
+
+        {indoorOnly && (
+          <div
+            className="mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold"
+            style={{ background: `${accent}14`, color: "var(--color-ink)" }}
+          >
+            <MapPin className="h-3.5 w-3.5" strokeWidth={2.4} />
+            Только в помещении
+          </div>
         )}
 
         <div className="mt-3 flex items-center justify-center flex-wrap gap-x-3 gap-y-2">
@@ -432,6 +444,7 @@ function ProgramModal({
   const totalPriceFrom =
     program.priceFrom + selectedAddons.reduce((sum, addon) => sum + addon.priceFrom, 0);
   const hasCustomChoice = selectedHeroChoices.length > 0 || selectedAddons.length > 0;
+  const indoorOnly = program.locations.length === 1 && program.locations[0] === "indoor";
   const orderMessage = WA_MESSAGES.programOrder({
     programName: program.title,
     durationLabel: program.durationLabel,
@@ -653,10 +666,13 @@ function ProgramModal({
               {position} / {total}
             </p>
           )}
-          {program.ruOnly && (
-            <p className="mt-2 text-xs font-medium text-center" style={{ color: accent }}>
-              Программа проводится только на русском языке
-            </p>
+          {(program.ruOnly || indoorOnly) && (
+            <div className="mt-2 space-y-1 text-center text-xs font-semibold text-amber-600">
+              {program.ruOnly && <p>1. Программа проводится только на русском языке</p>}
+              {indoorOnly && (
+                <p>{program.ruOnly ? "2" : "1"}. Программа проводится только в помещении</p>
+              )}
+            </div>
           )}
 
           {/* Stat tiles */}

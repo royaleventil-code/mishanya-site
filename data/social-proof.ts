@@ -22,6 +22,12 @@ export type ProofLinkImage = ProofImage & {
   hotspots?: ProofHotspot[];
 };
 
+export type ProofSet = {
+  gallery: ProofImage[];
+  reviews: ProofLinkImage[];
+  media: ProofLinkImage[];
+};
+
 export const SOCIAL_LINKS: ProofLink[] = [
   { label: "Instagram", href: "https://www.instagram.com/show.mishanya/" },
   { label: "Facebook", href: "https://www.facebook.com/royaleventisrael/" },
@@ -29,7 +35,7 @@ export const SOCIAL_LINKS: ProofLink[] = [
   { label: "Наш сайт" },
 ];
 
-export const KIDS_1_3_PROOF = {
+export const KIDS_1_3_PROOF: ProofSet = {
   gallery: [
     { src: "/proof/kids-1-3/page-09.webp", alt: "Фото с праздников для малышей 1-3 года" },
     { src: "/proof/kids-1-3/page-10.webp", alt: "Коллаж фотографий с детских праздников" },
@@ -72,6 +78,54 @@ export const KIDS_1_3_PROOF = {
           label: "Праздники для самых маленьких на YouTube",
           href: "https://www.youtube.com/watch?v=vAyBfqBMTZY",
           rect: { left: 5.8, top: 77, width: 88.4, height: 23 },
+        },
+      ],
+    },
+  ],
+};
+
+export const BOYS_6_10_PROOF: ProofSet = {
+  gallery: [
+    { src: "/proof/boys-6-10/page-11.webp", alt: "Фото с праздников для мальчиков 6-10 лет" },
+    { src: "/proof/boys-6-10/page-12.webp", alt: "Командные игры и герои на праздниках для мальчиков" },
+    { src: "/proof/boys-6-10/page-13.webp", alt: "Тесла шоу, неоновое шоу и шоу трансформеров" },
+    { src: "/proof/boys-6-10/page-14.webp", alt: "Вынос торта, герои и дискотека на празднике" },
+    { src: "/proof/boys-6-10/page-15.webp", alt: "Фото с ростовыми куклами и активностями для детей" },
+  ],
+  reviews: [
+    { src: "/proof/boys-6-10/page-16.webp", alt: "Отзывы родителей о праздниках для мальчиков 6-10 лет" },
+    { src: "/proof/boys-6-10/page-17.webp", alt: "Отзывы клиентов о праздниках Страны Чудес" },
+    {
+      src: "/proof/boys-6-10/page-18.webp",
+      alt: "Отзывы родителей и ссылка на все отзывы",
+      hotspots: [
+        {
+          label: "Все отзывы на Facebook",
+          href: "https://www.facebook.com/royaleventisrael/reviews/?ref=page_internal",
+          rect: { left: 0, top: 85.5, width: 100, height: 14.5 },
+        },
+      ],
+    },
+  ],
+  media: [
+    {
+      src: "/proof/boys-6-10/page-19.webp",
+      alt: "Видео с праздников для мальчиков 6-10 лет",
+      hotspots: [
+        {
+          label: "Лучшие детские праздники в Израиле на YouTube",
+          href: "https://youtu.be/Kh6AZUa_uks",
+          rect: { left: 5.3, top: 15.8, width: 90.9, height: 23.8 },
+        },
+        {
+          label: "Шоу трансформеров на празднике",
+          href: "https://youtu.be/ZlYyaCGYWFk",
+          rect: { left: 10.5, top: 45.7, width: 79.4, height: 22.1 },
+        },
+        {
+          label: "Фокусник и Спайдермен на дне рождения",
+          href: "https://www.youtube.com/watch?v=Jgx0YZekOno",
+          rect: { left: 6.2, top: 73, width: 89.4, height: 26.2 },
         },
       ],
     },

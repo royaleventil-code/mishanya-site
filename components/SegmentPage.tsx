@@ -10,6 +10,7 @@ import { Footer } from "./Footer";
 import { StickyMobileCta } from "./StickyMobileCta";
 import { PROGRAMS } from "@/data/programs";
 import { HEROES } from "@/data/heroes";
+import { BOYS_6_10_PROOF } from "@/data/social-proof";
 import { SEGMENTS } from "@/lib/segments";
 import type { AudienceContext, SegmentId } from "@/lib/types";
 
@@ -22,6 +23,12 @@ type Props = {
 
 export function SegmentPage({ segment, title, emojiOverride, audience }: Props) {
   const cfg = SEGMENTS[segment];
+  const useBoysProof =
+    audience?.gender === "boy" &&
+    typeof audience.age === "number" &&
+    audience.age >= 6 &&
+    audience.age <= 10;
+
   return (
     <>
       <Header />
@@ -33,7 +40,7 @@ export function SegmentPage({ segment, title, emojiOverride, audience }: Props) 
         heroes={HEROES}
         audience={audience}
       />
-      <SocialProofSection />
+      <SocialProofSection proofSet={useBoysProof ? BOYS_6_10_PROOF : undefined} />
       <HowItWorks />
       <Trust />
       <Faq />

@@ -1,7 +1,14 @@
 import { ExternalLink, Globe2 } from "lucide-react";
-import { KIDS_1_3_PROOF, SOCIAL_LINKS, type ProofImage, type ProofLink, type ProofLinkImage } from "@/data/social-proof";
+import {
+  KIDS_1_3_PROOF,
+  SOCIAL_LINKS,
+  type ProofImage,
+  type ProofLink,
+  type ProofLinkImage,
+  type ProofSet,
+} from "@/data/social-proof";
 
-export function SocialProofSection() {
+export function SocialProofSection({ proofSet = KIDS_1_3_PROOF }: { proofSet?: ProofSet }) {
   return (
     <section className="px-4 py-12 sm:py-16">
       <div className="mx-auto max-w-6xl">
@@ -14,9 +21,9 @@ export function SocialProofSection() {
           </h2>
         </div>
 
-        <ProofGrid title="Фото наших праздников" items={KIDS_1_3_PROOF.gallery} />
-        <ProofGrid title="Отзывы родителей" items={KIDS_1_3_PROOF.reviews} variant="review" />
-        <ProofMediaGrid title="Видео и контакты" items={KIDS_1_3_PROOF.media} />
+        <ProofGrid title="Фото наших праздников" items={proofSet.gallery} />
+        <ProofGrid title="Отзывы родителей" items={proofSet.reviews} variant="review" />
+        <ProofMediaGrid title="Видео и контакты" items={proofSet.media} />
       </div>
     </section>
   );
