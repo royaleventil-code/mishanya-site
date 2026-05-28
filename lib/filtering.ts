@@ -32,7 +32,7 @@ export function filterPrograms(
       return false;
     }
 
-    if (filters.kidsCount === "small" && (p.maxKids === null || p.maxKids > 15)) return false;
+    // Small groups can book larger programs; large groups cannot book capped programs.
     if (filters.kidsCount === "large" && p.maxKids !== null && p.maxKids <= 15) return false;
     if (filters.location && !p.locations.includes(filters.location)) return false;
 
