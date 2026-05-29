@@ -1,5 +1,5 @@
-import { SegmentPage } from "@/components/SegmentPage";
+import { notFound } from "next/navigation";
 
 export default function AllPage() {
-  return <SegmentPage segment="all" title="Все программы Мишани" />;
+  notFound();
 }

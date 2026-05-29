@@ -1,5 +1,5 @@
-import { SegmentPage } from "@/components/SegmentPage";
+import { notFound } from "next/navigation";
 
 export default function BabyPage() {
-  return <SegmentPage segment="baby" title="Программа для малышей до 3 лет" />;
+  notFound();
 }

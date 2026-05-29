@@ -49,7 +49,7 @@ export const PROGRAMS: Program[] = [
 {
     id: "mini",
     emoji: "🥳",
-    title: "MINI",
+    title: "Мини",
     tagline: "Компактный праздник для маленькой компании",
     durationLabel: "40 минут",
     animators: 1,
@@ -88,7 +88,7 @@ export const PROGRAMS: Program[] = [
 {
     id: "start",
     emoji: "🎊",
-    title: "START",
+    title: "Старт",
     tagline: "Час веселья с одним аниматором",
     durationLabel: "1 час",
     animators: 1,
@@ -123,7 +123,7 @@ export const PROGRAMS: Program[] = [
 {
     id: "standart",
     emoji: "✨",
-    title: "STANDART",
+    title: "Стандарт",
     tagline: "Универсальная программа на 1,5 часа",
     durationLabel: "1,5 часа",
     animators: 1,
@@ -158,7 +158,7 @@ export const PROGRAMS: Program[] = [
 {
     id: "super-heroes",
     emoji: "🦸",
-    title: "SUPER HEROES",
+    title: "Супергерои",
     tagline: "Большое шоу с любимыми героями",
     durationLabel: "2 часа",
     animators: 2,
@@ -233,7 +233,7 @@ export const PROGRAMS: Program[] = [
 {
     id: "unicorn-toddler-girls",
     emoji: "🦄",
-    title: "Радужные Единорожки",
+    title: "Радужные единорожки",
     tagline: "Нежный праздник с радугой и волшебством",
     durationLabel: "2 часа",
     animators: 2,
@@ -346,8 +346,8 @@ export const PROGRAMS: Program[] = [
 {
     id: "kpop",
     emoji: "⭐",
-    title: "K-POP PARTY",
-    tagline: "Стань новым айдолом — Idol Training и баттлы",
+    title: "K-pop вечеринка",
+    tagline: "Танцы, idol training и баттлы",
     durationLabel: "2 часа",
     animators: 2,
     animatorsLabel: "2 аниматора",
@@ -417,8 +417,8 @@ export const PROGRAMS: Program[] = [
 {
     id: "mishanya",
     emoji: "🤹",
-    title: "МИШАНЯ",
-    tagline: "Лучший ведущий Израиля — авторская программа",
+    title: "Мишаня",
+    tagline: "Авторская программа с ведущим Мишаней",
     durationLabel: "2 часа",
     animators: 2,
     animatorsLabel: "2 аниматора",
@@ -458,7 +458,7 @@ export const PROGRAMS: Program[] = [
 {
     id: "tiktok",
     emoji: "🎉",
-    title: "TIKTOK PARTY",
+    title: "TikTok вечеринка",
     tagline: "Тренды, челленджи и танцевальные баттлы",
     durationLabel: "2 часа",
     animators: 2,
@@ -533,7 +533,7 @@ export const PROGRAMS: Program[] = [
 {
     id: "magician",
     emoji: "🎩",
-    title: "Фокусник + Герой",
+    title: "Фокусник + герой",
     tagline: "Магия и любимый герой на одном празднике",
     durationLabel: "2 часа",
     animators: 2,
@@ -644,7 +644,7 @@ export const PROGRAMS: Program[] = [
 {
     id: "squid-game",
     emoji: "🦑",
-    title: "Игра в Кальмара",
+    title: "Игра в кальмара",
     tagline: "Праздник по правилам выживания (без страха)",
     durationLabel: "2 часа",
     animators: 2,
@@ -750,7 +750,7 @@ export const PROGRAMS: Program[] = [
 {
     id: "super-vip",
     emoji: "💎",
-    title: "SUPER VIP",
+    title: "Super VIP",
     tagline: "Эксклюзивный праздник премиум-уровня",
     durationLabel: "2,5 часа",
     animators: 5,
@@ -792,7 +792,7 @@ export const PROGRAMS: Program[] = [
 {
     id: "wednesday",
     emoji: "🖤",
-    title: "Wednesday Party",
+    title: "Вечеринка Wednesday",
     tagline: "Тёмная эстетика и танцы Уэнсдей",
     durationLabel: "2 часа",
     animators: 2,
@@ -824,7 +824,7 @@ export const PROGRAMS: Program[] = [
 {
     id: "barbie",
     emoji: "💕",
-    title: "Barbie Party",
+    title: "Вечеринка Barbie",
     tagline: "Розовая мечта в стиле Барби",
     durationLabel: "2 часа",
     animators: 2,
@@ -894,8 +894,8 @@ export const PROGRAMS: Program[] = [
 {
     id: "techno",
     emoji: "🤖",
-    title: "ТехноШоу",
-    tagline: "Интерактивные технологии и JUST DANCE",
+    title: "Техношоу",
+    tagline: "Интерактивные технологии и Just Dance",
     durationLabel: "2 часа",
     animators: 1,
     animatorsLabel: "1 аниматор",

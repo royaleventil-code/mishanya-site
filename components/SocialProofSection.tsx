@@ -13,7 +13,7 @@ export function SocialProofSection({ proofSet = KIDS_1_3_PROOF }: { proofSet?: P
     <section className="px-4 py-12 sm:py-16">
       <div className="mx-auto max-w-6xl">
         <div className="mb-7">
-          <p className="text-xs font-bold uppercase text-[var(--color-ink-soft)]">
+          <p className="text-sm font-bold text-[var(--color-ink-soft)]">
             Фото и отзывы
           </p>
           <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">
@@ -73,7 +73,7 @@ function ProofMediaGrid({ title, items }: { title: string; items: ProofLinkImage
 function SocialLinksCard({ links }: { links: ProofLink[] }) {
   return (
     <div className="rounded-3xl border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-card)]">
-      <p className="text-xs font-bold uppercase text-[var(--color-ink-soft)]">Мы онлайн</p>
+      <p className="text-sm font-bold text-[var(--color-ink-soft)]">Мы онлайн</p>
       <h4 className="mt-2 text-2xl font-black leading-tight">Наши соцсети</h4>
       <p className="mt-2 text-sm leading-snug text-[var(--color-ink-soft)]">
         Подпишитесь, смотрите видео с праздников и отзывы родителей.
