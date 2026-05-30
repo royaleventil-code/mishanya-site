@@ -153,7 +153,7 @@ export const PROGRAMS: Program[] = [
     gradientFrom: "from-sky-200",
     gradientTo: "to-sky-50",
     cover: "/programs/standart.webp",
-    audienceCovers: [{ gender: "girl", minAge: 1, maxAge: 3, cover: "/programs/standart-girls-1-3.png" }],
+    audienceCovers: [{ gender: "girl", minAge: 1, maxAge: 99, cover: "/programs/standart-girls.png" }],
   },
 {
     id: "super-heroes",
