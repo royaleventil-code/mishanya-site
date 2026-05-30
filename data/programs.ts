@@ -118,7 +118,7 @@ export const PROGRAMS: Program[] = [
     gradientFrom: "from-sky-200",
     gradientTo: "to-sky-50",
     cover: "/programs/start.png",
-    audienceCovers: [{ gender: "girl", minAge: 1, maxAge: 3, cover: "/programs/start-girls-1-3.png" }],
+    audienceCovers: [{ gender: "girl", minAge: 1, maxAge: 99, cover: "/programs/start-girls.png" }],
   },
 {
     id: "standart",
