@@ -493,7 +493,7 @@ function ProgramCard({
     >
       {/* Cover */}
       <div
-        className="relative h-44 sm:h-48 flex items-center justify-center overflow-hidden"
+        className="relative aspect-[4/3] flex items-center justify-center overflow-hidden"
         style={
           cover
             ? { background: "white" }
@@ -540,7 +540,7 @@ function ProgramCard({
       <div className="p-5 text-center">
         <h3 className="text-xl font-bold tracking-tight">{program.title}</h3>
         {program.tagline && (
-          <p className="mt-1 text-xs text-[var(--color-ink-soft)] line-clamp-2">
+          <p className="mt-0.5 text-xs text-[var(--color-ink-soft)] line-clamp-2">
             {program.tagline}
           </p>
         )}
@@ -555,7 +555,7 @@ function ProgramCard({
           </div>
         )}
 
-        <div className="mt-3 flex items-center justify-center flex-wrap gap-x-3 gap-y-2">
+        <div className="mt-2 flex items-center justify-center flex-wrap gap-x-2 gap-y-1.5">
           {/* Price pill */}
           <div className="apple-glass inline-flex items-baseline gap-1 rounded-full px-3 py-1.5 text-sm font-bold text-[var(--color-ink)]">
             <span className="text-[10px] font-medium opacity-60">от</span>
