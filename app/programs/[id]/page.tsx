@@ -5,7 +5,9 @@ import { Check, Clock, Languages, MapPin, MessageCircle, Users } from "lucide-re
 import { ADDONS } from "@/data/addons";
 import { PROGRAMS, getProgramById } from "@/data/programs";
 import { HEROES, getHeroImage } from "@/data/heroes";
+import { ProgramMenu } from "@/components/ProgramMenu";
 import { ProgramVisual } from "@/components/ProgramVisual";
+import { PublicHeader } from "@/components/PublicHeader";
 import { whatsappLink } from "@/lib/whatsapp";
 import type { Hero, Program } from "@/lib/types";
 
@@ -95,7 +97,8 @@ export default async function ProgramDetailPage({
 
   return (
     <main className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
-      <ProgramOnlyHeader />
+      <PublicHeader />
+      <ProgramReturnBar />
       <section className="px-5 py-8 sm:px-6 sm:py-12">
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-7 lg:grid-cols-[1.08fr_0.92fr] lg:items-start">
@@ -274,7 +277,7 @@ export default async function ProgramDetailPage({
       <section className="px-5 py-14 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-6xl rounded-lg bg-[#0a84ff] p-6 text-white sm:p-10">
           <h2 className="max-w-3xl text-4xl font-black leading-tight sm:text-5xl">
-            Подходит эта программа? Напишите дату, город и возраст ребенка.
+            Нравится эта идея? Напишите дату, город и возраст ребенка.
           </h2>
           <p className="mt-4 max-w-2xl text-base leading-7 text-white/82">
             Подстроим состав, героев, язык и дополнительные блоки под вашу
@@ -287,7 +290,7 @@ export default async function ProgramDetailPage({
             className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-base font-black text-[#0a84ff] transition active:scale-95"
           >
             <MessageCircle className="h-5 w-5" strokeWidth={2.4} />
-            Написать в WhatsApp
+            Оставить заявку в WhatsApp
           </a>
         </div>
       </section>
@@ -295,23 +298,16 @@ export default async function ProgramDetailPage({
   );
 }
 
-function ProgramOnlyHeader() {
+function ProgramReturnBar() {
   return (
-    <header className="border-b border-[var(--color-line)] bg-[#fffaf4]/90 px-5 py-4 backdrop-blur sm:px-6">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
-        <Image
-          src="/logo-ru.png"
-          alt="Мишаня в Стране Чудес"
-          width={160}
-          height={82}
-          className="h-16 w-auto"
-          priority
-        />
-        <div className="max-w-[180px] text-right text-xs font-bold leading-snug text-[var(--color-ink-soft)] sm:max-w-none">
-          Вы смотрите одну выбранную программу
-        </div>
+    <div className="border-b border-[var(--color-line)] bg-white px-5 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-6xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <ProgramMenu variant="pill" label="Другие программы" />
+        <p className="text-sm font-semibold leading-6 text-[var(--color-ink-soft)]">
+          Можно сразу выбрать другую идею для сравнения.
+        </p>
       </div>
-    </header>
+    </div>
   );
 }
 

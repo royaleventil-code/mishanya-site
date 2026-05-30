@@ -26,7 +26,6 @@ const CATALOG_GROUPS = [
     ids: [
       "frozen-toddler-girls",
       "unicorn-toddler-girls",
-      "paw-patrol-toddler-girls",
       "paw-patrol-toddler-boys",
       "kpop",
       "tiktok",
@@ -57,7 +56,7 @@ const FEATURED_CHOICES = [
   {
     id: "tiktok",
     title: "Танцы и тренды",
-    text: "Для детей, которым хочется музыки, челленджей и современной party-атмосферы.",
+    text: "Для детей, которым хочется музыки, челленджей и современной вечеринки.",
   },
   {
     id: "chemistry",
@@ -161,7 +160,7 @@ export default function ProgramsPage() {
               rel="noreferrer"
               className="mt-5 inline-flex shrink-0 rounded-full bg-[var(--color-whatsapp)] px-6 py-3.5 text-base font-black text-white transition active:scale-95 md:mt-0"
             >
-              Обсудить в WhatsApp
+              Оставить заявку в WhatsApp
             </a>
           </div>
         </div>

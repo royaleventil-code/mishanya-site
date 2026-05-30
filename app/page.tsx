@@ -17,11 +17,13 @@ import {
   Users,
 } from "lucide-react";
 import { PROGRAMS } from "@/data/programs";
-import { HEROES, getHeroImage } from "@/data/heroes";
+import { HEROES, getHeroEmoji, getHeroImage } from "@/data/heroes";
+import { DevPriceMenu } from "@/components/DevPriceMenu";
+import { ProgramMenu } from "@/components/ProgramMenu";
 import { ProgramVisual } from "@/components/ProgramVisual";
 import { SocialProofSection } from "@/components/SocialProofSection";
 import { WA_DISPLAY, WA_MESSAGES, whatsappLink } from "@/lib/whatsapp";
-import type { Program } from "@/lib/types";
+import type { Hero, Program } from "@/lib/types";
 
 const HERO_BACKDROPS = [
   "/proof/kids-1-3/page-09.webp",
@@ -114,17 +116,6 @@ const PROGRAM_GROUPS = [
   },
 ];
 
-const CHARACTER_IDS = [
-  "spiderman",
-  "elsa",
-  "racer",
-  "barbie",
-  "stitch",
-  "dj-marshmello",
-  "unicorn-mascot",
-  "mickey-mouse-mascot",
-];
-
 const PROCESS = [
   {
     title: "Вы рассказываете, что важно",
@@ -190,12 +181,6 @@ const FAQ = [
   },
 ];
 
-type CharacterPreview = {
-  id: string;
-  name: string;
-  image: string;
-};
-
 function pickPrograms(ids: string[]): Program[] {
   return ids
     .map((id) => PROGRAMS.find((program) => program.id === id))
@@ -203,11 +188,8 @@ function pickPrograms(ids: string[]): Program[] {
 }
 
 export default function Home() {
-  const characterPreview = CHARACTER_IDS.map<CharacterPreview | null>((id) => {
-    const hero = HEROES.find((item) => item.id === id);
-    const image = getHeroImage(id);
-    return hero && image ? { id: hero.id, name: hero.name, image } : null;
-  }).filter((item): item is CharacterPreview => Boolean(item));
+  const costumeHeroes = HEROES.filter((hero) => hero.kind === "costume");
+  const mascotHeroes = HEROES.filter((hero) => hero.kind === "mascot");
 
   return (
     <main className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
@@ -216,7 +198,7 @@ export default function Home() {
       <AgencySection />
       <CustomControlSection />
       <ProgramSkeletonSection />
-      <CharactersSection characters={characterPreview} />
+      <CharactersSection costumes={costumeHeroes} mascots={mascotHeroes} />
       <ProcessSection />
       <div id="proof">
         <SocialProofSection />
@@ -248,17 +230,20 @@ function HeroSection() {
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(4,7,20,0.88)_0%,rgba(4,7,20,0.66)_42%,rgba(4,7,20,0.22)_100%)]" />
       <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#fffaf4] to-transparent" />
 
-      <header className="relative z-10 mx-auto flex h-24 max-w-6xl items-center justify-between px-5 sm:px-6">
-        <Link href="/" aria-label="Мишаня в Стране Чудес" className="flex items-center">
-          <Image
-            src="/logo-ru.png"
-            alt="Мишаня в Стране Чудес"
-            width={180}
-            height={92}
-            priority
-            className="h-20 w-auto"
-          />
-        </Link>
+      <header className="relative z-50 mx-auto flex h-24 max-w-6xl items-center justify-between px-5 sm:px-6">
+        <div className="flex items-center gap-2">
+          <Link href="/" aria-label="Мишаня в Стране Чудес" className="flex items-center">
+            <Image
+              src="/logo-ru.png"
+              alt="Мишаня в Стране Чудес"
+              width={180}
+              height={92}
+              priority
+              className="h-20 w-auto"
+            />
+          </Link>
+          <DevPriceMenu theme="dark" />
+        </div>
         <nav className="hidden items-center gap-6 text-sm font-semibold text-white/85 md:flex">
           <Link href="/about" className="transition hover:text-white">
             О нас
@@ -276,15 +261,19 @@ function HeroSection() {
             Контакты
           </Link>
         </nav>
-        <a
-          href={whatsappLink(WA_MESSAGES.default)}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-2 rounded-full bg-[var(--color-whatsapp)] px-4 py-2.5 text-sm font-bold text-white shadow-lg transition active:scale-95"
-        >
-          <MessageCircle className="h-4 w-4" strokeWidth={2.4} />
-          WhatsApp
-        </a>
+        <div className="flex items-center gap-2">
+          <ProgramMenu theme="dark" />
+          <a
+            href={whatsappLink(WA_MESSAGES.default)}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Написать в WhatsApp"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--color-whatsapp)] text-sm font-bold text-white shadow-lg transition active:scale-95 sm:w-auto sm:px-4 sm:py-2.5"
+          >
+            <MessageCircle className="h-4 w-4" strokeWidth={2.4} />
+            <span className="hidden sm:inline">WhatsApp</span>
+          </a>
+        </div>
       </header>
 
       <div className="relative z-10 mx-auto max-w-6xl px-5 pb-16 pt-10 sm:px-6 sm:pb-20 sm:pt-14">
@@ -300,20 +289,20 @@ function HeroSection() {
           праздника в садике и школе.
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <Link
+            href="/programs"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-base font-black text-zinc-950 transition active:scale-95"
+          >
+            Посмотреть все идеи
+            <ChevronRight className="h-5 w-5" strokeWidth={2.6} />
+          </Link>
           <a
             href={whatsappLink("Здравствуйте! Хочу подобрать детский праздник.")}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-base font-black text-zinc-950 transition active:scale-95"
-          >
-            Выбрать идею
-            <ChevronRight className="h-5 w-5" strokeWidth={2.6} />
-          </a>
-          <a
-            href="#proof"
             className="inline-flex items-center justify-center gap-2 rounded-full border border-white/35 px-6 py-3.5 text-base font-bold text-white backdrop-blur transition hover:bg-white/10 active:scale-95"
           >
-            Смотреть фото
+            Написать в WhatsApp
           </a>
         </div>
         <div className="mt-10 grid max-w-4xl grid-cols-2 gap-3 md:grid-cols-4">
@@ -423,7 +412,7 @@ function CustomControlSection() {
               href="/programs"
               className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#0a84ff] px-6 py-3.5 text-base font-black text-white transition active:scale-95"
             >
-              Посмотреть идеи
+              Посмотреть все идеи
               <ChevronRight className="h-5 w-5" strokeWidth={2.6} />
             </Link>
           </div>
@@ -475,9 +464,10 @@ function ProgramSkeletonSection() {
                 </p>
                 <div className="mt-4 space-y-2">
                   {pickPrograms(group.programIds).map((program) => (
-                    <div
+                    <Link
                       key={program.id}
-                      className="rounded-lg border border-[var(--color-line)] px-3 py-2"
+                      href={`/programs/${program.id}`}
+                      className="block rounded-lg border border-[var(--color-line)] px-3 py-2 transition hover:border-[#0a84ff]"
                     >
                       <div className="text-sm font-black">{program.title}</div>
                       {program.tagline && (
@@ -485,7 +475,7 @@ function ProgramSkeletonSection() {
                           {program.tagline}
                         </div>
                       )}
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -520,11 +510,7 @@ function ProgramCoverStrip({ programs }: { programs: Program[] }) {
   );
 }
 
-function CharactersSection({
-  characters,
-}: {
-  characters: Array<{ id: string; name: string; image: string }>;
-}) {
+function CharactersSection({ costumes, mascots }: { costumes: Hero[]; mascots: Hero[] }) {
   return (
     <section className="bg-[#111318] px-5 py-14 text-white sm:px-6 sm:py-20">
       <div className="mx-auto max-w-6xl">
@@ -534,35 +520,66 @@ function CharactersSection({
               Персонажи
             </p>
             <h2 className="mt-3 text-4xl font-black leading-tight sm:text-5xl">
-              Героя можно выбрать, заменить или собрать в пару.
+              Все наши герои.
             </h2>
           </div>
           <p className="text-base leading-7 text-white/72">
-            На сайте показаны примеры настроения и масштаба. Точный набор
-            Точный набор персонажей выбирается под интересы ребенка, возраст и язык гостей.
+            Можно выбрать ведущего в образе, добавить ростовую куклу или собрать
+            пару героев под возраст, язык и настроение праздника.
           </p>
         </div>
 
-        <div className="mt-9 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
-          {characters.map((character) => (
-            <div key={character.id} className="rounded-lg bg-white p-3 text-center text-zinc-950">
-              <div className="relative mx-auto h-24 w-full">
-                <Image
-                  src={character.image}
-                  alt={character.name}
-                  fill
-                  sizes="110px"
-                  className="object-contain"
-                />
-              </div>
-              <div className="mt-3 min-h-[40px] text-xs font-black leading-tight">
-                {character.name}
-              </div>
-            </div>
-          ))}
+        <div className="mt-9 space-y-8">
+          <HeroCarousel title="Костюмы" heroes={costumes} />
+          <HeroCarousel title="Ростовые куклы" heroes={mascots} />
         </div>
       </div>
     </section>
+  );
+}
+
+function HeroCarousel({ title, heroes }: { title: string; heroes: Hero[] }) {
+  return (
+    <div>
+      <div className="mb-3 flex items-end justify-between gap-4">
+        <h3 className="text-2xl font-black leading-tight">{title}</h3>
+        <div className="text-sm font-black text-white/55">{heroes.length}</div>
+      </div>
+      <div className="hide-scrollbar -mx-5 overflow-x-auto px-5 pb-2 sm:-mx-6 sm:px-6">
+        <div className="flex min-w-max snap-x gap-3">
+          {heroes.map((hero) => (
+            <HeroCarouselCard key={hero.id} hero={hero} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeroCarouselCard({ hero }: { hero: Hero }) {
+  const image = getHeroImage(hero.id);
+
+  return (
+    <div className="w-[136px] shrink-0 snap-start rounded-lg bg-white p-3 text-center text-zinc-950 shadow-[0_18px_38px_rgba(0,0,0,0.18)] sm:w-[152px]">
+      <div className="relative flex aspect-square items-center justify-center rounded-md bg-[#fffaf4]">
+        {image ? (
+          <Image
+            src={image}
+            alt={hero.name}
+            fill
+            sizes="152px"
+            className="object-contain p-2"
+          />
+        ) : (
+          <span className="text-4xl" aria-hidden="true">
+            {getHeroEmoji(hero.id)}
+          </span>
+        )}
+      </div>
+      <div className="mt-3 flex min-h-[42px] items-center justify-center text-xs font-black leading-tight">
+        {hero.name}
+      </div>
+    </div>
   );
 }
 
@@ -648,7 +665,7 @@ function FinalSection() {
             Быстрый старт
           </p>
           <h2 className="mt-3 text-4xl font-black leading-tight sm:text-6xl">
-            Напишите возраст, город и дату — получите несколько вариантов на выбор.
+            Оставьте заявку — подберем несколько вариантов под возраст, город и дату.
           </h2>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a

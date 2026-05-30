@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
+import { DevPriceMenu } from "@/components/DevPriceMenu";
+import { ProgramMenu } from "@/components/ProgramMenu";
 import { WA_MESSAGES, whatsappLink } from "@/lib/whatsapp";
 
 const NAV = [
@@ -23,15 +25,18 @@ export function PublicHeader({ theme = "light" }: { theme?: "light" | "dark" }) 
       }`}
     >
       <div className="mx-auto flex h-24 max-w-6xl items-center justify-between px-5 sm:px-6">
-        <Link href="/" aria-label="Мишаня в Стране Чудес" className="flex items-center">
-          <Image
-            src="/logo-ru.png"
-            alt="Мишаня в Стране Чудес"
-            width={180}
-            height={92}
-            className="h-20 w-auto"
-          />
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/" aria-label="Мишаня в Стране Чудес" className="flex items-center">
+            <Image
+              src="/logo-ru.png"
+              alt="Мишаня в Стране Чудес"
+              width={180}
+              height={92}
+              className="h-20 w-auto"
+            />
+          </Link>
+          <DevPriceMenu theme={theme} />
+        </div>
 
         <nav className="hidden items-center gap-5 text-sm font-bold md:flex">
           {NAV.map((item) => (
@@ -45,15 +50,19 @@ export function PublicHeader({ theme = "light" }: { theme?: "light" | "dark" }) 
           ))}
         </nav>
 
-        <a
-          href={whatsappLink(WA_MESSAGES.default)}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-2 rounded-full bg-[var(--color-whatsapp)] px-4 py-2.5 text-sm font-bold text-white shadow-lg transition active:scale-95"
-        >
-          <MessageCircle className="h-4 w-4" strokeWidth={2.4} />
-          WhatsApp
-        </a>
+        <div className="flex items-center gap-2">
+          <ProgramMenu theme={theme} />
+          <a
+            href={whatsappLink(WA_MESSAGES.default)}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Написать в WhatsApp"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--color-whatsapp)] text-sm font-bold text-white shadow-lg transition active:scale-95 sm:w-auto sm:px-4 sm:py-2.5"
+          >
+            <MessageCircle className="h-4 w-4" strokeWidth={2.4} />
+            <span className="hidden sm:inline">WhatsApp</span>
+          </a>
+        </div>
       </div>
     </header>
   );

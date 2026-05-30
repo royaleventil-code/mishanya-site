@@ -59,17 +59,18 @@ export function ProgramVisual({
   sizes,
   className = "",
 }: {
-  program: Pick<Program, "id">;
+  program: Pick<Program, "id" | "cover">;
   priority?: boolean;
   sizes: string;
   className?: string;
 }) {
   const visual = visualFor(program);
+  const src = program.cover ?? visual.src;
 
   return (
     <div className={`relative overflow-hidden bg-white ${className}`} aria-hidden="true">
       <Image
-        src={visual.src}
+        src={src}
         alt=""
         fill
         priority={priority}

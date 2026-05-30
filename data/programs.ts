@@ -374,8 +374,9 @@ export const PROGRAMS: Program[] = [
     bonus: BUBBLE_MACHINE_BONUS,
     gradientFrom: "from-fuchsia-300",
     gradientTo: "to-purple-100",
+    cover: "/programs/kpop.png",
   },
-{
+  {
     id: "chemistry",
     emoji: "🧪",
     title: "Химическое шоу",
@@ -820,8 +821,9 @@ export const PROGRAMS: Program[] = [
     bonus: BUBBLE_MACHINE_BONUS,
     gradientFrom: "from-zinc-700",
     gradientTo: "to-purple-200",
+    cover: "/programs/wednesday.png",
   },
-{
+  {
     id: "barbie",
     emoji: "💕",
     title: "Вечеринка Barbie",
@@ -856,8 +858,9 @@ export const PROGRAMS: Program[] = [
     bonus: BUBBLE_MACHINE_BONUS,
     gradientFrom: "from-pink-300",
     gradientTo: "to-rose-100",
+    cover: "/programs/barbie.png",
   },
-{
+  {
     id: "tesla",
     emoji: "⚡",
     title: "Тесла шоу",

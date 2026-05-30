@@ -19,7 +19,7 @@ export function FinalCta({ accent }: Props) {
             Готовы обсудить дату?
           </h2>
           <p className="mt-3 text-white/70 text-sm sm:text-base">
-            Напишите в WhatsApp — менеджер ответит за 5 минут
+            Напишите в WhatsApp — подберем варианты по дате, возрасту и месту
           </p>
           <a
             href={whatsappLink(WA_MESSAGES.default)}
