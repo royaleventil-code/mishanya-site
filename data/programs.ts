@@ -191,7 +191,7 @@ export const PROGRAMS: Program[] = [
     gradientFrom: "from-blue-300",
     gradientTo: "to-indigo-100",
     cover: "/programs/super-heroes.png",
-    audienceCovers: [{ gender: "girl", minAge: 1, maxAge: 3, cover: "/programs/super-heroes-girls-1-3.png" }],
+    audienceCovers: [{ gender: "girl", cover: "/programs/super-heroes-girls-1-3.png" }],
   },
 {
     id: "unicorn-toddler-girls",
@@ -320,7 +320,9 @@ export const PROGRAMS: Program[] = [
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
     segments: ["girl-4-6", "girl-6plus", "all"],
-    heroSlots: [],
+    heroSlots: [
+      { label: "Образ ведущей", kind: "costume", onlyHeroIds: ["kpop-rumi", "kpop-zoey", "kpop-mira"] },
+    ],
     includes: [
       "Топ-ведущие Руми + Зои или Мири",
       "Музыкальный концертный сет",
@@ -343,7 +345,7 @@ export const PROGRAMS: Program[] = [
     id: "frozen-toddler-girls",
     emoji: "❄️",
     title: "Холодное сердце",
-    tagline: "Снежная сказка с Эльзой и Олафом",
+    tagline: "Снежная сказка с Эльзой, Анной и Олафом",
     durationLabel: "2 часа",
     animators: 2,
     animatorsLabel: "2 аниматора",
@@ -355,11 +357,11 @@ export const PROGRAMS: Program[] = [
     segments: ["baby", "girl-4-6", "girl-6plus"],
     showFor: [{ gender: "girl" }],
     heroSlots: [
-      { label: "Образ ведущей", kind: "costume", onlyHeroIds: ["elsa"] },
+      { label: "Образ ведущей", kind: "costume", onlyHeroIds: ["elsa", "anna"] },
       { label: "Ростовая кукла", kind: "mascot", onlyHeroIds: ["olaf"] },
     ],
     includes: [
-      "Ведущая в образе Эльзы",
+      "Ведущая в образе Эльзы или Анны",
       "Ростовой Олаф",
       "Снежная сказка для маленькой принцессы",
       "Добрые игры и зимние задания",

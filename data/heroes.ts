@@ -30,7 +30,7 @@ export const HEROES: Hero[] = [
   { id: "minecraft-boy", name: "Майнкрафт мальчик", kind: "costume", segments: ["boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"], languages: ["ru", "he"] },
   { id: "marvel", name: "Марвел", kind: "costume", segments: ["baby", "boy-4-6", "boy-6plus", "girl-6plus", "all"], languages: ["ru", "he"] },
   { id: "mashenka", name: "Машенька", kind: "costume", segments: ["baby", "girl-4-6", "all"], languages: ["ru", "he"] },
-  { id: "kpop-mira", name: "Мира (K-POP)", kind: "costume", segments: ["girl-4-6", "girl-6plus", "all"], languages: ["ru", "he"] },
+  { id: "kpop-mira", name: "Мири (K-POP)", kind: "costume", segments: ["girl-4-6", "girl-6plus", "all"], languages: ["ru", "he"] },
   { id: "mickey-mouse", name: "Микки Маус", kind: "costume", segments: ["baby", "boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"], languages: ["ru", "he"] },
   { id: "minnie-mouse", name: "Минни Маус", kind: "costume", segments: ["baby", "boy-4-6", "girl-4-6", "girl-6plus", "all"], languages: ["ru", "he"] },
   { id: "optimus-prime", name: "Оптимус Прайм", kind: "costume", segments: ["boy-4-6", "boy-6plus", "all"], languages: ["ru"] },
