@@ -1,8 +1,11 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
 import { DevPriceMenu } from "@/components/DevPriceMenu";
 import { ProgramMenu } from "@/components/ProgramMenu";
+import { useAutoHideHeader } from "@/components/useAutoHideHeader";
 import { WA_MESSAGES, whatsappLink } from "@/lib/whatsapp";
 
 const NAV = [
@@ -15,10 +18,14 @@ const NAV = [
 
 export function PublicHeader({ theme = "light" }: { theme?: "light" | "dark" }) {
   const isDark = theme === "dark";
+  const { isVisible, showHeader } = useAutoHideHeader();
 
   return (
     <header
-      className={`sticky top-0 z-40 border-b backdrop-blur-md ${
+      onFocusCapture={showHeader}
+      className={`sticky top-0 z-40 border-b backdrop-blur-md transition-transform duration-200 ease-out will-change-transform motion-reduce:transition-none ${
+        isVisible ? "translate-y-0" : "-translate-y-full"
+      } ${
         isDark
           ? "border-white/15 bg-zinc-950/78 text-white"
           : "border-[var(--color-line)] bg-[#fffaf4]/88 text-[var(--color-ink)]"

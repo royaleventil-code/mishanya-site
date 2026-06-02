@@ -1,12 +1,22 @@
+"use client";
+
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
 import { DevPriceMenu } from "@/components/DevPriceMenu";
 import { ProgramMenu } from "@/components/ProgramMenu";
+import { useAutoHideHeader } from "@/components/useAutoHideHeader";
 import { whatsappLink, WA_MESSAGES } from "@/lib/whatsapp";
 
 export function Header() {
+  const { isVisible, showHeader } = useAutoHideHeader();
+
   return (
-    <header className="sticky top-0 z-30 bg-[var(--color-canvas)]/85 backdrop-blur-md border-b border-[var(--color-line)]">
+    <header
+      onFocusCapture={showHeader}
+      className={`sticky top-0 z-30 border-b border-[var(--color-line)] bg-[var(--color-canvas)]/85 backdrop-blur-md transition-transform duration-200 ease-out will-change-transform motion-reduce:transition-none ${
+        isVisible ? "translate-y-0" : "-translate-y-full"
+      }`}
+    >
       <div className="mx-auto max-w-5xl px-4 sm:px-6 h-[100px] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2 group" aria-label="Мишаня в Стране Чудес">
