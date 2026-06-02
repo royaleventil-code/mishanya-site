@@ -26,7 +26,7 @@ export function DevPriceMenu({ theme = "light" }: { theme?: "light" | "dark" }) 
         Цены
         <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" strokeWidth={2.6} />
       </summary>
-      <div className="absolute left-0 top-12 w-[min(320px,calc(100vw-40px))] overflow-hidden rounded-2xl border border-black/5 bg-white text-[var(--color-ink)] shadow-[0_24px_70px_rgba(15,15,20,0.24)]">
+      <div className="fixed inset-x-3 top-[104px] max-h-[calc(100dvh-116px)] w-auto overflow-hidden rounded-2xl border border-black/5 bg-white text-[var(--color-ink)] shadow-[0_24px_70px_rgba(15,15,20,0.24)] sm:absolute sm:left-0 sm:right-auto sm:top-12 sm:max-h-none sm:w-[min(320px,calc(100vw-40px))]">
         <div className="px-4 pb-2 pt-4">
           <div className="text-[11px] font-black uppercase tracking-wide text-[#0a84ff]">Программы и цены</div>
           <div className="mt-1 text-base font-black leading-tight">Выберите возраст ребёнка</div>
@@ -36,12 +36,12 @@ export function DevPriceMenu({ theme = "light" }: { theme?: "light" | "dark" }) 
         </div>
         <div className="max-h-[70vh] space-y-3 overflow-y-auto p-3 pt-2">
           <div className="rounded-xl bg-[#f4f8ff] p-3">
-            <div className="mb-2 flex items-end justify-between gap-3">
+            <div className="mb-2 flex items-end justify-between gap-2">
               <div>
                 <div className="text-sm font-black">Для мальчиков</div>
                 <div className="text-xs font-bold text-[var(--color-ink-soft)]">1-10 лет</div>
               </div>
-              <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-[#0a84ff]">
+              <span className="rounded-full bg-white px-2 py-1 text-[10px] font-black text-[#0a84ff] min-[370px]:px-2.5 min-[370px]:text-[11px]">
                 выбрать возраст
               </span>
             </div>
@@ -53,12 +53,12 @@ export function DevPriceMenu({ theme = "light" }: { theme?: "light" | "dark" }) 
           </div>
 
           <div className="rounded-xl bg-[#fff4f8] p-3">
-            <div className="mb-2 flex items-end justify-between gap-3">
+            <div className="mb-2 flex items-end justify-between gap-2">
               <div>
                 <div className="text-sm font-black">Для девочек</div>
                 <div className="text-xs font-bold text-[var(--color-ink-soft)]">1-10 лет</div>
               </div>
-              <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-[#e34f7d]">
+              <span className="rounded-full bg-white px-2 py-1 text-[10px] font-black text-[#e34f7d] min-[370px]:px-2.5 min-[370px]:text-[11px]">
                 выбрать возраст
               </span>
             </div>

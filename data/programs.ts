@@ -1,7 +1,7 @@
 import type { Program } from "@/lib/types";
 
 const BUBBLE_MACHINE_BONUS =
-  "Мыльная машинка — сказочная атмосфера в финале (только в помещении)";
+  "Машинка мыльных пузырей (только в помещении)";
 const BASIC_PARTY_ADDONS = ["bubbles-show", "confetti", "pinata"];
 const CONFETTI_ONLY_ADDONS = ["confetti"];
 const SHOW_PARTY_ADDONS = ["bubbles-show", "confetti"];
@@ -163,6 +163,7 @@ export const PROGRAMS: Program[] = [
       "Игры по сюжету",
       "Современные конкурсы",
       "Фото с героями",
+      "Фотозона",
       "Подарочек каждому гостю",
       "Красивый вынос торта с любимым героем 🎂",
     ],
@@ -367,7 +368,7 @@ export const PROGRAMS: Program[] = [
     emoji: "🧪",
     title: "Химическое шоу",
     tagline: "Безопасные эксперименты с азотом и огнём",
-    durationLabel: "до 2 часов",
+    durationLabel: "2 часа",
     animators: 1,
     animatorsLabel: "1 аниматор",
     priceFrom: 2000,

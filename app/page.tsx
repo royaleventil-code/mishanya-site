@@ -258,7 +258,7 @@ function HeroSection() {
         <p className="text-sm font-bold text-yellow-200">
           Агентство детских праздников в Израиле
         </p>
-        <h1 className="mt-4 max-w-4xl text-4xl font-black leading-[0.96] tracking-tight sm:mt-5 sm:text-7xl lg:text-8xl">
+        <h1 className="mt-4 max-w-4xl text-[38px] font-black leading-[0.98] tracking-tight sm:mt-5 sm:text-7xl sm:leading-[0.96] lg:text-8xl">
           Детский праздник под вашего ребенка, а не по шаблону.
         </h1>
         <p className="mt-5 max-w-2xl text-base leading-7 text-white/86 sm:mt-6 sm:text-xl sm:leading-8">
@@ -307,10 +307,10 @@ function CustomControlSection() {
             <p className="text-sm font-bold text-[#0a84ff]">
               Настройка под вас
             </p>
-            <h2 className="mt-3 text-4xl font-black leading-tight sm:text-5xl">
+            <h2 className="mt-3 text-[30px] font-black leading-[1.08] sm:text-5xl sm:leading-tight">
               Готовая программа — это основа, а праздник собирается под вашу семью.
             </h2>
-            <p className="mt-5 text-lg leading-8 text-[var(--color-ink-soft)]">
+            <p className="mt-4 text-base leading-7 text-[var(--color-ink-soft)] sm:mt-5 sm:text-lg sm:leading-8">
               Можно начать с простой идеи: супергерои, сказка, танцы или шоу.
               Дальше выбираете, что оставить главным, а что поменять под ребенка,
               гостей, площадку и бюджет.
@@ -349,10 +349,10 @@ function ProgramSkeletonSection() {
           <p className="text-sm font-bold text-[#e34f35]">
             Готовые идеи
           </p>
-          <h2 className="mt-3 text-4xl font-black leading-tight sm:text-5xl">
+          <h2 className="mt-3 text-[30px] font-black leading-[1.08] sm:text-5xl sm:leading-tight">
             Выберите готовую идею или соберите программу под себя.
           </h2>
-          <p className="mt-5 text-lg leading-8 text-[var(--color-ink-soft)]">
+          <p className="mt-4 text-base leading-7 text-[var(--color-ink-soft)] sm:mt-5 sm:text-lg sm:leading-8">
             Эти карточки — удобная отправная точка. Любую программу можно
             адаптировать по героям, длительности, языку, площадке и бюджету.
           </p>
@@ -429,7 +429,7 @@ function CharactersSection({ costumes, mascots }: { costumes: Hero[]; mascots: H
             <p className="text-sm font-bold text-yellow-200">
               Персонажи
             </p>
-            <h2 className="mt-3 text-4xl font-black leading-tight sm:text-5xl">
+            <h2 className="mt-3 text-[30px] font-black leading-[1.08] sm:text-5xl sm:leading-tight">
               Популярные герои для праздника.
             </h2>
           </div>
@@ -439,7 +439,7 @@ function CharactersSection({ costumes, mascots }: { costumes: Hero[]; mascots: H
           </p>
         </div>
 
-        <div className="mt-7 grid gap-7 lg:grid-cols-2">
+        <div className="mt-7 grid min-w-0 gap-7 lg:grid-cols-2">
           <HeroPreviewGroup title="Костюмы ведущих" count={costumes.length} heroes={featuredCostumes} />
           <HeroPreviewGroup title="Ростовые куклы" count={mascots.length} heroes={featuredMascots} />
         </div>
@@ -469,7 +469,7 @@ function CharactersSection({ costumes, mascots }: { costumes: Hero[]; mascots: H
 
 function HeroPreviewGroup({ title, count, heroes }: { title: string; count: number; heroes: Hero[] }) {
   return (
-    <div>
+    <div className="min-w-0">
       <div className="mb-3 flex items-end justify-between gap-4">
         <h3 className="text-2xl font-black leading-tight">{title}</h3>
         <div className="text-sm font-black text-white/55">{count}</div>
@@ -520,7 +520,7 @@ function ProcessSection() {
           <p className="text-sm font-bold text-[#0a84ff]">
             Процесс
           </p>
-          <h2 className="mt-3 text-4xl font-black leading-tight sm:text-5xl">
+          <h2 className="mt-3 text-[30px] font-black leading-[1.08] sm:text-5xl sm:leading-tight">
             Вы видите понятный выбор, а детали собираем вместе.
           </h2>
         </div>
@@ -566,7 +566,7 @@ function FaqSection() {
           <p className="text-sm font-bold text-[#e34f35]">
             Вопросы
           </p>
-          <h2 className="mt-3 text-4xl font-black leading-tight sm:text-5xl">
+          <h2 className="mt-3 text-[30px] font-black leading-[1.08] sm:text-5xl sm:leading-tight">
             Частые вопросы перед выбором программы.
           </h2>
         </div>
@@ -593,7 +593,7 @@ function FinalSection() {
           <p className="text-sm font-bold text-white/72">
             Быстрый старт
           </p>
-          <h2 className="mt-3 text-4xl font-black leading-tight sm:text-6xl">
+          <h2 className="mt-3 text-[30px] font-black leading-[1.08] sm:text-6xl sm:leading-tight">
             Оставьте заявку — подберем несколько вариантов под возраст, город и дату.
           </h2>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
