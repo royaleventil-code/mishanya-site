@@ -9,12 +9,8 @@ import {
   MapPin,
   MessageCircle,
   Palette,
-  PartyPopper,
   Phone,
   ShieldCheck,
-  Sparkles,
-  Star,
-  Users,
 } from "lucide-react";
 import { PROGRAMS } from "@/data/programs";
 import { HEROES, getHeroEmoji, getHeroImage } from "@/data/heroes";
@@ -36,38 +32,6 @@ const STATS = [
   { value: "10 000+", label: "детских событий и шоу" },
   { value: "80+", label: "персонажей и образов" },
   { value: "2 языка", label: "русский и иврит" },
-];
-
-const EVENT_TYPES = [
-  {
-    title: "День рождения",
-    text: "От домашнего праздника на 10 детей до большого события в зале.",
-    Icon: PartyPopper,
-  },
-  {
-    title: "Бар / Бат мицва",
-    text: "Сценарий, ведущие, интерактив и шоу-блоки для семьи и гостей.",
-    Icon: Star,
-  },
-  {
-    title: "Садик и школа",
-    text: "Выпускные, календарные праздники, утренники и выездные программы.",
-    Icon: Users,
-  },
-  {
-    title: "Семейные события",
-    text: "Детская зона на свадьбе, корпоративе, гендер-пати или городском празднике.",
-    Icon: Sparkles,
-  },
-];
-
-const SERVICE_BLOCKS = [
-  "Аниматоры и ведущие",
-  "Персонажи и ростовые герои",
-  "Шоу-программы",
-  "Музыка, свет и реквизит",
-  "Фото и видео",
-  "Дополнительные активности",
 ];
 
 const CUSTOM_CONTROLS = [
@@ -97,7 +61,7 @@ const PROGRAM_GROUPS = [
   {
     title: "Готовый день рождения",
     text: "База для праздника: ведущий, игры, музыка, реквизит и финал с тортом.",
-    programIds: ["mini", "start", "standart"],
+    programIds: ["start", "standart", "super-heroes"],
   },
   {
     title: "Супергерои и приключения",
@@ -181,10 +145,26 @@ const FAQ = [
   },
 ];
 
+const FEATURED_COSTUME_IDS = ["spiderman", "elsa", "wednesday", "harry-potter", "barbie", "stitch"];
+const FEATURED_MASCOT_IDS = [
+  "mickey-mouse-mascot",
+  "minnie-mouse-mascot",
+  "olaf",
+  "pikachu-mascot",
+  "sonic-mascot",
+  "stitch-mascot",
+];
+
 function pickPrograms(ids: string[]): Program[] {
   return ids
     .map((id) => PROGRAMS.find((program) => program.id === id))
     .filter((program): program is Program => Boolean(program));
+}
+
+function pickHeroes(heroes: Hero[], ids: string[]): Hero[] {
+  return ids
+    .map((id) => heroes.find((hero) => hero.id === id))
+    .filter((hero): hero is Hero => Boolean(hero));
 }
 
 export default function Home() {
@@ -194,8 +174,6 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
       <HeroSection />
-      <EventTypesSection />
-      <AgencySection />
       <CustomControlSection />
       <ProgramSkeletonSection />
       <CharactersSection costumes={costumeHeroes} mascots={mascotHeroes} />
@@ -212,7 +190,7 @@ export default function Home() {
 
 function HeroSection() {
   return (
-    <section className="relative isolate min-h-[78svh] overflow-hidden bg-zinc-950 text-white">
+    <section className="relative isolate min-h-[68svh] overflow-hidden bg-zinc-950 text-white">
       <div className="absolute inset-0 grid grid-cols-3">
         {HERO_BACKDROPS.map((src, index) => (
           <div key={src} className="relative min-h-full overflow-hidden">
@@ -230,7 +208,7 @@ function HeroSection() {
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(4,7,20,0.88)_0%,rgba(4,7,20,0.66)_42%,rgba(4,7,20,0.22)_100%)]" />
       <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#fffaf4] to-transparent" />
 
-      <header className="relative z-50 mx-auto flex h-24 max-w-6xl items-center justify-between px-5 sm:px-6">
+      <header className="relative z-50 mx-auto flex h-20 max-w-6xl items-center justify-between px-5 sm:h-24 sm:px-6">
         <div className="flex items-center gap-2">
           <Link href="/" aria-label="Мишаня в Стране Чудес" className="flex items-center">
             <Image
@@ -239,7 +217,7 @@ function HeroSection() {
               width={180}
               height={92}
               priority
-              className="h-20 w-auto"
+              className="h-16 w-auto sm:h-20"
             />
           </Link>
           <DevPriceMenu theme="dark" />
@@ -276,19 +254,19 @@ function HeroSection() {
         </div>
       </header>
 
-      <div className="relative z-10 mx-auto max-w-6xl px-5 pb-16 pt-10 sm:px-6 sm:pb-20 sm:pt-14">
+      <div className="relative z-10 mx-auto max-w-6xl px-5 pb-12 pt-6 sm:px-6 sm:pb-20 sm:pt-14">
         <p className="text-sm font-bold text-yellow-200">
           Агентство детских праздников в Израиле
         </p>
-        <h1 className="mt-5 max-w-4xl text-5xl font-black leading-[0.95] tracking-tight sm:text-7xl lg:text-8xl">
+        <h1 className="mt-4 max-w-4xl text-4xl font-black leading-[0.96] tracking-tight sm:mt-5 sm:text-7xl lg:text-8xl">
           Детский праздник под вашего ребенка, а не по шаблону.
         </h1>
-        <p className="mt-6 max-w-2xl text-lg leading-8 text-white/86 sm:text-xl">
+        <p className="mt-5 max-w-2xl text-base leading-7 text-white/86 sm:mt-6 sm:text-xl sm:leading-8">
           Вы выбираете настроение, героев, язык и масштаб. Мы помогаем собрать
           из этого понятную программу для дня рождения, семейного события или
           праздника в садике и школе.
         </p>
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+        <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row">
           <Link
             href="/programs"
             className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-base font-black text-zinc-950 transition active:scale-95"
@@ -305,7 +283,7 @@ function HeroSection() {
             Написать в WhatsApp
           </a>
         </div>
-        <div className="mt-10 grid max-w-4xl grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="mt-8 grid max-w-4xl grid-cols-2 gap-3 sm:mt-10 md:grid-cols-4">
           {STATS.map((stat) => (
             <div key={stat.label} className="border-l border-white/25 pl-4">
               <div className="text-2xl font-black leading-none sm:text-3xl">{stat.value}</div>
@@ -320,80 +298,9 @@ function HeroSection() {
   );
 }
 
-function EventTypesSection() {
-  return (
-    <section id="formats" className="px-5 py-14 sm:px-6 sm:py-20">
-      <div className="mx-auto max-w-6xl">
-        <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm font-bold text-[#e34f35]">
-              Форматы
-            </p>
-            <h2 className="mt-3 max-w-3xl text-4xl font-black leading-tight sm:text-5xl">
-              Выберите формат, который подходит вашей семье.
-            </h2>
-          </div>
-          <p className="max-w-sm text-base leading-7 text-[var(--color-ink-soft)]">
-            Вы выбираете настроение праздника, а мы помогаем собрать его под
-            возраст, место, язык гостей и ваш комфортный масштаб.
-          </p>
-        </div>
-
-        <div className="mt-9 grid gap-4 md:grid-cols-4">
-          {EVENT_TYPES.map((item) => (
-            <article key={item.title} className="rounded-lg bg-white p-5 shadow-[var(--shadow-card)]">
-              <item.Icon className="h-7 w-7 text-[#0a84ff]" strokeWidth={2.4} />
-              <h3 className="mt-5 text-xl font-black">{item.title}</h3>
-              <p className="mt-3 text-sm leading-6 text-[var(--color-ink-soft)]">
-                {item.text}
-              </p>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function AgencySection() {
-  return (
-    <section className="bg-white px-5 py-14 sm:px-6 sm:py-20">
-      <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-        <div>
-          <p className="text-sm font-bold text-[#0a84ff]">
-            Что можно собрать
-          </p>
-          <h2 className="mt-3 text-4xl font-black leading-tight sm:text-5xl">
-            Вы выбираете эмоцию, героев и масштаб праздника.
-          </h2>
-          <p className="mt-5 text-lg leading-8 text-[var(--color-ink-soft)]">
-            Вы задаете настроение, героев и желаемый масштаб. Мы собираем из
-            программ, персонажей, шоу и дополнительных услуг понятный сценарий
-            именно для вашего праздника.
-          </p>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          {SERVICE_BLOCKS.map((service, index) => (
-            <div
-              key={service}
-              className="rounded-lg border border-[var(--color-line)] bg-[#fffaf4] p-5"
-            >
-              <div className="text-sm font-black text-[#e34f35]">
-                {String(index + 1).padStart(2, "0")}
-              </div>
-              <div className="mt-4 text-xl font-black">{service}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function CustomControlSection() {
   return (
-    <section className="px-5 py-14 sm:px-6 sm:py-20">
+    <section className="px-5 py-10 sm:px-6 sm:py-16">
       <div className="mx-auto max-w-6xl">
         <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
           <div>
@@ -436,7 +343,7 @@ function CustomControlSection() {
 
 function ProgramSkeletonSection() {
   return (
-    <section id="programs" className="px-5 py-14 sm:px-6 sm:py-20">
+    <section id="programs" className="px-5 py-10 sm:px-6 sm:py-16">
       <div className="mx-auto max-w-6xl">
         <div className="max-w-3xl">
           <p className="text-sm font-bold text-[#e34f35]">
@@ -451,27 +358,27 @@ function ProgramSkeletonSection() {
           </p>
         </div>
 
-        <div className="mt-9 grid gap-5 lg:grid-cols-4">
+        <div className="mt-8 grid gap-4 lg:grid-cols-4">
           {PROGRAM_GROUPS.map((group) => (
             <article key={group.title} className="overflow-hidden rounded-lg bg-white shadow-[var(--shadow-card)]">
-              <div className="relative h-56 bg-zinc-100">
+              <div className="relative h-48 bg-zinc-100">
                 <ProgramCoverStrip programs={pickPrograms(group.programIds)} />
               </div>
-              <div className="p-5">
-                <h3 className="text-2xl font-black">{group.title}</h3>
-                <p className="mt-3 min-h-[72px] text-sm leading-6 text-[var(--color-ink-soft)]">
+              <div className="p-4">
+                <h3 className="text-xl font-black">{group.title}</h3>
+                <p className="mt-2 line-clamp-2 text-[13px] leading-5 text-[var(--color-ink-soft)]">
                   {group.text}
                 </p>
-                <div className="mt-4 space-y-2">
+                <div className="mt-3 space-y-1.5">
                   {pickPrograms(group.programIds).map((program) => (
                     <Link
                       key={program.id}
                       href={`/programs/${program.id}`}
-                      className="block rounded-lg border border-[var(--color-line)] px-3 py-2 transition hover:border-[#0a84ff]"
+                      className="block rounded-lg border border-[var(--color-line)] px-3 py-1.5 transition hover:border-[#0a84ff]"
                     >
                       <div className="text-sm font-black">{program.title}</div>
                       {program.tagline && (
-                        <div className="mt-1 text-xs leading-5 text-[var(--color-ink-soft)]">
+                        <div className="mt-0.5 line-clamp-1 text-[11px] leading-4 text-[var(--color-ink-soft)]">
                           {program.tagline}
                         </div>
                       )}
@@ -511,44 +418,66 @@ function ProgramCoverStrip({ programs }: { programs: Program[] }) {
 }
 
 function CharactersSection({ costumes, mascots }: { costumes: Hero[]; mascots: Hero[] }) {
+  const featuredCostumes = pickHeroes(costumes, FEATURED_COSTUME_IDS);
+  const featuredMascots = pickHeroes(mascots, FEATURED_MASCOT_IDS);
+
   return (
-    <section className="bg-[#111318] px-5 py-14 text-white sm:px-6 sm:py-20">
+    <section className="bg-[#111318] px-5 py-10 text-white sm:px-6 sm:py-16">
       <div className="mx-auto max-w-6xl">
-        <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
+        <div className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-end">
           <div>
             <p className="text-sm font-bold text-yellow-200">
               Персонажи
             </p>
             <h2 className="mt-3 text-4xl font-black leading-tight sm:text-5xl">
-              Все наши герои.
+              Популярные герои для праздника.
             </h2>
           </div>
           <p className="text-base leading-7 text-white/72">
-            Можно выбрать ведущего в образе, добавить ростовую куклу или собрать
-            пару героев под возраст, язык и настроение праздника.
+            Ведущий в образе, ростовая кукла или пара героев под возраст,
+            программу и язык гостей.
           </p>
         </div>
 
-        <div className="mt-9 space-y-8">
-          <HeroCarousel title="Костюмы" heroes={costumes} />
-          <HeroCarousel title="Ростовые куклы" heroes={mascots} />
+        <div className="mt-7 grid gap-7 lg:grid-cols-2">
+          <HeroPreviewGroup title="Костюмы ведущих" count={costumes.length} heroes={featuredCostumes} />
+          <HeroPreviewGroup title="Ростовые куклы" count={mascots.length} heroes={featuredMascots} />
+        </div>
+
+        <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+          <Link
+            href="/programs"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-base font-black text-zinc-950 transition active:scale-95"
+          >
+            Смотреть программы
+            <ChevronRight className="h-5 w-5" strokeWidth={2.6} />
+          </Link>
+          <a
+            href={whatsappLink("Здравствуйте! Хочу подобрать героя для детского праздника.")}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-white/30 px-6 py-3.5 text-base font-bold text-white transition hover:bg-white/10 active:scale-95"
+          >
+            <MessageCircle className="h-5 w-5" strokeWidth={2.4} />
+            Подобрать героя
+          </a>
         </div>
       </div>
     </section>
   );
 }
 
-function HeroCarousel({ title, heroes }: { title: string; heroes: Hero[] }) {
+function HeroPreviewGroup({ title, count, heroes }: { title: string; count: number; heroes: Hero[] }) {
   return (
     <div>
       <div className="mb-3 flex items-end justify-between gap-4">
         <h3 className="text-2xl font-black leading-tight">{title}</h3>
-        <div className="text-sm font-black text-white/55">{heroes.length}</div>
+        <div className="text-sm font-black text-white/55">{count}</div>
       </div>
-      <div className="hide-scrollbar -mx-5 overflow-x-auto px-5 pb-2 sm:-mx-6 sm:px-6">
-        <div className="flex min-w-max snap-x gap-3">
+      <div className="hide-scrollbar -mx-5 overflow-x-auto px-5 pb-1 sm:-mx-6 sm:px-6 lg:mx-0 lg:overflow-visible lg:px-0">
+        <div className="flex min-w-max gap-2 lg:grid lg:min-w-0 lg:grid-cols-3 lg:gap-3">
           {heroes.map((hero) => (
-            <HeroCarouselCard key={hero.id} hero={hero} />
+            <HeroPreviewTile key={hero.id} hero={hero} />
           ))}
         </div>
       </div>
@@ -556,18 +485,18 @@ function HeroCarousel({ title, heroes }: { title: string; heroes: Hero[] }) {
   );
 }
 
-function HeroCarouselCard({ hero }: { hero: Hero }) {
+function HeroPreviewTile({ hero }: { hero: Hero }) {
   const image = getHeroImage(hero.id);
 
   return (
-    <div className="w-[136px] shrink-0 snap-start rounded-lg bg-white p-3 text-center text-zinc-950 shadow-[0_18px_38px_rgba(0,0,0,0.18)] sm:w-[152px]">
+    <div className="w-[108px] shrink-0 rounded-lg bg-white p-2 text-center text-zinc-950 shadow-[0_18px_38px_rgba(0,0,0,0.18)] sm:w-[124px] lg:w-auto">
       <div className="relative flex aspect-square items-center justify-center rounded-md bg-[#fffaf4]">
         {image ? (
           <Image
             src={image}
             alt={hero.name}
             fill
-            sizes="152px"
+            sizes="(max-width: 640px) 30vw, 160px"
             className="object-contain p-2"
           />
         ) : (
@@ -576,7 +505,7 @@ function HeroCarouselCard({ hero }: { hero: Hero }) {
           </span>
         )}
       </div>
-      <div className="mt-3 flex min-h-[42px] items-center justify-center text-xs font-black leading-tight">
+      <div className="mt-2 flex min-h-[30px] items-center justify-center text-[10px] font-black leading-tight sm:text-xs">
         {hero.name}
       </div>
     </div>
@@ -585,7 +514,7 @@ function HeroCarouselCard({ hero }: { hero: Hero }) {
 
 function ProcessSection() {
   return (
-    <section className="bg-white px-5 py-14 sm:px-6 sm:py-20">
+    <section className="bg-white px-5 py-10 sm:px-6 sm:py-16">
       <div className="mx-auto max-w-6xl">
         <div className="max-w-3xl">
           <p className="text-sm font-bold text-[#0a84ff]">
@@ -631,7 +560,7 @@ function ProcessSection() {
 
 function FaqSection() {
   return (
-    <section id="faq" className="px-5 py-14 sm:px-6 sm:py-20">
+    <section id="faq" className="px-5 py-10 sm:px-6 sm:py-16">
       <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[0.75fr_1.25fr]">
         <div>
           <p className="text-sm font-bold text-[#e34f35]">
@@ -658,7 +587,7 @@ function FaqSection() {
 
 function FinalSection() {
   return (
-    <section className="bg-[#0a84ff] px-5 py-14 text-white sm:px-6 sm:py-20">
+    <section className="bg-[#0a84ff] px-5 py-10 text-white sm:px-6 sm:py-16">
       <div className="mx-auto max-w-6xl">
         <div className="max-w-4xl">
           <p className="text-sm font-bold text-white/72">

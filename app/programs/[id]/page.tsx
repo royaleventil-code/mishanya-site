@@ -132,7 +132,7 @@ export default async function ProgramDetailPage({
                 <Fact
                   icon={<Users className="h-5 w-5" />}
                   title="Группа"
-                  value={program.maxKids === null ? "обсуждаем по формату" : `до ${program.maxKids}`}
+                  value={program.maxKids === null ? "Без ограничений" : `до ${program.maxKids}`}
                 />
                 <Fact icon={<Languages className="h-5 w-5" />} title="Язык" value={languageLabel(program)} />
                 <Fact icon={<MapPin className="h-5 w-5" />} title="Место" value={locationLabel(program)} />
@@ -149,37 +149,37 @@ export default async function ProgramDetailPage({
         </div>
       </section>
 
-      <section className="bg-white px-5 py-14 sm:px-6 sm:py-20">
+      <section className="bg-white px-5 py-10 sm:px-6 sm:py-16">
         <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.8fr_1.2fr]">
           <div>
             <h2 className="text-4xl font-black leading-tight sm:text-5xl">
               Что входит в программу
             </h2>
             {program.includesHighlight && (
-              <p className="mt-5 rounded-lg bg-[#fffaf4] p-5 text-base font-bold leading-7">
+              <p className="mt-4 rounded-lg bg-[#fffaf4] p-4 text-[15px] font-bold leading-6">
                 {program.includesHighlight}
               </p>
             )}
             {program.bonus && (
-              <p className="mt-4 rounded-lg bg-[#eaf4ff] p-5 text-sm leading-6">
+              <p className="mt-3 rounded-lg bg-[#eaf4ff] p-4 text-sm leading-5">
                 <span className="font-black">Бонус: </span>
                 {program.bonus}
               </p>
             )}
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-2.5 sm:grid-cols-2">
             {includes.map((item) => (
-              <div key={item} className="flex gap-3 rounded-lg border border-[var(--color-line)] p-4">
-                <Check className="mt-0.5 h-5 w-5 shrink-0 text-[#0a84ff]" strokeWidth={2.5} />
-                <span className="text-sm font-semibold leading-6">{item}</span>
+              <div key={item} className="flex gap-2.5 rounded-lg border border-[var(--color-line)] p-3">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#0a84ff]" strokeWidth={2.5} />
+                <span className="text-[13px] font-semibold leading-5">{item}</span>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="px-5 py-14 sm:px-6 sm:py-20">
+      <section className="px-5 py-10 sm:px-6 sm:py-16">
         <div className="mx-auto max-w-6xl">
           <div className="max-w-3xl">
             <p className="text-sm font-bold text-[#0a84ff]">
@@ -194,12 +194,12 @@ export default async function ProgramDetailPage({
             </p>
           </div>
 
-          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {CUSTOM_OPTIONS.map((option) => (
-              <div key={option.title} className="rounded-lg bg-white p-5 shadow-[var(--shadow-card)]">
+              <div key={option.title} className="rounded-lg bg-white p-4 shadow-[var(--shadow-card)]">
                 <Check className="h-5 w-5 text-[#0a84ff]" strokeWidth={2.5} />
-                <h3 className="mt-4 text-xl font-black leading-tight">{option.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-[var(--color-ink-soft)]">
+                <h3 className="mt-3 text-lg font-black leading-tight">{option.title}</h3>
+                <p className="mt-2 text-[13px] leading-5 text-[var(--color-ink-soft)]">
                   {option.text}
                 </p>
               </div>
@@ -209,7 +209,7 @@ export default async function ProgramDetailPage({
       </section>
 
       {(program.heroSlots.length > 0 || examples.length > 0) && (
-        <section className="px-5 py-14 sm:px-6 sm:py-20">
+        <section className="px-5 py-10 sm:px-6 sm:py-16">
           <div className="mx-auto max-w-6xl">
             <div className="max-w-3xl">
               <p className="text-sm font-bold text-[#e34f35]">
@@ -223,9 +223,9 @@ export default async function ProgramDetailPage({
             {program.heroSlots.length > 0 && (
               <div className="mt-8 grid gap-3 md:grid-cols-2">
                 {program.heroSlots.map((slot) => (
-                  <div key={`${slot.label}-${slot.kind}`} className="rounded-lg bg-white p-5 shadow-[var(--shadow-card)]">
+                  <div key={`${slot.label}-${slot.kind}`} className="rounded-lg bg-white p-4 shadow-[var(--shadow-card)]">
                     <div className="text-xl font-black">{slot.label}</div>
-                    <div className="mt-2 text-sm leading-6 text-[var(--color-ink-soft)]">
+                    <div className="mt-1 text-sm leading-5 text-[var(--color-ink-soft)]">
                       {slot.kind === "mascot" ? "Ростовой персонаж" : "Ведущий в образе"}
                     </div>
                   </div>

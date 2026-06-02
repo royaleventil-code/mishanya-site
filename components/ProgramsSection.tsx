@@ -567,12 +567,10 @@ function ProgramCard({
             {program.durationLabel}
           </span>
 
-          {program.maxKids !== null && (
-            <span className="inline-flex items-center gap-1 text-xs text-[var(--color-ink-soft)]">
-              <Users className="w-3.5 h-3.5" strokeWidth={2.2} />
-              до {program.maxKids}
-            </span>
-          )}
+          <span className="inline-flex items-center gap-1 text-xs text-[var(--color-ink-soft)]">
+            <Users className="w-3.5 h-3.5" strokeWidth={2.2} />
+            {program.maxKids === null ? "Без ограничений" : `до ${program.maxKids}`}
+          </span>
         </div>
 
         <div
@@ -863,10 +861,8 @@ function ProgramModal({
           )}
           {(program.ruOnly || indoorOnly) && (
             <div className="mt-2 space-y-1 text-center text-xs font-semibold text-amber-600">
-              {program.ruOnly && <p>1. Программа проводится только на русском языке</p>}
-              {indoorOnly && (
-                <p>{program.ruOnly ? "2" : "1"}. Программа проводится только в помещении</p>
-              )}
+              {program.ruOnly && <p>Программа проводится только на русском языке</p>}
+              {indoorOnly && <p>Программа проводится только в помещении</p>}
             </div>
           )}
 
@@ -876,8 +872,8 @@ function ProgramModal({
             <Stat icon={<Users className="w-4 h-4" />} value={program.animatorsLabel ?? `${program.animators}`} label="команда" />
             <Stat
               icon={<Baby className="w-4 h-4" />}
-              value={program.maxKids === null ? "любое" : `до ${program.maxKids}`}
-              label="детей"
+              value={program.maxKids === null ? "Без ограничений" : `до ${program.maxKids}`}
+              label={program.maxKids === null ? "" : "детей"}
             />
           </div>
 
@@ -972,19 +968,23 @@ function ProgramModal({
 
           {/* Hero slots */}
           {program.heroSlots.map((slot, slotIdx) => {
-            const girlHeroIds = girlHeroIdsForSlot(audience, slot.kind);
+            const useUniversalHeroPool =
+              segment === "all" && !audience?.gender && !slot.onlyHeroIds?.length;
+            const girlHeroIds = useUniversalHeroPool ? null : girlHeroIdsForSlot(audience, slot.kind);
             const onlyHeroIds = girlHeroIds
               ? slot.onlyHeroIds?.length
                 ? girlHeroIds.filter((id) => slot.onlyHeroIds?.includes(id))
                 : girlHeroIds
               : slot.onlyHeroIds;
-            const excludedHeroIds = new Set(girlHeroIds ? [] : slot.excludedHeroIds ?? []);
+            const excludedHeroIds = new Set(
+              girlHeroIds || useUniversalHeroPool ? [] : slot.excludedHeroIds ?? [],
+            );
             const slotHeroes = sortHeroes(
               filterHeroes(
                 heroes.filter((h) => h.kind === slot.kind && !excludedHeroIds.has(h.id)),
                 segment,
                 languageFilter,
-                girlHeroIds ? [] : slot.includedHeroIds,
+                girlHeroIds || useUniversalHeroPool ? [] : slot.includedHeroIds,
                 audience,
                 onlyHeroIds,
               ),
@@ -1286,7 +1286,7 @@ function Stat({ icon, value, label }: { icon: React.ReactNode; value: string; la
     <div className="apple-glass rounded-2xl p-3 text-center">
       <div className="flex justify-center text-[var(--color-ink-soft)]">{icon}</div>
       <div className="mt-1.5 text-sm font-semibold leading-tight">{value}</div>
-      <div className="mt-0.5 text-[11px] text-[var(--color-ink-soft)]">{label}</div>
+      {label && <div className="mt-0.5 text-[11px] text-[var(--color-ink-soft)]">{label}</div>}
     </div>
   );
 }

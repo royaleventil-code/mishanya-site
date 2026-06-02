@@ -24,7 +24,7 @@ const MENU_GROUPS: MenuGroup[] = [
   {
     tab: "Основа",
     title: "Основа праздника",
-    ids: ["mini", "start", "standart", "mishanya", "vip", "super-vip"],
+    ids: ["start", "standart", "super-heroes", "mishanya", "vip", "super-vip"],
   },
   {
     tab: "Герои",
@@ -94,12 +94,12 @@ export function ProgramMenu({ theme = "light", variant = "icon", label = "Про
         className="ml-auto flex h-full max-w-[430px] flex-col overflow-hidden rounded-lg bg-[#fffaf4] shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-[var(--color-line)] bg-white px-4 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-[var(--color-line)] bg-white px-4 py-3">
           <div>
             <p className="text-xs font-black uppercase text-[#e34f35]">
               Программы
             </p>
-            <h2 className="mt-1 text-2xl font-black leading-tight">
+            <h2 className="mt-0.5 text-xl font-black leading-tight">
               Быстрый список
             </h2>
           </div>
@@ -107,13 +107,13 @@ export function ProgramMenu({ theme = "light", variant = "icon", label = "Про
             type="button"
             onClick={() => setOpen(false)}
             aria-label="Закрыть список программ"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-ink)] text-white shadow-sm transition active:scale-95"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-ink)] text-white shadow-sm transition active:scale-95"
           >
             <X className="h-5 w-5" strokeWidth={2.6} />
           </button>
         </div>
 
-        <div className="grid grid-cols-3 gap-1.5 border-b border-[var(--color-line)] bg-white px-4 py-3">
+        <div className="grid grid-cols-3 gap-1.5 border-b border-[var(--color-line)] bg-white px-3 py-2">
           {MENU_GROUPS.map((group, index) => {
             const isActive = activeGroupIndex === index;
 
@@ -122,7 +122,7 @@ export function ProgramMenu({ theme = "light", variant = "icon", label = "Про
                 key={group.tab}
                 type="button"
                 onClick={() => setActiveGroupIndex(index)}
-                className={`rounded-full px-3 py-2 text-sm font-black transition active:scale-95 ${
+                className={`rounded-full px-3 py-1.5 text-[13px] font-black transition active:scale-95 ${
                   isActive
                     ? "bg-[var(--color-ink)] text-white"
                     : "bg-[#fffaf4] text-[var(--color-ink-soft)] hover:bg-zinc-100"
@@ -134,25 +134,25 @@ export function ProgramMenu({ theme = "light", variant = "icon", label = "Про
           })}
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
           <div>
-            <h3 className="mb-2 text-sm font-black text-[var(--color-ink-soft)]">
+            <h3 className="mb-1.5 text-[13px] font-black text-[var(--color-ink-soft)]">
               {activeGroup.title}
             </h3>
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               {byIds(activeGroup.ids).map((program) => (
                 <Link
                   key={program.id}
                   href={`/programs/${program.id}`}
                   prefetch={false}
-                  className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg border border-[var(--color-line)] bg-white px-3 py-2.5 transition hover:border-[#0a84ff] hover:shadow-sm active:scale-[0.99]"
+                  className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg border border-[var(--color-line)] bg-white px-3 py-2 transition hover:border-[#0a84ff] hover:shadow-sm active:scale-[0.99]"
                 >
                   <div className="min-w-0">
-                    <div className="truncate text-[15px] font-black leading-5">
+                    <div className="truncate text-sm font-black leading-4">
                       {program.title}
                     </div>
                     {program.tagline && (
-                      <p className="mt-0.5 truncate text-xs font-semibold leading-5 text-[var(--color-ink-soft)]">
+                      <p className="mt-0.5 truncate text-[11px] font-semibold leading-4 text-[var(--color-ink-soft)]">
                         {program.tagline}
                       </p>
                     )}

@@ -6,8 +6,6 @@ const BASIC_PARTY_ADDONS = ["bubbles-show", "confetti", "pinata"];
 const CONFETTI_ONLY_ADDONS = ["confetti"];
 const SHOW_PARTY_ADDONS = ["bubbles-show", "confetti"];
 const MAIN_PROGRAM_EXCLUDED_HERO_IDS = [
-  "aurora",
-  "batman",
   "barbie",
   "anna",
   "unicorn",
@@ -16,13 +14,10 @@ const MAIN_PROGRAM_EXCLUDED_HERO_IDS = [
   "lol-bee",
   "mashenka",
   "minnie-mouse",
-  "pony-dash",
-  "pony-twilight",
   "popit-girl",
   "rapunzel",
   "kpop-rumi",
   "mermaid",
-  "cinderella",
   "troll-poppy",
   "troll-branch",
   "tinker-bell",
@@ -45,46 +40,23 @@ const MAIN_PROGRAM_HERO_SLOT_SETTINGS = {
   orderedHeroIds: MAIN_PROGRAM_ORDERED_HERO_IDS,
 };
 
+function audienceCovers({
+  all,
+  boy,
+  girl = boy,
+}: {
+  all: string;
+  boy: string;
+  girl?: string;
+}): NonNullable<Program["audienceCovers"]> {
+  return [
+    { segment: "all", cover: all },
+    { gender: "boy", minAge: 1, maxAge: 99, cover: boy },
+    { gender: "girl", minAge: 1, maxAge: 99, cover: girl },
+  ];
+}
+
 export const PROGRAMS: Program[] = [
-{
-    id: "mini",
-    emoji: "🥳",
-    title: "Мини",
-    tagline: "Компактный праздник для маленькой компании",
-    durationLabel: "40 минут",
-    animators: 1,
-    animatorsLabel: "1 аниматор",
-    priceFrom: 1100,
-    currency: "₪",
-    maxKids: 10,
-    languages: ["ru", "he"],
-    locations: ["indoor", "outdoor"],
-    segments: [],
-    heroSlots: [
-      {
-        label: "Герой на выбор",
-        kind: "costume",
-        ...MAIN_PROGRAM_HERO_SLOT_SETTINGS,
-      },
-    ],
-    includes: [
-      "Ведущий в выбранном образе",
-      "Знакомство с детьми и лёгкий разогрев",
-      "Фокусы и мини-шоу",
-      "Танцы под весёлую музыку",
-      "Конкурсы для маленькой компании",
-      "Активные игры и эстафеты",
-    ],
-    bundled: [
-      "Музыка и игровой реквизит",
-      "Торжественный вынос торта 🎂",
-    ],
-    recommendedAddonIds: SHOW_PARTY_ADDONS,
-    gradientFrom: "from-sky-200",
-    gradientTo: "to-sky-50",
-    cover: "/programs/mini.png",
-    audienceCovers: [{ gender: "girl", minAge: 1, maxAge: 3, cover: "/programs/mini-girls-1-3.png" }],
-  },
 {
     id: "start",
     emoji: "🎊",
@@ -118,7 +90,11 @@ export const PROGRAMS: Program[] = [
     gradientFrom: "from-sky-200",
     gradientTo: "to-sky-50",
     cover: "/programs/start.png",
-    audienceCovers: [{ gender: "girl", minAge: 1, maxAge: 99, cover: "/programs/start-girls.png" }],
+    audienceCovers: audienceCovers({
+      all: "/programs/start-universal.png",
+      boy: "/programs/start.png",
+      girl: "/programs/start-girls.png",
+    }),
   },
 {
     id: "standart",
@@ -153,7 +129,11 @@ export const PROGRAMS: Program[] = [
     gradientFrom: "from-sky-200",
     gradientTo: "to-sky-50",
     cover: "/programs/standart.webp",
-    audienceCovers: [{ gender: "girl", minAge: 1, maxAge: 99, cover: "/programs/standart-girls.png" }],
+    audienceCovers: audienceCovers({
+      all: "/programs/standart-universal.png",
+      boy: "/programs/standart.webp",
+      girl: "/programs/standart-girls.png",
+    }),
   },
 {
     id: "super-heroes",
@@ -191,7 +171,11 @@ export const PROGRAMS: Program[] = [
     gradientFrom: "from-blue-300",
     gradientTo: "to-indigo-100",
     cover: "/programs/super-heroes.png",
-    audienceCovers: [{ gender: "girl", cover: "/programs/super-heroes-girls-1-3.png" }],
+    audienceCovers: audienceCovers({
+      all: "/programs/super-heroes-universal.png",
+      boy: "/programs/super-heroes.png",
+      girl: "/programs/super-heroes-girls-1-3.png",
+    }),
   },
 {
     id: "unicorn-toddler-girls",
@@ -316,7 +300,7 @@ export const PROGRAMS: Program[] = [
     animatorsLabel: "2 аниматора",
     priceFrom: 2200,
     currency: "₪",
-    maxKids: null,
+    maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
     segments: ["girl-4-6", "girl-6plus", "all"],
@@ -468,7 +452,7 @@ export const PROGRAMS: Program[] = [
     animatorsLabel: "2 аниматора",
     priceFrom: 2200,
     currency: "₪",
-    maxKids: null,
+    maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
     segments: ["boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
@@ -508,7 +492,7 @@ export const PROGRAMS: Program[] = [
     animatorsLabel: "2 аниматора + пудель",
     priceFrom: 1800,
     currency: "₪",
-    maxKids: null,
+    maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
     segments: ["baby", "boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
@@ -543,7 +527,7 @@ export const PROGRAMS: Program[] = [
     animatorsLabel: "2 аниматора",
     priceFrom: 2000,
     currency: "₪",
-    maxKids: null,
+    maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
     segments: ["boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
@@ -582,7 +566,7 @@ export const PROGRAMS: Program[] = [
     animatorsLabel: "2 аниматора",
     priceFrom: 2000,
     currency: "₪",
-    maxKids: null,
+    maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor"],
     segments: ["boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
@@ -618,7 +602,7 @@ export const PROGRAMS: Program[] = [
     animatorsLabel: "2 аниматора",
     priceFrom: 2000,
     currency: "₪",
-    maxKids: null,
+    maxKids: 35,
     languages: ["ru"],
     locations: ["indoor", "outdoor"],
     segments: ["boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
@@ -654,7 +638,7 @@ export const PROGRAMS: Program[] = [
     animatorsLabel: "2 аниматора",
     priceFrom: 2000,
     currency: "₪",
-    maxKids: null,
+    maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
     segments: ["boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
@@ -689,7 +673,7 @@ export const PROGRAMS: Program[] = [
     animatorsLabel: "2 аниматора",
     priceFrom: 3000,
     currency: "₪",
-    maxKids: null,
+    maxKids: 35,
     languages: ["ru", "he"],
     locations: ["outdoor"],
     segments: ["baby", "boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
@@ -749,6 +733,11 @@ export const PROGRAMS: Program[] = [
     gradientFrom: "from-yellow-300",
     gradientTo: "to-amber-50",
     cover: "/programs/vip.png",
+    audienceCovers: audienceCovers({
+      all: "/programs/vip.png",
+      boy: "/programs/vip.png",
+      girl: "/programs/vip.png",
+    }),
   },
 {
     id: "super-vip",
@@ -791,6 +780,11 @@ export const PROGRAMS: Program[] = [
     gradientFrom: "from-purple-500",
     gradientTo: "to-pink-200",
     cover: "/programs/super-vip.png",
+    audienceCovers: audienceCovers({
+      all: "/programs/super-vip.png",
+      boy: "/programs/super-vip.png",
+      girl: "/programs/super-vip.png",
+    }),
   },
 {
     id: "wednesday",
@@ -802,7 +796,7 @@ export const PROGRAMS: Program[] = [
     animatorsLabel: "2 аниматора",
     priceFrom: 2000,
     currency: "₪",
-    maxKids: null,
+    maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
     segments: ["girl-4-6", "girl-6plus", "all"],
@@ -835,7 +829,7 @@ export const PROGRAMS: Program[] = [
     animatorsLabel: "2 аниматора",
     priceFrom: 2000,
     currency: "₪",
-    maxKids: null,
+    maxKids: 35,
     languages: ["ru"],
     locations: ["indoor", "outdoor"],
     segments: ["baby", "girl-4-6", "girl-6plus", "all"],
@@ -872,7 +866,7 @@ export const PROGRAMS: Program[] = [
     animatorsLabel: "1 аниматор",
     priceFrom: 2000,
     currency: "₪",
-    maxKids: null,
+    maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor"],
     segments: ["boy-6plus", "girl-6plus", "all"],
@@ -906,7 +900,7 @@ export const PROGRAMS: Program[] = [
     animatorsLabel: "1 аниматор",
     priceFrom: 2000,
     currency: "₪",
-    maxKids: null,
+    maxKids: 35,
     languages: ["ru"],
     locations: ["indoor"],
     segments: ["boy-6plus", "girl-6plus", "all"],

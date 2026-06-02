@@ -23,7 +23,6 @@ const VISUALS: Record<VisualKind, { src: string; tint: string }> = {
 };
 
 const VISUAL_BY_PROGRAM_ID: Record<string, VisualKind> = {
-  mini: "party",
   start: "party",
   standart: "party",
   mishanya: "party",

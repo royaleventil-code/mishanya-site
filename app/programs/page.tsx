@@ -18,7 +18,7 @@ const CATALOG_GROUPS = [
   {
     title: "Готовая основа праздника",
     text: "Можно взять как базу и настроить под возраст, место, язык и количество гостей.",
-    ids: ["mini", "start", "standart", "super-heroes", "mishanya", "vip", "super-vip"],
+    ids: ["start", "standart", "super-heroes", "mishanya", "vip", "super-vip"],
   },
   {
     title: "Темы и герои",
@@ -114,7 +114,7 @@ export default function ProgramsPage() {
                 поменять героя, длительность, язык, шоу-блоки и масштаб.
               </p>
             </div>
-            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               {FEATURED_CHOICES.map((choice) => {
                 const program = PROGRAMS.find((item) => item.id === choice.id);
                 return program ? (
@@ -124,10 +124,10 @@ export default function ProgramsPage() {
             </div>
           </section>
 
-          <div className="mt-10 space-y-12">
+          <div className="mt-9 space-y-10">
             {CATALOG_GROUPS.map((group) => (
               <section key={group.title}>
-                <div className="mb-5 flex flex-col justify-between gap-3 md:flex-row md:items-end">
+                <div className="mb-4 flex flex-col justify-between gap-3 md:flex-row md:items-end">
                   <div>
                     <h2 className="text-3xl font-black leading-tight">{group.title}</h2>
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-ink-soft)]">
@@ -136,7 +136,7 @@ export default function ProgramsPage() {
                   </div>
                 </div>
 
-                <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {byIds(group.ids).map((program) => (
                     <ProgramCard key={program.id} program={program} />
                   ))}
@@ -187,14 +187,14 @@ function FeaturedChoiceCard({
       <ProgramVisual
         program={program}
         sizes="(max-width: 768px) 100vw, 25vw"
-        className="aspect-[4/3]"
+        className="aspect-[16/10]"
       />
-      <div className="p-5">
-        <h3 className="text-xl font-black leading-tight">{title}</h3>
-        <p className="mt-3 min-h-[96px] text-sm leading-6 text-[var(--color-ink-soft)]">
+      <div className="p-4">
+        <h3 className="text-lg font-black leading-tight">{title}</h3>
+        <p className="mt-2 line-clamp-2 text-[13px] leading-5 text-[var(--color-ink-soft)]">
           {text}
         </p>
-        <div className="mt-4 inline-flex items-center gap-2 text-sm font-black text-[#0a84ff]">
+        <div className="mt-3 inline-flex items-center gap-2 text-sm font-black text-[#0a84ff]">
           Посмотреть идею
           <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" strokeWidth={2.6} />
         </div>
@@ -212,14 +212,14 @@ function ProgramCard({ program }: { program: Program }) {
       <ProgramVisual
         program={program}
         sizes="(max-width: 768px) 100vw, 33vw"
-        className="aspect-[4/3]"
+        className="aspect-[16/10]"
       />
-      <div className="p-5">
+      <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-2xl font-black leading-tight">{program.title}</h3>
+            <h3 className="text-xl font-black leading-tight">{program.title}</h3>
             {program.tagline && (
-              <p className="mt-2 text-sm leading-6 text-[var(--color-ink-soft)]">
+              <p className="mt-1 line-clamp-2 text-[13px] leading-5 text-[var(--color-ink-soft)]">
                 {program.tagline}
               </p>
             )}
@@ -230,20 +230,20 @@ function ProgramCard({ program }: { program: Program }) {
           />
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-2 text-xs font-bold text-[var(--color-ink-soft)]">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fffaf4] px-3 py-2">
+        <div className="mt-4 grid grid-cols-2 gap-1.5 text-[11px] font-bold text-[var(--color-ink-soft)]">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fffaf4] px-2.5 py-1.5">
             <Clock className="h-3.5 w-3.5" strokeWidth={2.4} />
             {program.durationLabel}
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fffaf4] px-3 py-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fffaf4] px-2.5 py-1.5">
             <Users className="h-3.5 w-3.5" strokeWidth={2.4} />
-            {program.maxKids === null ? "по запросу" : `до ${program.maxKids}`}
+            {program.maxKids === null ? "Без ограничений" : `до ${program.maxKids}`}
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fffaf4] px-3 py-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fffaf4] px-2.5 py-1.5">
             <Languages className="h-3.5 w-3.5" strokeWidth={2.4} />
             {languageLabel(program)}
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fffaf4] px-3 py-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fffaf4] px-2.5 py-1.5">
             <MapPin className="h-3.5 w-3.5" strokeWidth={2.4} />
             {locationLabel(program)}
           </span>
