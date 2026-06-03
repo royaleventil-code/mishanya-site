@@ -57,11 +57,13 @@ const DECORATION_SLOTS: DecorationSlot[] = [
   { top: "91rem", left: "68%", size: "2.4rem", rotate: "24deg", scale: "0.82", opacity: "0.4", delay: "-3.4s", duration: "7s" },
 ];
 
+const FALLBACK_MOTIFS: AtmosphereMotif[] = ["softCircle"];
+
 export function AgeAtmosphere({ audience, programThemeId }: Props) {
   const theme = resolveAtmosphereTheme(audience, programThemeId);
   if (!theme) return null;
 
-  const motifs = theme.motifs.length > 0 ? theme.motifs : ["softCircle"];
+  const motifs = theme.motifs.length > 0 ? theme.motifs : FALLBACK_MOTIFS;
   const atmosphereStyle: AtmosphereStyle = {
     "--atmo-base": theme.palette.base,
     "--atmo-aura": theme.palette.aura,
