@@ -8,6 +8,7 @@ import { Faq } from "./Faq";
 import { FinalCta } from "./FinalCta";
 import { PublicFooter } from "./PublicFooter";
 import { StickyMobileCta } from "./StickyMobileCta";
+import { AgeAtmosphere } from "./AgeAtmosphere";
 import { PROGRAMS } from "@/data/programs";
 import { HEROES } from "@/data/heroes";
 import {
@@ -61,21 +62,24 @@ export function SegmentPage({ segment, title, emojiOverride, audience }: Props) 
   return (
     <>
       <PublicHeader />
-      <main className="pb-24 sm:pb-0">
-        <Hero emoji={emojiOverride ?? cfg.emoji} title={title} accent={cfg.accent} />
-        <ProgramsSection
-          segment={segment}
-          accent={cfg.accent}
-          programs={PROGRAMS}
-          heroes={HEROES}
-          audience={audience}
-        />
-        <SocialProofSection proofSet={proofSet} />
-        <HowItWorks />
-        <Trust />
-        <Faq />
-        <FinalCta accent={cfg.accent} />
-        <PublicFooter />
+      <main className="relative isolate overflow-hidden pb-24 sm:pb-0">
+        <AgeAtmosphere audience={audience} />
+        <div className="relative z-10">
+          <Hero emoji={emojiOverride ?? cfg.emoji} title={title} accent={cfg.accent} />
+          <ProgramsSection
+            segment={segment}
+            accent={cfg.accent}
+            programs={PROGRAMS}
+            heroes={HEROES}
+            audience={audience}
+          />
+          <SocialProofSection proofSet={proofSet} />
+          <HowItWorks />
+          <Trust />
+          <Faq />
+          <FinalCta accent={cfg.accent} />
+          <PublicFooter />
+        </div>
       </main>
       <StickyMobileCta />
     </>
