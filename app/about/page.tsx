@@ -113,7 +113,7 @@ export default function AboutPage() {
                 Обсудить праздник
               </a>
               <Link
-                href="/programs"
+                href="/all"
                 className="group inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-4 text-base font-black text-zinc-900 shadow-[var(--shadow-card)] ring-1 ring-black/[0.04] transition active:scale-95"
               >
                 Наши программы

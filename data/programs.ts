@@ -90,11 +90,12 @@ export const PROGRAMS: Program[] = [
     gradientFrom: "from-sky-200",
     gradientTo: "to-sky-50",
     cover: "/programs/start.png",
-    audienceCovers: audienceCovers({
-      all: "/programs/start-universal.png",
-      boy: "/programs/start.png",
-      girl: "/programs/start-girls.png",
-    }),
+    audienceCovers: [
+      { segment: "all", cover: "/programs/start-universal.png" },
+      { gender: "boy", minAge: 1, maxAge: 99, cover: "/programs/start.png" },
+      { gender: "girl", minAge: 1, maxAge: 3, cover: "/programs/start-girls-1-3.webp" },
+      { gender: "girl", minAge: 4, maxAge: 99, cover: "/programs/start-girls.png" },
+    ],
   },
 {
     id: "standart",

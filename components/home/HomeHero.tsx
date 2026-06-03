@@ -4,13 +4,21 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, MessageCircle } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
+import { DevPriceMenu } from "@/components/DevPriceMenu";
 import { whatsappLink } from "@/lib/whatsapp";
 
 const WA_HELP =
   "Здравствуйте! Помогите, пожалуйста, подобрать праздник для ребёнка 🎉";
 
+const HERO_ADVANTAGES = [
+  { value: "11 лет", label: "дарим праздники в Израиле", color: "#ff9f0a" },
+  { value: "10 000+", label: "праздников провели", color: "#0a84ff" },
+  { value: "783", label: "отзыва родителей · 5,0", color: "#ff375f" },
+  { value: "RU / HE", label: "ведущие на русском и иврите", color: "#5e5ce6" },
+];
+
 const NAV = [
-  { href: "/programs", label: "Программы" },
+  { href: "/all", label: "Программы" },
   { href: "/gallery", label: "Фото и видео" },
   { href: "/about", label: "О нас" },
   { href: "/contacts", label: "Контакты" },
@@ -175,23 +183,43 @@ export function HomeHero() {
             <br className="hidden sm:block" /> для вашего ребёнка
           </motion.h1>
 
-          <motion.p
+          <motion.div
             variants={rise}
-            className="mt-4 max-w-xl text-base leading-7 text-[var(--color-ink-soft)] sm:text-lg sm:leading-8"
+            className="mt-5 grid max-w-xl grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3"
           >
-            11 лет дарим радость детям Израиля — любимые герои, шоу и эмоции,
-            которые помнят годами. Соберём праздник под возраст, язык и ваш
-            бюджет.
-          </motion.p>
+            {HERO_ADVANTAGES.map((item) => (
+              <div
+                key={item.label}
+                className="rounded-2xl bg-white/78 px-3 py-2.5 shadow-sm ring-1 ring-black/5 backdrop-blur"
+              >
+                <div
+                  className="font-[family-name:var(--font-nunito)] text-xl font-black leading-none sm:text-2xl"
+                  style={{ color: item.color }}
+                >
+                  {item.value}
+                </div>
+                <div className="mt-1 text-[11px] font-bold leading-snug text-[var(--color-ink-soft)] sm:text-xs">
+                  {item.label}
+                </div>
+              </div>
+            ))}
+          </motion.div>
 
           <motion.div variants={rise} className="mt-7 flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/programs"
-              className="group inline-flex items-center justify-center gap-2 rounded-full bg-[linear-gradient(100deg,#ff375f,#ff5a7a)] px-7 py-4 text-base font-black text-white shadow-[0_14px_30px_rgba(255,55,95,0.4)] transition hover:shadow-[0_18px_40px_rgba(255,55,95,0.5)] active:scale-95"
-            >
-              Смотреть программы
-              <ChevronRight className="h-5 w-5 transition group-hover:translate-x-0.5" strokeWidth={2.6} />
-            </Link>
+            <DevPriceMenu
+              trigger={({ open, onClick }) => (
+                <button
+                  type="button"
+                  onClick={onClick}
+                  aria-expanded={open}
+                  aria-haspopup="dialog"
+                  className="group inline-flex items-center justify-center gap-2 rounded-full bg-[linear-gradient(100deg,#ff375f,#ff5a7a)] px-7 py-4 text-base font-black text-white shadow-[0_14px_30px_rgba(255,55,95,0.4)] transition hover:shadow-[0_18px_40px_rgba(255,55,95,0.5)] active:scale-95"
+                >
+                  Смотреть программы
+                  <ChevronRight className="h-5 w-5 transition group-hover:translate-x-0.5" strokeWidth={2.6} />
+                </button>
+              )}
+            />
             <a
               href={whatsappLink(WA_HELP)}
               target="_blank"
@@ -209,21 +237,20 @@ export function HomeHero() {
           initial={reduce ? false : { opacity: 0, scale: 0.92, y: 24 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
-          className="relative mx-auto mt-2 w-full max-w-[440px] md:mt-0"
+          className="relative mx-auto mt-2 w-full max-w-[430px] sm:max-w-[520px] md:mt-0 md:max-w-[460px] lg:max-w-[500px]"
         >
           <motion.div
             animate={reduce ? undefined : { y: [0, -10, 0] }}
             transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-            className="relative rotate-1 overflow-hidden rounded-[28px] shadow-[0_30px_70px_rgba(15,15,20,0.22)]"
+            className="relative aspect-[4/3] rotate-1 overflow-hidden rounded-[24px] bg-[#72c7ff] shadow-[0_30px_70px_rgba(15,15,20,0.22)] sm:aspect-[16/11] sm:rounded-[28px] md:aspect-square lg:aspect-[4/3] xl:aspect-square"
           >
             <Image
               src="/generated/program-party.webp"
-              alt="Детский день рождения — торт, воздушные шары и конфетти"
-              width={900}
-              height={900}
+              alt="Герои и персонажи Мишани для детского праздника"
+              fill
               priority
-              sizes="(max-width: 768px) 92vw, 440px"
-              className="h-auto w-full"
+              sizes="(max-width: 640px) 92vw, (max-width: 1024px) 46vw, 500px"
+              className="object-cover object-[50%_76%] md:object-center"
             />
           </motion.div>
 

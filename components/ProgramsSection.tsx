@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, animate, motion, useMotionValue } from "framer-motion";
 import { Baby, Banknote, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, MapPin, Users, X } from "lucide-react";
 import type { AudienceContext, FilterState, Hero, Program, SegmentId } from "@/lib/types";
 import { filterHeroes, filterPrograms } from "@/lib/filtering";
@@ -259,6 +259,11 @@ export function ProgramsSection({ segment, accent, programs, heroes, audience }:
     : null;
   const canGoPrevious = selectedIndex > 0;
   const canGoNext = selectedIndex >= 0 && selectedIndex < visiblePrograms.length - 1;
+
+  useEffect(() => {
+    const programId = new URLSearchParams(window.location.search).get("program");
+    if (programId) setSelectedId(programId);
+  }, []);
 
   const navigateProgram = useCallback(
     (direction: -1 | 1) => {
@@ -618,6 +623,8 @@ function ProgramModal({
   const APPLE_EASE = [0.32, 0.72, 0, 1] as const;
   const swipeStartRef = useRef<{ x: number; y: number; canClose: boolean } | null>(null);
   const closeTrackingCleanupRef = useRef<(() => void) | null>(null);
+  const pullCloseTimeoutRef = useRef<number | null>(null);
+  const modalY = useMotionValue(0);
   const [selectedHeroByProgram, setSelectedHeroByProgram] = useState<Record<string, Record<number, Hero>>>({});
   const [selectedAddonIdsByProgram, setSelectedAddonIdsByProgram] = useState<Record<string, string[]>>({});
   const recommendedAddons =
@@ -652,63 +659,89 @@ function ProgramModal({
   useEffect(() => {
     return () => {
       closeTrackingCleanupRef.current?.();
+      if (pullCloseTimeoutRef.current !== null) window.clearTimeout(pullCloseTimeoutRef.current);
     };
   }, []);
+
+  const closeThreshold = () => window.innerHeight * 0.15;
+
+  const settlePull = () => {
+    animate(modalY, 0, { type: "spring", stiffness: 420, damping: 34, mass: 0.8 });
+  };
+
+  const closeWithPull = () => {
+    if (pullCloseTimeoutRef.current !== null) return;
+    animate(modalY, window.innerHeight, { duration: 0.24, ease: APPLE_EASE });
+    pullCloseTimeoutRef.current = window.setTimeout(onClose, 180);
+  };
 
   const startCloseTracking = (startY: number) => {
     closeTrackingCleanupRef.current?.();
 
     let closed = false;
-    const cleanup = () => {
+    const cleanupListeners = () => {
       window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", cleanup);
-      window.removeEventListener("pointercancel", cleanup);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", finish);
       window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", cleanup);
+      window.removeEventListener("mouseup", finish);
       window.removeEventListener("touchmove", onTouchMove);
-      window.removeEventListener("touchend", cleanup);
-      window.removeEventListener("touchcancel", cleanup);
+      window.removeEventListener("touchend", finish);
+      window.removeEventListener("touchcancel", finish);
       closeTrackingCleanupRef.current = null;
     };
 
-    const closeIfPulled = (clientY: number) => {
-      if (closed || clientY - startY <= 50) return;
+    const finish = () => {
+      cleanupListeners();
+      if (!closed) settlePull();
+    };
+
+    const updatePull = (clientY: number) => {
+      if (closed) return;
+      const dy = clientY - startY;
+      if (dy <= 0) {
+        modalY.set(0);
+        return;
+      }
+      modalY.set(Math.min(dy, window.innerHeight));
+      if (dy <= closeThreshold()) return;
       closed = true;
-      cleanup();
-      onClose();
+      cleanupListeners();
+      closeWithPull();
     };
 
     function onPointerMove(event: PointerEvent) {
-      closeIfPulled(event.clientY);
+      updatePull(event.clientY);
     }
 
     function onMouseMove(event: MouseEvent) {
-      closeIfPulled(event.clientY);
+      updatePull(event.clientY);
     }
 
     function onTouchMove(event: TouchEvent) {
       const touch = event.touches[0];
-      if (touch) closeIfPulled(touch.clientY);
+      if (touch) updatePull(touch.clientY);
     }
 
     window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", cleanup);
-    window.addEventListener("pointercancel", cleanup);
+    window.addEventListener("pointerup", finish);
+    window.addEventListener("pointercancel", finish);
     window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", cleanup);
+    window.addEventListener("mouseup", finish);
     window.addEventListener("touchmove", onTouchMove, { passive: true });
-    window.addEventListener("touchend", cleanup);
-    window.addEventListener("touchcancel", cleanup);
-    closeTrackingCleanupRef.current = cleanup;
+    window.addEventListener("touchend", finish);
+    window.addEventListener("touchcancel", finish);
+    closeTrackingCleanupRef.current = finish;
   };
 
   const startSwipe = (target: EventTarget, container: HTMLDivElement, x: number, y: number) => {
     const targetElement = target as HTMLElement;
     const isCloseHandle = !!targetElement.closest("[data-close-drag-handle]");
     const isTopDragZone = y - container.getBoundingClientRect().top <= 96;
+    const isAtScrollTop = container.scrollTop <= 2;
     if (targetElement.closest("a")) return;
     if (targetElement.closest("button") && !isCloseHandle) return;
-    swipeStartRef.current = { x, y, canClose: isCloseHandle || isTopDragZone };
+    swipeStartRef.current = { x, y, canClose: isCloseHandle || isTopDragZone || isAtScrollTop };
   };
 
   const moveSwipe = (x: number, y: number) => {
@@ -716,11 +749,13 @@ function ProgramModal({
     if (!start?.canClose) return;
     const dx = x - start.x;
     const dy = y - start.y;
-    const isDownClose = dy > 50 && Math.abs(dy) > Math.abs(dx) * 1.0;
+    const isDownClose = dy > 8 && Math.abs(dy) > Math.abs(dx) * 1.0;
     if (!isDownClose) return;
 
+    modalY.set(Math.min(dy, window.innerHeight));
+    if (dy <= closeThreshold()) return;
     swipeStartRef.current = null;
-    onClose();
+    closeWithPull();
   };
 
   const endSwipe = (x: number, y: number) => {
@@ -730,11 +765,13 @@ function ProgramModal({
 
     const dx = x - start.x;
     const dy = y - start.y;
-    const isDownClose = start.canClose && dy > 50 && Math.abs(dy) > Math.abs(dx) * 1.0;
+    const isDownClose = start.canClose && dy > 8 && Math.abs(dy) > Math.abs(dx) * 1.0;
     if (isDownClose) {
-      onClose();
+      if (dy > closeThreshold()) closeWithPull();
+      else settlePull();
       return;
     }
+    settlePull();
     // Horizontal swipe handled by framer-motion drag on the slide content (visual follow + spring)
   };
 
@@ -773,7 +810,7 @@ function ProgramModal({
       transition={{ duration: 0.2, ease: APPLE_EASE }}
     >
       <motion.div
-        className="relative w-full sm:max-w-2xl bg-white sm:rounded-3xl shadow-2xl h-[100dvh] sm:h-auto sm:max-h-[95vh] overflow-y-auto overflow-x-hidden"
+        className="relative w-full sm:max-w-2xl bg-white sm:rounded-3xl shadow-2xl h-[100dvh] sm:h-auto sm:max-h-[95vh] overflow-y-auto overflow-x-hidden overscroll-y-contain"
         onClick={(e) => e.stopPropagation()}
         onPointerDown={rememberSwipeStart}
         onPointerMove={handleSwipeMove}
@@ -784,10 +821,11 @@ function ProgramModal({
         onMouseDown={rememberMouseSwipeStart}
         onMouseMove={handleMouseSwipeMove}
         onMouseUp={handleMouseSwipeEnd}
-        initial={{ opacity: 0, scale: 0.96, y: 24 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.96, y: 24 }}
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.98 }}
         transition={{ duration: 0.32, ease: APPLE_EASE }}
+        style={{ y: modalY }}
       >
         <AnimatePresence mode="sync" initial={false} custom={slideDirection}>
           <motion.div

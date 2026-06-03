@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin/", "/boy/", "/girl/", "/baby/", "/all/"],
+      disallow: ["/admin/", "/boy/", "/girl/", "/baby/"],
     },
   };
 }

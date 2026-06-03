@@ -37,7 +37,7 @@ export function WhyUs() {
     <section className="bg-white px-5 py-14 sm:px-6 sm:py-20">
       <div className="mx-auto max-w-6xl">
         <div className="max-w-2xl">
-          <p className="text-sm font-black uppercase tracking-wide text-[#0a84ff]">Почему Мишаня</p>
+          <p className="text-sm font-black uppercase tracking-wide text-[#0a84ff]">Почему Страна Чудес</p>
           <h2 className="mt-2 font-[family-name:var(--font-nunito)] text-[32px] font-black leading-tight tracking-tight text-zinc-950 sm:text-5xl">
             Праздник, который любят и дети, и родители
           </h2>

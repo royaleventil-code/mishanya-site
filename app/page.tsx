@@ -1,5 +1,4 @@
 import { HomeHero } from "@/components/home/HomeHero";
-import { TrustBar } from "@/components/home/TrustBar";
 import { ProgramsShowcase } from "@/components/home/ProgramsShowcase";
 import { HeroesStrip } from "@/components/home/HeroesStrip";
 import { WhyUs } from "@/components/home/WhyUs";
@@ -14,7 +13,6 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
       <HomeHero />
-      <TrustBar />
       <ProgramsShowcase />
       <HeroesStrip />
       <WhyUs />

@@ -64,7 +64,7 @@ export function SiteFooter() {
 
         <div className="flex flex-col gap-2 text-sm">
           <div className="font-black text-white/90">Сайт</div>
-          <Link href="/programs" className="text-white/70 transition hover:text-white">
+          <Link href="/all" className="text-white/70 transition hover:text-white">
             Программы
           </Link>
           <Link href="/gallery" className="text-white/70 transition hover:text-white">

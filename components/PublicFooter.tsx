@@ -4,7 +4,7 @@ import { WA_DISPLAY } from "@/lib/whatsapp";
 const LINKS = [
   { href: "/about", label: "О нас" },
   { href: "/formats", label: "Форматы" },
-  { href: "/programs", label: "Программы" },
+  { href: "/all", label: "Программы" },
   { href: "/gallery", label: "Фото и отзывы" },
   { href: "/contacts", label: "Контакты" },
 ];

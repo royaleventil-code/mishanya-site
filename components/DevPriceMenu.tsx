@@ -1,21 +1,31 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown, X } from "lucide-react";
+import { ChevronDown, MessageCircle, X } from "lucide-react";
+import { whatsappLink } from "@/lib/whatsapp";
 
 const BOY_AGES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const GIRL_AGES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const WA_PROGRAM_HELP =
+  "Здравствуйте! Хочу узнать про все ваши программы и подобрать подходящий вариант.";
 
-export function DevPriceMenu({ theme = "light" }: { theme?: "light" | "dark" }) {
+type DevPriceMenuProps = {
+  theme?: "light" | "dark";
+  trigger?: (props: { open: boolean; onClick: () => void }) => ReactNode;
+};
+
+export function DevPriceMenu({ theme = "light", trigger }: DevPriceMenuProps) {
   const [open, setOpen] = useState(false);
   const isDark = theme === "dark";
   const summaryClass = isDark
     ? "border-white/25 bg-white/10 text-white hover:bg-white/16"
     : "border-[var(--color-line)] bg-white text-[var(--color-ink)] shadow-sm hover:bg-zinc-50";
   const closeMenu = () => setOpen(false);
+  const toggleMenu = () => setOpen((value) => !value);
   const canUsePortal = typeof document !== "undefined";
 
   useEffect(() => {
@@ -94,7 +104,15 @@ export function DevPriceMenu({ theme = "light" }: { theme?: "light" | "dark" }) 
             </div>
           </div>
 
-          <DevPriceLink href="/all" label="Показать все программы" secondary onSelect={closeMenu} />
+          <a
+            href={whatsappLink(WA_PROGRAM_HELP)}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center justify-center gap-2 rounded-lg bg-[var(--color-whatsapp)] px-3 py-3 text-center text-sm font-black text-white transition active:scale-95"
+          >
+            <MessageCircle className="h-4 w-4" strokeWidth={2.6} />
+            Помощь в подборе программы
+          </a>
         </div>
       </div>
     </div>
@@ -102,15 +120,19 @@ export function DevPriceMenu({ theme = "light" }: { theme?: "light" | "dark" }) 
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-        className={`flex h-10 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-black transition active:scale-95 ${summaryClass}`}
-      >
-        Цены
-        <ChevronDown className={`h-3.5 w-3.5 transition ${open ? "rotate-180" : ""}`} strokeWidth={2.6} />
-      </button>
+      {trigger ? (
+        trigger({ open, onClick: toggleMenu })
+      ) : (
+        <button
+          type="button"
+          onClick={toggleMenu}
+          aria-expanded={open}
+          className={`flex h-10 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-black transition active:scale-95 ${summaryClass}`}
+        >
+          Цены
+          <ChevronDown className={`h-3.5 w-3.5 transition ${open ? "rotate-180" : ""}`} strokeWidth={2.6} />
+        </button>
+      )}
       {open && canUsePortal ? createPortal(priceModal, document.body) : null}
     </>
   );

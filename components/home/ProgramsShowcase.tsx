@@ -7,7 +7,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { PROGRAMS } from "@/data/programs";
 import type { Program } from "@/lib/types";
 
-const FEATURED_IDS = ["super-heroes", "barbie", "neon", "harry-potter", "tiktok", "mishanya"];
+const FEATURED_IDS = ["super-heroes", "frozen-toddler-girls", "chemistry", "paw-patrol-toddler-boys", "tiktok", "mishanya"];
 
 function coverOf(p: Program): string {
   return p.cover ?? "/generated/program-party.webp";
@@ -44,7 +44,7 @@ export function ProgramsShowcase() {
               transition={{ duration: 0.5, delay: (i % 3) * 0.08, ease: [0.22, 1, 0.36, 1] }}
             >
               <Link
-                href={`/programs/${p.id}`}
+                href={`/all?program=${encodeURIComponent(p.id)}`}
                 className="group block overflow-hidden rounded-[var(--radius-card)] bg-white shadow-[var(--shadow-card)] ring-1 ring-black/[0.04] transition duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-card-hover)]"
               >
                 <div className="relative aspect-[4/3] overflow-hidden bg-[#f3f0ff]">
@@ -74,7 +74,7 @@ export function ProgramsShowcase() {
 
         <div className="mt-8 flex justify-center">
           <Link
-            href="/programs"
+            href="/all"
             className="group inline-flex items-center justify-center gap-2 rounded-full bg-zinc-950 px-7 py-4 text-base font-black text-white shadow-lg transition hover:bg-zinc-800 active:scale-95"
           >
             Все программы и цены

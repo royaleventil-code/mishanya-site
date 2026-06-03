@@ -292,7 +292,7 @@ export function ContactsContent() {
 
           <p className="mt-6 text-sm text-[var(--color-ink-soft)]">
             Хотите сперва посмотреть программы?{" "}
-            <Link href="/programs" className="font-black text-[#0a84ff]">
+            <Link href="/all" className="font-black text-[#0a84ff]">
               Открыть каталог
             </Link>
           </p>

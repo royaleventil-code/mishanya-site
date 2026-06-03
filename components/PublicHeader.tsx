@@ -3,14 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
-import { ProgramMenu } from "@/components/ProgramMenu";
+import { DevPriceMenu } from "@/components/DevPriceMenu";
 import { useAutoHideHeader } from "@/components/useAutoHideHeader";
 import { WA_MESSAGES, whatsappLink } from "@/lib/whatsapp";
 
 const NAV = [
   { href: "/about", label: "О нас" },
   { href: "/formats", label: "Форматы" },
-  { href: "/programs", label: "Программы" },
+  { href: "/all", label: "Программы" },
   { href: "/gallery", label: "Фото" },
   { href: "/contacts", label: "Контакты" },
 ];
@@ -56,7 +56,24 @@ export function PublicHeader({ theme = "light" }: { theme?: "light" | "dark" }) 
         </nav>
 
         <div className="flex items-center gap-2">
-          <ProgramMenu theme={theme} />
+          <DevPriceMenu
+            theme={theme}
+            trigger={({ open, onClick }) => (
+              <button
+                type="button"
+                onClick={onClick}
+                aria-expanded={open}
+                aria-haspopup="dialog"
+                className={`inline-flex h-11 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-black transition active:scale-95 ${
+                  isDark
+                    ? "border-white/25 bg-white/10 text-white hover:bg-white/16"
+                    : "border-[var(--color-line)] bg-white text-[var(--color-ink)] shadow-sm hover:bg-zinc-50"
+                }`}
+              >
+                Программы
+              </button>
+            )}
+          />
           <a
             href={whatsappLink(WA_MESSAGES.default)}
             target="_blank"

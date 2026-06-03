@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
-import { DevPriceMenu } from "@/components/DevPriceMenu";
-import { ProgramMenu } from "@/components/ProgramMenu";
 import { useAutoHideHeader } from "@/components/useAutoHideHeader";
 import { whatsappLink, WA_MESSAGES } from "@/lib/whatsapp";
 
@@ -23,10 +21,14 @@ export function Header() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo-ru.png" alt="Мишаня в Стране Чудес" className="h-[87px] w-auto" />
           </Link>
-          <DevPriceMenu />
         </div>
         <div className="flex items-center gap-2">
-          <ProgramMenu />
+          <Link
+            href="/all"
+            className="inline-flex h-11 shrink-0 items-center justify-center rounded-full border border-[var(--color-line)] bg-white px-4 text-sm font-black text-[var(--color-ink)] shadow-sm transition hover:bg-zinc-50 active:scale-95"
+          >
+            Программы
+          </Link>
           <a
             href={whatsappLink(WA_MESSAGES.default)}
             target="_blank"
