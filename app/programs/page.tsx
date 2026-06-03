@@ -92,10 +92,10 @@ export default function ProgramsPage() {
       <PublicHeader />
       <section className="px-5 py-14 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-6xl">
-          <p className="text-sm font-bold text-[#e34f35]">
+          <p className="text-sm font-black uppercase tracking-wide text-[#ff375f]">
             Программы
           </p>
-          <h1 className="mt-3 max-w-4xl break-words text-4xl font-black leading-tight sm:text-6xl">
+          <h1 className="mt-3 max-w-4xl break-words font-[family-name:var(--font-nunito)] text-4xl font-black leading-tight tracking-tight sm:text-6xl">
             Выберите готовую идею — мы адаптируем её под ваш праздник.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--color-ink-soft)]">
@@ -145,7 +145,7 @@ export default function ProgramsPage() {
             ))}
           </div>
 
-          <div className="mt-12 rounded-lg bg-white p-6 shadow-[var(--shadow-card)] md:flex md:items-center md:justify-between md:gap-8">
+          <div className="mt-12 rounded-[var(--radius-card)] bg-white p-6 shadow-[var(--shadow-card)] md:flex md:items-center md:justify-between md:gap-8">
             <div>
               <h2 className="text-2xl font-black">Хотите подобрать точнее?</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-ink-soft)]">
@@ -182,13 +182,18 @@ function FeaturedChoiceCard({
   return (
     <Link
       href={`/programs/${program.id}`}
-      className="group overflow-hidden rounded-lg bg-white shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]"
+      className="group overflow-hidden rounded-[var(--radius-card)] bg-white shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]"
     >
-      <ProgramVisual
-        program={program}
-        sizes="(max-width: 768px) 100vw, 25vw"
-        className="aspect-[16/10]"
-      />
+      <div className="relative">
+        <ProgramVisual
+          program={program}
+          sizes="(max-width: 768px) 100vw, 25vw"
+          className="aspect-[16/10]"
+        />
+        <div className="absolute left-2.5 top-2.5 rounded-full bg-white/92 px-2.5 py-1 text-xs font-black text-zinc-900 shadow-sm backdrop-blur">
+          от {program.priceFrom} {program.currency}
+        </div>
+      </div>
       <div className="p-4">
         <h3 className="text-lg font-black leading-tight">{title}</h3>
         <p className="mt-2 line-clamp-2 text-[13px] leading-5 text-[var(--color-ink-soft)]">
@@ -207,13 +212,18 @@ function ProgramCard({ program }: { program: Program }) {
   return (
     <Link
       href={`/programs/${program.id}`}
-      className="group overflow-hidden rounded-lg bg-white shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]"
+      className="group overflow-hidden rounded-[var(--radius-card)] bg-white shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]"
     >
-      <ProgramVisual
-        program={program}
-        sizes="(max-width: 768px) 100vw, 33vw"
-        className="aspect-[16/10]"
-      />
+      <div className="relative">
+        <ProgramVisual
+          program={program}
+          sizes="(max-width: 768px) 100vw, 33vw"
+          className="aspect-[16/10]"
+        />
+        <div className="absolute left-2.5 top-2.5 rounded-full bg-white/92 px-3 py-1 text-sm font-black text-zinc-900 shadow-sm backdrop-blur">
+          от {program.priceFrom} {program.currency}
+        </div>
+      </div>
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div>

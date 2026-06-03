@@ -1,60 +1,66 @@
+"use client";
+
+import { motion, useReducedMotion } from "framer-motion";
+
 const STATS = [
   {
     value: "10 000+",
     label: "праздников",
-    from: "#3b82f6",
-    to: "#06b6d4",
+    color: "#0a84ff",
   },
   {
     value: "11 лет",
     label: "в Израиле",
-    from: "#a855f7",
-    to: "#ec4899",
+    color: "#5e5ce6",
   },
   {
     value: "783",
     label: "отзыва 5★",
-    from: "#f59e0b",
-    to: "#fb923c",
+    color: "#ff9f0a",
   },
   {
     value: "100M",
     label: "просмотров YouTube",
-    from: "#10b981",
-    to: "#14b8a6",
+    color: "#ff375f",
   },
 ];
 
 export function Trust() {
+  const reduce = useReducedMotion();
+
   return (
-    <section className="py-12 sm:py-20 bg-[var(--color-ink)] text-white">
-      <div className="mx-auto max-w-5xl px-5 sm:px-6">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-4">
-          {STATS.map((s) => (
-            <div
+    <section className="relative overflow-hidden bg-[#0f0f14] py-12 text-white sm:py-20">
+      <div className="pointer-events-none absolute -left-16 -top-16 h-64 w-64 rounded-full bg-[#ff375f] opacity-30 blur-[90px]" />
+      <div className="pointer-events-none absolute -bottom-16 -right-16 h-64 w-64 rounded-full bg-[#5e5ce6] opacity-30 blur-[90px]" />
+
+      <div className="relative mx-auto max-w-5xl px-5 sm:px-6">
+        <div className="grid grid-cols-2 gap-6 sm:grid-cols-4 sm:gap-4">
+          {STATS.map((s, i) => (
+            <motion.div
               key={s.label}
-              className="relative rounded-2xl px-2 py-6 sm:px-4 text-center overflow-hidden"
+              initial={reduce ? false : { opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.5, delay: i * 0.08, ease: "easeOut" }}
+              className="relative overflow-hidden rounded-[var(--radius-card)] px-2 py-6 text-center sm:px-4"
               style={{
-                background: `radial-gradient(120% 100% at 50% 0%, ${s.from}26 0%, ${s.to}14 45%, transparent 75%)`,
-                boxShadow: `inset 0 0 0 1px ${s.from}33, 0 0 32px -8px ${s.to}40`,
+                background: `radial-gradient(120% 100% at 50% 0%, ${s.color}26 0%, ${s.color}14 45%, transparent 75%)`,
+                boxShadow: `inset 0 0 0 1px ${s.color}33, 0 0 32px -8px ${s.color}40`,
               }}
             >
               <div
-                className="text-[26px] sm:text-5xl font-bold tracking-tight tabular-nums leading-none whitespace-nowrap"
+                className="whitespace-nowrap font-[family-name:var(--font-nunito)] text-[26px] font-black leading-none tracking-tight tabular-nums sm:text-5xl"
                 style={{
-                  backgroundImage: `linear-gradient(135deg, ${s.from} 0%, ${s.to} 100%)`,
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                  filter: `drop-shadow(0 0 14px ${s.to}66)`,
+                  color: s.color,
+                  filter: `drop-shadow(0 0 14px ${s.color}66)`,
                 }}
               >
                 {s.value}
               </div>
-              <div className="mt-2 text-xs sm:text-sm text-white/70 whitespace-nowrap">
+              <div className="mt-2 whitespace-nowrap text-xs text-white/70 sm:text-sm">
                 {s.label}
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>

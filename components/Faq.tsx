@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 const ITEMS = [
   {
@@ -28,38 +29,60 @@ const ITEMS = [
 
 export function Faq() {
   const [open, setOpen] = useState<number | null>(null);
+  const reduce = useReducedMotion();
 
   return (
-    <section className="mx-auto max-w-3xl px-5 sm:px-6 py-10 sm:py-14">
-      <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+    <section className="mx-auto max-w-3xl px-5 py-10 sm:px-6 sm:py-14">
+      <p className="text-sm font-black uppercase tracking-wide text-[#ff9f0a]">
+        Вопросы
+      </p>
+      <h2 className="mt-2 font-[family-name:var(--font-nunito)] text-2xl font-black tracking-tight sm:text-3xl">
         Частые вопросы
       </h2>
 
-      <div className="mt-6 divide-y divide-[var(--color-line)] rounded-2xl bg-white shadow-[0_8px_24px_rgba(15,15,20,0.04)]">
+      <div className="mt-6 space-y-3">
         {ITEMS.map((item, i) => {
           const isOpen = open === i;
           return (
-            <div key={i}>
+            <motion.div
+              key={i}
+              initial={reduce ? false : { opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.5, delay: i * 0.08, ease: "easeOut" }}
+              className="overflow-hidden rounded-[var(--radius-card)] bg-white shadow-[var(--shadow-card)] ring-1 ring-black/[0.04]"
+            >
               <button
                 onClick={() => setOpen(isOpen ? null : i)}
-                className="w-full text-left px-5 py-4 sm:px-6 sm:py-5 flex items-center justify-between gap-4"
+                className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left sm:px-6 sm:py-5"
                 aria-expanded={isOpen}
               >
-                <span className="text-[15px] sm:text-base font-medium">
+                <span className="font-[family-name:var(--font-nunito)] text-[15px] font-black sm:text-base">
                   {item.q}
                 </span>
                 <ChevronDown
-                  className={`w-5 h-5 shrink-0 text-[var(--color-ink-soft)] transition-transform ${
+                  className={`h-5 w-5 shrink-0 text-[var(--color-ink-soft)] transition-transform duration-300 ${
                     isOpen ? "rotate-180" : ""
                   }`}
+                  strokeWidth={2.6}
                 />
               </button>
-              {isOpen && (
-                <div className="px-5 pb-5 sm:px-6 sm:pb-6 -mt-1 text-sm text-[var(--color-ink-soft)] leading-relaxed">
-                  {item.a}
-                </div>
-              )}
-            </div>
+              <AnimatePresence initial={false}>
+                {isOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    className="overflow-hidden"
+                  >
+                    <p className="-mt-1 px-5 pb-5 text-sm leading-relaxed text-[var(--color-ink-soft)] sm:px-6 sm:pb-6">
+                      {item.a}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
           );
         })}
       </div>

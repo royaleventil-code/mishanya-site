@@ -103,10 +103,10 @@ export default async function ProgramDetailPage({
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-7 lg:grid-cols-[1.08fr_0.92fr] lg:items-start">
             <div>
-              <p className="text-sm font-bold text-[#e34f35]">
+              <p className="text-sm font-bold text-[#ff375f]">
                 Выбранная программа
               </p>
-              <h1 className="mt-3 break-words text-4xl font-black leading-tight sm:text-7xl">
+              <h1 className="mt-3 break-words font-[family-name:var(--font-nunito)] text-4xl font-black leading-tight tracking-tight sm:text-7xl">
                 {program.title}
               </h1>
               {program.tagline && (
@@ -114,9 +114,15 @@ export default async function ProgramDetailPage({
                   {program.tagline}
                 </p>
               )}
+              <div className="mt-6 inline-flex items-baseline gap-2.5 rounded-[var(--radius-card)] bg-white px-5 py-3 shadow-[var(--shadow-card)] ring-1 ring-black/[0.04]">
+                <span className="text-sm font-bold text-[var(--color-ink-soft)]">Стоимость</span>
+                <span className="font-[family-name:var(--font-nunito)] text-2xl font-black text-[#ff375f]">
+                  от {program.priceFrom} {program.currency}
+                </span>
+              </div>
             </div>
 
-            <div className="overflow-hidden rounded-lg bg-white shadow-[var(--shadow-card)] lg:row-span-2">
+            <div className="overflow-hidden rounded-[var(--radius-card)] bg-white shadow-[var(--shadow-card)] lg:row-span-2">
               <ProgramVisual
                 program={program}
                 priority
@@ -139,7 +145,7 @@ export default async function ProgramDetailPage({
               </div>
 
               {program.note && (
-                <div className="mt-5 rounded-lg bg-white p-5 text-sm leading-6 shadow-[var(--shadow-card)]">
+                <div className="mt-5 rounded-[var(--radius-card)] bg-white p-5 text-sm leading-6 shadow-[var(--shadow-card)]">
                   <span className="font-black">Важно: </span>
                   {program.note}
                 </div>
@@ -156,12 +162,12 @@ export default async function ProgramDetailPage({
               Что входит в программу
             </h2>
             {program.includesHighlight && (
-              <p className="mt-4 rounded-lg bg-[#fffaf4] p-4 text-[15px] font-bold leading-6">
+              <p className="mt-4 rounded-[var(--radius-card)] bg-[#fffaf4] p-4 text-[15px] font-bold leading-6">
                 {program.includesHighlight}
               </p>
             )}
             {program.bonus && (
-              <p className="mt-3 rounded-lg bg-[#eaf4ff] p-4 text-sm leading-5">
+              <p className="mt-3 rounded-[var(--radius-card)] bg-[#eaf4ff] p-4 text-sm leading-5">
                 <span className="font-black">Бонус: </span>
                 {program.bonus}
               </p>
@@ -170,7 +176,7 @@ export default async function ProgramDetailPage({
 
           <div className="grid gap-2.5 sm:grid-cols-2">
             {includes.map((item) => (
-              <div key={item} className="flex gap-2.5 rounded-lg border border-[var(--color-line)] p-3">
+              <div key={item} className="flex gap-2.5 rounded-[var(--radius-card)] border border-[var(--color-line)] p-3">
                 <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#0a84ff]" strokeWidth={2.5} />
                 <span className="text-[13px] font-semibold leading-5">{item}</span>
               </div>
@@ -196,7 +202,7 @@ export default async function ProgramDetailPage({
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {CUSTOM_OPTIONS.map((option) => (
-              <div key={option.title} className="rounded-lg bg-white p-4 shadow-[var(--shadow-card)]">
+              <div key={option.title} className="rounded-[var(--radius-card)] bg-white p-4 shadow-[var(--shadow-card)]">
                 <Check className="h-5 w-5 text-[#0a84ff]" strokeWidth={2.5} />
                 <h3 className="mt-3 text-lg font-black leading-tight">{option.title}</h3>
                 <p className="mt-2 text-[13px] leading-5 text-[var(--color-ink-soft)]">
@@ -212,7 +218,7 @@ export default async function ProgramDetailPage({
         <section className="px-5 py-10 sm:px-6 sm:py-16">
           <div className="mx-auto max-w-6xl">
             <div className="max-w-3xl">
-              <p className="text-sm font-bold text-[#e34f35]">
+              <p className="text-sm font-bold text-[#ff375f]">
                 Герои
               </p>
               <h2 className="mt-3 text-4xl font-black leading-tight sm:text-5xl">
@@ -223,7 +229,7 @@ export default async function ProgramDetailPage({
             {program.heroSlots.length > 0 && (
               <div className="mt-8 grid gap-3 md:grid-cols-2">
                 {program.heroSlots.map((slot) => (
-                  <div key={`${slot.label}-${slot.kind}`} className="rounded-lg bg-white p-4 shadow-[var(--shadow-card)]">
+                  <div key={`${slot.label}-${slot.kind}`} className="rounded-[var(--radius-card)] bg-white p-4 shadow-[var(--shadow-card)]">
                     <div className="text-xl font-black">{slot.label}</div>
                     <div className="mt-1 text-sm leading-5 text-[var(--color-ink-soft)]">
                       {slot.kind === "mascot" ? "Ростовой персонаж" : "Ведущий в образе"}
@@ -256,7 +262,7 @@ export default async function ProgramDetailPage({
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {recommendedAddons.map((addon) => (
-                <div key={addon.id} className="rounded-lg bg-white p-4 text-zinc-950">
+                <div key={addon.id} className="rounded-[var(--radius-card)] bg-white p-4 text-zinc-950">
                   <div className="flex items-center gap-3">
                     {addon.icon ? (
                       <div className="relative h-14 w-14 shrink-0">
@@ -275,7 +281,7 @@ export default async function ProgramDetailPage({
       )}
 
       <section className="px-5 py-14 sm:px-6 sm:py-20">
-        <div className="mx-auto max-w-6xl rounded-lg bg-[#0a84ff] p-6 text-white sm:p-10">
+        <div className="mx-auto max-w-6xl rounded-[var(--radius-card)] bg-[#0a84ff] p-6 text-white sm:p-10">
           <h2 className="max-w-3xl text-4xl font-black leading-tight sm:text-5xl">
             Нравится эта идея? Напишите дату, город и возраст ребенка.
           </h2>
@@ -321,7 +327,7 @@ function Fact({
   value: string;
 }) {
   return (
-    <div className="rounded-lg bg-white p-4 shadow-[var(--shadow-card)]">
+    <div className="rounded-[var(--radius-card)] bg-white p-4 shadow-[var(--shadow-card)]">
       <div className="flex items-center gap-2 text-[#0a84ff]">{icon}</div>
       <div className="mt-3 text-sm font-bold text-[var(--color-ink-soft)]">
         {title}
@@ -335,7 +341,7 @@ function HeroMiniCard({ hero }: { hero: Hero }) {
   const image = getHeroImage(hero.id);
 
   return (
-    <div className="rounded-lg bg-white p-3 text-center shadow-[var(--shadow-card)]">
+    <div className="rounded-[var(--radius-card)] bg-white p-3 text-center shadow-[var(--shadow-card)]">
       <div className="relative mx-auto h-24 w-full">
         {image ? (
           <Image src={image} alt={hero.name} fill sizes="110px" className="object-contain" />

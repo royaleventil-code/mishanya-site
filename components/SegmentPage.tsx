@@ -1,4 +1,4 @@
-import { Header } from "./Header";
+import { PublicHeader } from "./PublicHeader";
 import { Hero } from "./Hero";
 import { ProgramsSection } from "./ProgramsSection";
 import { SocialProofSection } from "./SocialProofSection";
@@ -6,7 +6,7 @@ import { HowItWorks } from "./HowItWorks";
 import { Trust } from "./Trust";
 import { Faq } from "./Faq";
 import { FinalCta } from "./FinalCta";
-import { Footer } from "./Footer";
+import { PublicFooter } from "./PublicFooter";
 import { StickyMobileCta } from "./StickyMobileCta";
 import { PROGRAMS } from "@/data/programs";
 import { HEROES } from "@/data/heroes";
@@ -60,7 +60,7 @@ export function SegmentPage({ segment, title, emojiOverride, audience }: Props) 
 
   return (
     <>
-      <Header />
+      <PublicHeader />
       <Hero emoji={emojiOverride ?? cfg.emoji} title={title} accent={cfg.accent} />
       <ProgramsSection
         segment={segment}
@@ -74,7 +74,7 @@ export function SegmentPage({ segment, title, emojiOverride, audience }: Props) 
       <Trust />
       <Faq />
       <FinalCta accent={cfg.accent} />
-      <Footer />
+      <PublicFooter />
       <StickyMobileCta />
     </>
   );

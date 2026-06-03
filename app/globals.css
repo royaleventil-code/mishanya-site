@@ -6,7 +6,7 @@
   --color-girl: #ff375f;
   --color-all-seg: #5e5ce6;
   --color-whatsapp: #25d366;
-  --color-canvas: #fafafa;
+  --color-canvas: #fffaf4;
   --color-ink: #0f0f14;
   --color-ink-soft: #5a5a64;
   --color-line: #ececef;
@@ -33,6 +33,14 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Playful rounded display font for all headings (premium-fairytale system) */
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-nunito), var(--font-sans);
 }
 
 /* Smooth scroll for in-page anchors */

@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
-import { DevPriceMenu } from "@/components/DevPriceMenu";
 import { ProgramMenu } from "@/components/ProgramMenu";
 import { useAutoHideHeader } from "@/components/useAutoHideHeader";
 import { WA_MESSAGES, whatsappLink } from "@/lib/whatsapp";
@@ -42,7 +41,6 @@ export function PublicHeader({ theme = "light" }: { theme?: "light" | "dark" }) 
               className="h-20 w-auto"
             />
           </Link>
-          <DevPriceMenu theme={theme} />
         </div>
 
         <nav className="hidden items-center gap-5 text-sm font-bold md:flex">

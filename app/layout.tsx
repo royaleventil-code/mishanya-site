@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Lilita_One } from "next/font/google";
+import { Inter, Lilita_One, Nunito } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -12,6 +12,13 @@ const lilita = Lilita_One({
   subsets: ["latin"],
   weight: "400",
   variable: "--font-display",
+  display: "swap",
+});
+
+const nunito = Nunito({
+  subsets: ["latin", "cyrillic"],
+  weight: ["700", "800", "900"],
+  variable: "--font-nunito",
   display: "swap",
 });
 
@@ -32,7 +39,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ru" className={`${inter.variable} ${lilita.variable}`}>
+    <html lang="ru" className={`${inter.variable} ${lilita.variable} ${nunito.variable}`}>
       <body className="min-h-screen antialiased">{children}</body>
     </html>
   );
