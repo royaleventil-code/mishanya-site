@@ -20,6 +20,17 @@ const GENERAL_INQUIRY_LINES = [
 
 export const WA_MESSAGES = {
   default: GENERAL_INQUIRY_LINES.join("\n"),
+  audience: (audienceLabel: string) =>
+    [
+      "Здравствуйте! Хочу детский праздник.",
+      "Программа: помогите подобрать",
+      `Возраст ребёнка: ${audienceLabel}`,
+      "Дата:",
+      "Город:",
+      "Количество детей:",
+      "Место:",
+      "Язык:",
+    ].join("\n"),
   program: (name: string, durationLabel?: string, priceFrom?: number, programId = "") => {
     const programLine = [
       `Программа: ${name}`,

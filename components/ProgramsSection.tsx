@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, animate, motion, useMotionValue } from "framer-motion";
-import { Baby, Banknote, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, MapPin, Users, X } from "lucide-react";
+import { Baby, Banknote, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, MapPin, MessageCircle, Users, X } from "lucide-react";
 import type { AudienceContext, Gender, Hero, Program, SegmentId } from "@/lib/types";
 import { filterHeroes, filterPrograms } from "@/lib/filtering";
 import { sortHeroes } from "@/lib/heroOrder";
@@ -23,6 +23,66 @@ type AddonItem = (typeof ADDONS)[number];
 type HeroChoice = {
   label: string;
   hero: Hero;
+};
+
+type ProgramMoodConfig = {
+  label: string;
+  tint: string;
+  glow: string;
+  accent: string;
+  marks: string[];
+};
+
+const PROGRAM_MOODS: Record<string, ProgramMoodConfig> = {
+  chemistry: {
+    label: "лабораторное шоу",
+    tint: "rgba(20, 184, 166, 0.24)",
+    glow: "rgba(16, 185, 129, 0.34)",
+    accent: "#14b8a6",
+    marks: ["●", "○", "✦"],
+  },
+  neon: {
+    label: "световое шоу",
+    tint: "rgba(168, 85, 247, 0.28)",
+    glow: "rgba(34, 211, 238, 0.32)",
+    accent: "#a855f7",
+    marks: ["—", "✦", "—"],
+  },
+  "harry-potter": {
+    label: "магический квест",
+    tint: "rgba(245, 158, 11, 0.24)",
+    glow: "rgba(124, 58, 237, 0.24)",
+    accent: "#f59e0b",
+    marks: ["✦", "✧", "✦"],
+  },
+  "super-heroes": {
+    label: "геройская миссия",
+    tint: "rgba(37, 99, 235, 0.24)",
+    glow: "rgba(239, 68, 68, 0.28)",
+    accent: "#2563eb",
+    marks: ["▰", "▱", "▰"],
+  },
+  kpop: {
+    label: "танцевальная сцена",
+    tint: "rgba(236, 72, 153, 0.24)",
+    glow: "rgba(99, 102, 241, 0.28)",
+    accent: "#ec4899",
+    marks: ["♪", "✦", "♪"],
+  },
+  tiktok: {
+    label: "челлендж-вечеринка",
+    tint: "rgba(6, 182, 212, 0.24)",
+    glow: "rgba(244, 63, 94, 0.28)",
+    accent: "#06b6d4",
+    marks: ["♪", "↗", "♪"],
+  },
+  foam: {
+    label: "пенная вечеринка",
+    tint: "rgba(125, 211, 252, 0.26)",
+    glow: "rgba(45, 212, 191, 0.28)",
+    accent: "#0ea5e9",
+    marks: ["○", "●", "○"],
+  },
 };
 
 const GIRL_COSTUME_HERO_IDS = {
@@ -643,6 +703,7 @@ function ProgramModal({
     audienceLabel: audienceMessageValue(audience),
   });
   const ctaLabel = `Написать про ${program.title} ${programPriceCtaLabel(program, totalPriceFrom)}`;
+  const mood = PROGRAM_MOODS[program.id];
 
   useEffect(() => {
     return () => {
@@ -872,6 +933,7 @@ function ProgramModal({
               {program.emoji}
             </span>
           )}
+          <ProgramMoodLayer mood={mood} />
         </div>
 
         <div className="p-5 pb-28 sm:p-7 sm:pb-7">
@@ -935,25 +997,21 @@ function ProgramModal({
               <div className="text-xs uppercase tracking-wider opacity-90 font-medium">
                 {hasStartingPrice(program.id) ? "Стоимость от" : "Стоимость"}
               </div>
-              <div className="mt-1 text-3xl sm:text-4xl font-bold tracking-tight tabular-nums">
-                {formatPrice(totalPriceFrom)}
+              <div className="mt-1 flex min-h-[40px] items-center justify-center text-3xl font-bold tracking-tight tabular-nums sm:min-h-[48px] sm:text-4xl">
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.span
+                    key={totalPriceFrom}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.16, ease: APPLE_EASE }}
+                  >
+                    {formatPrice(totalPriceFrom)}
+                  </motion.span>
+                </AnimatePresence>
               </div>
               <Banknote className="w-5 h-5 mx-auto mt-1 opacity-90" strokeWidth={2.2} />
             </div>
-          </div>
-
-          <div className="sticky bottom-0 z-20 -mx-5 mt-4 bg-white/95 px-5 py-3 backdrop-blur sm:static sm:mx-auto sm:w-[85%] sm:bg-transparent sm:px-0 sm:py-0">
-            <a
-              href={whatsappLink(orderMessage)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-whatsapp)] px-5 py-4 text-base font-semibold text-white shadow-lg transition active:scale-[0.98]"
-            >
-              {ctaLabel}
-            </a>
-            <p className="mt-2 text-center text-[11px] font-semibold text-[var(--color-ink-soft)]">
-              В WhatsApp уже подставлены программа, длительность и цена.
-            </p>
           </div>
 
           {/* Includes — iOS list style */}
@@ -1112,9 +1170,10 @@ function ProgramModal({
             href={whatsappLink(orderMessage)}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-7 w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-whatsapp)] px-5 py-4 text-base font-semibold text-white shadow-lg transition active:scale-[0.98]"
+            className="mt-7 inline-flex min-h-[56px] w-full items-center justify-center gap-2 rounded-2xl bg-[var(--color-whatsapp)] px-5 py-4 text-center text-base font-semibold leading-tight text-white shadow-lg transition active:scale-[0.98]"
           >
-            Узнать подробнее про эту программу
+            <MessageCircle className="h-5 w-5 shrink-0" strokeWidth={2.5} />
+            {ctaLabel}
           </a>
         </div>
           </motion.div>
@@ -1190,6 +1249,37 @@ function ProgramModal({
   );
 }
 
+function ProgramMoodLayer({ mood }: { mood?: ProgramMoodConfig }) {
+  if (!mood) return null;
+
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `linear-gradient(180deg, transparent 42%, ${mood.tint} 100%)`,
+        }}
+      />
+      <span
+        className="absolute -left-8 bottom-6 h-24 w-24 rounded-full blur-2xl"
+        style={{ background: mood.glow }}
+      />
+      <span
+        className="absolute -right-8 top-8 h-20 w-20 rounded-full blur-2xl"
+        style={{ background: mood.tint }}
+      />
+      <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-[11px] font-black text-[var(--color-ink)] shadow-sm backdrop-blur">
+        {mood.marks.map((mark, index) => (
+          <span key={`${mark}-${index}`} style={{ color: mood.accent }}>
+            {mark}
+          </span>
+        ))}
+        <span>{mood.label}</span>
+      </div>
+    </div>
+  );
+}
+
 function RecommendedAddonsPanel({
   addons,
   accent,
@@ -1223,22 +1313,30 @@ function RecommendedAddonsPanel({
             key={addon.id}
             type="button"
             onClick={() => onToggleAddon(addon.id)}
-            className="relative rounded-2xl bg-white p-3 text-center shadow-[0_10px_30px_rgba(15,15,20,0.06)] transition active:scale-[0.98] border"
+            aria-pressed={selected}
+            className="relative rounded-2xl border bg-white p-3 text-center shadow-[0_10px_30px_rgba(15,15,20,0.06)] transition-[box-shadow,transform] active:scale-[0.98] focus:outline-none focus-visible:ring-2"
             style={{
               borderColor: selected ? accent : "transparent",
               boxShadow: selected
                 ? `0 0 0 2px ${accent}22, 0 14px 34px rgba(15,15,20,0.10)`
                 : "0 10px 30px rgba(15,15,20,0.06)",
+              ['--tw-ring-color' as never]: accent,
             }}
           >
-            {selected && (
-              <span
-                className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full text-white"
-                style={{ backgroundColor: accent }}
-              >
-                <Check className="h-4 w-4" strokeWidth={2.8} />
-              </span>
-            )}
+            <AnimatePresence>
+              {selected && (
+                <motion.span
+                  className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full text-white"
+                  style={{ backgroundColor: accent }}
+                  initial={{ opacity: 0, scale: 0.82 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.82 }}
+                  transition={{ duration: 0.12 }}
+                >
+                  <Check className="h-4 w-4" strokeWidth={2.8} />
+                </motion.span>
+              )}
+            </AnimatePresence>
             <div className="mx-auto flex h-20 items-center justify-center">
               {addon.icon ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -1281,7 +1379,13 @@ function ProgramChoiceSummary({
   totalPriceFrom: number;
 }) {
   return (
-    <div className="apple-glass mt-6 rounded-3xl p-4">
+    <motion.div
+      className="apple-glass mt-6 rounded-3xl p-4"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
+      aria-live="polite"
+    >
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-base font-bold">Мой праздник</h3>
         <span className="apple-glass-strong rounded-full px-3 py-1 text-[11px] font-semibold text-[var(--color-ink)]">
@@ -1291,36 +1395,54 @@ function ProgramChoiceSummary({
 
       <div className="mt-4 space-y-2.5 text-sm">
         <SummaryRow label="Программа" value={`${programName}, ${durationLabel}`} />
-        {heroChoices.map((choice) => (
-          <SummaryRow key={choice.hero.id} label={choice.label} value={choice.hero.name} />
-        ))}
-        {addons.length > 0 && (
-          <SummaryRow
-            label={addons.length === 1 ? "Дополнительная опция" : "Дополнительные опции"}
-            value={addons.map((addon) => addon.name).join(", ")}
-          />
-        )}
+        <AnimatePresence initial={false}>
+          {heroChoices.map((choice) => (
+            <SummaryRow key={choice.hero.id} label={choice.label} value={choice.hero.name} />
+          ))}
+          {addons.length > 0 && (
+            <SummaryRow
+              key="addons"
+              label={addons.length === 1 ? "Дополнительная опция" : "Дополнительные опции"}
+              value={addons.map((addon) => addon.name).join(", ")}
+            />
+          )}
+        </AnimatePresence>
         <div className="apple-glass-strong flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-[var(--color-ink)]">
           <span className="text-xs font-medium opacity-70">Итого</span>
-          <span className="text-base font-bold tabular-nums">
-            {formatProgramPriceLabel(programId, totalPriceFrom)}
-          </span>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={totalPriceFrom}
+              className="text-base font-bold tabular-nums"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.14, ease: [0.32, 0.72, 0, 1] }}
+            >
+              {formatProgramPriceLabel(programId, totalPriceFrom)}
+            </motion.span>
+          </AnimatePresence>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start justify-between gap-3 rounded-2xl bg-white/75 px-3 py-2.5 shadow-sm">
+    <motion.div
+      className="flex items-start justify-between gap-3 rounded-2xl bg-white/75 px-3 py-2.5 shadow-sm"
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -4 }}
+      transition={{ duration: 0.14, ease: [0.32, 0.72, 0, 1] }}
+    >
       <span className="text-xs font-medium leading-snug text-[var(--color-ink-soft)]">
         {label}
       </span>
       <span className="max-w-[58%] text-right text-sm font-bold leading-snug text-[var(--color-ink)]">
         {value}
       </span>
-    </div>
+    </motion.div>
   );
 }
 
@@ -1354,16 +1476,18 @@ function HeroSlotPanel({
   return (
     <div className="mt-6 border border-[var(--color-line)] rounded-2xl overflow-hidden">
       <button
+        type="button"
         onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
         className="w-full flex items-center justify-between px-4 py-3.5 text-left bg-white hover:bg-zinc-50"
       >
         <span className="text-[15px] font-semibold">{label}</span>
         <div className="flex items-center gap-2">
           <span
-            className="max-w-[150px] truncate text-xs font-medium"
+            className="max-w-[150px] truncate text-xs font-bold"
             style={selectedHero ? { color: accent } : undefined}
           >
-            {selectedHero?.name ?? heroes.length}
+            {selectedHero?.name ?? `${heroes.length} вариантов`}
           </span>
           <ChevronDown
             className={`w-5 h-5 text-[var(--color-ink-soft)] transition-transform ${
@@ -1372,54 +1496,70 @@ function HeroSlotPanel({
           />
         </div>
       </button>
-      {open && (
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 p-3 bg-zinc-50/60">
-          {heroes.map((h) => {
-            const selected = selectedHeroId === h.id;
-            return (
-            <button
-              key={h.id}
-              type="button"
-              onClick={() => onSelectHero(h)}
-              className="relative rounded-xl bg-white pt-1 pb-2 px-1.5 text-center hover:shadow-md transition group border"
-              style={{
-                borderColor: selected ? accent : "transparent",
-                boxShadow: selected
-                  ? `0 0 0 2px ${accent}22, 0 10px 24px rgba(15,15,20,0.10)`
-                  : undefined,
-              }}
-            >
-              {selected && (
-                <span
-                  className="absolute right-1.5 top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full text-white"
-                  style={{ backgroundColor: accent }}
-                >
-                  <Check className="h-3.5 w-3.5" strokeWidth={2.8} />
-                </span>
-              )}
-              <div
-                className="w-full h-[88px] flex items-center justify-center"
-                style={{ filter: `drop-shadow(0 4px 12px ${accent}40)` }}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            className="grid grid-cols-3 sm:grid-cols-5 gap-2 p-3 bg-zinc-50/60"
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.16, ease: [0.32, 0.72, 0, 1] }}
+          >
+            {heroes.map((h) => {
+              const selected = selectedHeroId === h.id;
+              return (
+              <button
+                key={h.id}
+                type="button"
+                onClick={() => onSelectHero(h)}
+                aria-pressed={selected}
+                className="relative rounded-xl border bg-white px-1.5 pb-2 pt-1 text-center transition-[box-shadow,transform] hover:shadow-md active:scale-[0.98] focus:outline-none focus-visible:ring-2"
+                style={{
+                  borderColor: selected ? accent : "transparent",
+                  boxShadow: selected
+                    ? `0 0 0 2px ${accent}22, 0 10px 24px rgba(15,15,20,0.10)`
+                    : undefined,
+                  ['--tw-ring-color' as never]: accent,
+                }}
               >
-                {getHeroImage(h.id) ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={getHeroImage(h.id)!}
-                    alt={h.name}
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <span className="text-[44px] leading-none">{getHeroEmoji(h.id)}</span>
-                )}
-              </div>
-              <div className="mt-0.5 text-[11px] leading-tight font-medium line-clamp-2 min-h-[28px] flex items-center justify-center">
-                {h.name}
-              </div>
-            </button>
-            );
-          })}
-        </div>
-      )}
+                <AnimatePresence>
+                  {selected && (
+                    <motion.span
+                      className="absolute right-1.5 top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full text-white"
+                      style={{ backgroundColor: accent }}
+                      initial={{ opacity: 0, scale: 0.82 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.82 }}
+                      transition={{ duration: 0.12 }}
+                    >
+                      <Check className="h-3.5 w-3.5" strokeWidth={2.8} />
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+                <div
+                  className="w-full h-[88px] flex items-center justify-center"
+                  style={{ filter: `drop-shadow(0 4px 12px ${accent}40)` }}
+                >
+                  {getHeroImage(h.id) ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={getHeroImage(h.id)!}
+                      alt={h.name}
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <span className="text-[44px] leading-none">{getHeroEmoji(h.id)}</span>
+                  )}
+                </div>
+                <div className="mt-0.5 text-[11px] leading-tight font-medium line-clamp-2 min-h-[28px] flex items-center justify-center">
+                  {h.name}
+                </div>
+              </button>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, MessageCircle } from "lucide-react";
@@ -7,11 +8,41 @@ import { motion, useReducedMotion } from "framer-motion";
 import { DevPriceMenu } from "@/components/DevPriceMenu";
 import { WA_MESSAGES, whatsappLink } from "@/lib/whatsapp";
 
-const HERO_ADVANTAGES = [
-  { value: "11 лет", label: "дарим праздники в Израиле", color: "#ff9f0a" },
-  { value: "10 000+", label: "праздников провели", color: "#0a84ff" },
-  { value: "783", label: "отзыва родителей · 5,0", color: "#ff375f" },
-  { value: "RU / HE", label: "ведущие на русском и иврите", color: "#5e5ce6" },
+type HeroAdvantage = {
+  value: string;
+  counter?: {
+    from: number;
+    to: number;
+    suffix?: string;
+  };
+  label: string;
+  color: string;
+};
+
+const HERO_ADVANTAGES: HeroAdvantage[] = [
+  {
+    value: "11 лет",
+    counter: { from: 1, to: 11, suffix: " лет" },
+    label: "дарим праздники в Израиле",
+    color: "#ff9f0a",
+  },
+  {
+    value: "10 000+",
+    counter: { from: 1000, to: 10000, suffix: "+" },
+    label: "праздников провели",
+    color: "#0a84ff",
+  },
+  {
+    value: "783 отзыва",
+    counter: { from: 0, to: 783, suffix: " отзыва" },
+    label: "средняя оценка 5,0",
+    color: "#ff375f",
+  },
+  {
+    value: "RU / HE",
+    label: "ведущие на русском и иврите",
+    color: "#5e5ce6",
+  },
 ];
 
 const NAV = [
@@ -68,6 +99,18 @@ export function HomeHero() {
       opacity: 1,
       y: 0,
       transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+    },
+  };
+  const ctaRise = {
+    hidden: { opacity: 0, y: reduce ? 0 : 14, scale: reduce ? 1 : 0.985 },
+    show: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        duration: 0.85,
+        ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
+      },
     },
   };
 
@@ -185,24 +228,15 @@ export function HomeHero() {
             className="mt-5 grid max-w-xl grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3"
           >
             {HERO_ADVANTAGES.map((item) => (
-              <div
+              <HeroStatCard
                 key={item.label}
-                className="rounded-2xl bg-white/78 px-3 py-2.5 shadow-sm ring-1 ring-black/5 backdrop-blur"
-              >
-                <div
-                  className="font-[family-name:var(--font-nunito)] text-xl font-black leading-none sm:text-2xl"
-                  style={{ color: item.color }}
-                >
-                  {item.value}
-                </div>
-                <div className="mt-1 text-[11px] font-bold leading-snug text-[var(--color-ink-soft)] sm:text-xs">
-                  {item.label}
-                </div>
-              </div>
+                item={item}
+                reduce={reduce}
+              />
             ))}
           </motion.div>
 
-          <motion.div variants={rise} className="mt-7 flex flex-col gap-3 sm:flex-row">
+          <motion.div variants={ctaRise} className="mt-7 flex flex-col gap-3 sm:flex-row">
             <DevPriceMenu
               trigger={({ open, onClick }) => (
                 <button
@@ -210,7 +244,7 @@ export function HomeHero() {
                   onClick={onClick}
                   aria-expanded={open}
                   aria-haspopup="dialog"
-                  className="group inline-flex items-center justify-center gap-2 rounded-full bg-[linear-gradient(100deg,#ff375f,#ff5a7a)] px-7 py-4 text-base font-black text-white shadow-[0_14px_30px_rgba(255,55,95,0.4)] transition hover:shadow-[0_18px_40px_rgba(255,55,95,0.5)] active:scale-95"
+                  className="group inline-flex items-center justify-center gap-2 rounded-full bg-[linear-gradient(100deg,#ff375f,#ff5a7a)] px-7 py-4 text-base font-black text-white shadow-[0_14px_30px_rgba(255,55,95,0.4)] transition-[box-shadow,transform,background] duration-300 ease-out hover:shadow-[0_18px_40px_rgba(255,55,95,0.5)] active:scale-[0.98]"
                 >
                   Смотреть программы
                   <ChevronRight className="h-5 w-5 transition group-hover:translate-x-0.5" strokeWidth={2.6} />
@@ -263,4 +297,120 @@ export function HomeHero() {
       </div>
     </section>
   );
+}
+
+function HeroStatCard({
+  item,
+  reduce,
+}: {
+  item: HeroAdvantage;
+  reduce: boolean | null;
+}) {
+  return (
+    <div className="relative min-h-[74px] overflow-hidden rounded-2xl bg-white/78 px-3 py-2.5 shadow-sm ring-1 ring-black/5 backdrop-blur">
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-px opacity-70"
+        style={{ background: `linear-gradient(90deg, transparent, ${item.color}, transparent)` }}
+      />
+      <div
+        className="font-[family-name:var(--font-nunito)] text-xl font-black leading-none sm:text-2xl"
+        style={{ color: item.color }}
+      >
+        {item.counter ? (
+          <OdometerCounter
+            value={item.value}
+            from={item.counter.from}
+            to={item.counter.to}
+            suffix={item.counter.suffix}
+            reduce={reduce}
+          />
+        ) : (
+          item.value
+        )}
+      </div>
+      <div className="mt-1 text-[11px] font-bold leading-snug text-[var(--color-ink-soft)] sm:text-xs">
+        {item.label}
+      </div>
+    </div>
+  );
+}
+
+function OdometerCounter({
+  value,
+  from,
+  to,
+  suffix = "",
+  reduce,
+}: {
+  value: string;
+  from: number;
+  to: number;
+  suffix?: string;
+  reduce: boolean | null;
+}) {
+  const [current, setCurrent] = useState(reduce ? to : from);
+
+  useEffect(() => {
+    if (reduce) {
+      setCurrent(to);
+      return;
+    }
+
+    let frame = 0;
+    const duration = 2200;
+
+    const tick = (startTime: number) => {
+      const step = (now: number) => {
+        const progress = Math.min((now - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        setCurrent(Math.round(from + (to - from) * eased));
+
+        if (progress < 1) {
+          frame = window.requestAnimationFrame(step);
+        }
+      };
+
+      frame = window.requestAnimationFrame(step);
+    };
+
+    setCurrent(from);
+    frame = window.requestAnimationFrame(tick);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [from, reduce, to]);
+
+  if (reduce) return <span>{value}</span>;
+
+  const formattedValue = formatOdometerNumber(current);
+  const finalValue = formatOdometerNumber(to);
+  const needsSuffixGap = suffix.startsWith(" ");
+  const visibleSuffix = needsSuffixGap ? suffix.trimStart() : suffix;
+
+  return (
+    <span
+      aria-label={value}
+      className="inline-flex items-baseline whitespace-nowrap tabular-nums"
+      role="text"
+    >
+      <span
+        className="inline-block text-left"
+        style={{ minWidth: `${finalValue.length * 0.56}em` }}
+        aria-hidden
+      >
+        {formattedValue}
+      </span>
+      {visibleSuffix && (
+        <span aria-hidden className={needsSuffixGap ? "ml-1" : undefined}>
+          {visibleSuffix}
+        </span>
+      )}
+    </span>
+  );
+}
+
+function formatOdometerNumber(value: number): string {
+  return Math.max(0, value).toLocaleString("ru-RU").replace(/\u00a0/g, " ");
 }

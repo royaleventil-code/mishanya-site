@@ -7,7 +7,6 @@ import { Trust } from "./Trust";
 import { Faq } from "./Faq";
 import { FinalCta } from "./FinalCta";
 import { PublicFooter } from "./PublicFooter";
-import { StickyMobileCta } from "./StickyMobileCta";
 import { AgeAtmosphere } from "./AgeAtmosphere";
 import { PROGRAMS } from "@/data/programs";
 import { HEROES } from "@/data/heroes";
@@ -81,7 +80,6 @@ export function SegmentPage({ segment, title, emojiOverride, audience }: Props) 
           <PublicFooter />
         </div>
       </main>
-      <StickyMobileCta />
     </>
   );
 }
