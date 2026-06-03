@@ -5,11 +5,11 @@ export const metadata = createPageMetadata({
   title: `${SITE_NAME} — детские праздники в Израиле`,
   description:
     "Мишаня в Стране Чудес, также Михаил в Стране Чудес и Страна Чудес: детские праздники, герои и шоу в Израиле.",
-  path: "/",
+  path: "/ru",
   canonicalPath: "/ru",
   image: "/generated/program-party.webp",
 });
 
-export default function Home() {
+export default function RuHomePage() {
   return <HomePage />;
 }

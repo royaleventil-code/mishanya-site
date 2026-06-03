@@ -21,7 +21,7 @@ import {
 import { motion, useReducedMotion } from "framer-motion";
 import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
-import { whatsappLink } from "@/lib/whatsapp";
+import { WA_MESSAGES, whatsappLink } from "@/lib/whatsapp";
 
 const FORMATS = [
   {
@@ -94,8 +94,6 @@ const BENEFITS = [
     text: "Нам доверяют тысячи семей, детские сады и мэрии по всему Израилю.",
   },
 ];
-
-const WA_FORMAT = "Здравствуйте! Хочу обсудить формат детского праздника.";
 
 export default function FormatsPage() {
   const reduce = useReducedMotion();
@@ -214,7 +212,7 @@ export default function FormatsPage() {
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <Link
-                href="/all"
+                href="/ru/all"
                 className="group inline-flex items-center justify-center gap-2 rounded-full bg-[linear-gradient(100deg,#ff375f,#ff5a7a)] px-7 py-4 text-base font-black text-white shadow-[0_14px_30px_rgba(255,55,95,0.4)] transition active:scale-95"
               >
                 Все программы и цены
@@ -224,7 +222,7 @@ export default function FormatsPage() {
                 />
               </Link>
               <a
-                href={whatsappLink(WA_FORMAT)}
+                href={whatsappLink(WA_MESSAGES.default)}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-whatsapp)] px-7 py-4 text-base font-black text-white shadow-lg transition active:scale-95"

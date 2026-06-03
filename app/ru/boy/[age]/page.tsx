@@ -24,11 +24,11 @@ export async function generateMetadata({
   return createAgeProgramsMetadata({
     gender: "boy",
     age: ageNum,
-    path: `/boy/${ageNum}`,
+    path: `/ru/boy/${ageNum}`,
   });
 }
 
-export default async function BoyAgePage({
+export default async function RuBoyAgePage({
   params,
 }: {
   params: Promise<{ age: string }>;

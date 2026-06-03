@@ -5,10 +5,7 @@ import Link from "next/link";
 import { ChevronRight, MessageCircle } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { DevPriceMenu } from "@/components/DevPriceMenu";
-import { whatsappLink } from "@/lib/whatsapp";
-
-const WA_HELP =
-  "Здравствуйте! Помогите, пожалуйста, подобрать праздник для ребёнка 🎉";
+import { WA_MESSAGES, whatsappLink } from "@/lib/whatsapp";
 
 const HERO_ADVANTAGES = [
   { value: "11 лет", label: "дарим праздники в Израиле", color: "#ff9f0a" },
@@ -18,7 +15,7 @@ const HERO_ADVANTAGES = [
 ];
 
 const NAV = [
-  { href: "/all", label: "Программы" },
+  { href: "/ru/all", label: "Программы" },
   { href: "/gallery", label: "Фото и видео" },
   { href: "/about", label: "О нас" },
   { href: "/contacts", label: "Контакты" },
@@ -131,7 +128,7 @@ export function HomeHero() {
       </div>
 
       {/* header */}
-      <header className="relative z-20 mx-auto flex h-20 max-w-6xl items-center justify-between px-5 sm:h-24 sm:px-6">
+      <header className="relative z-20 mx-auto flex h-24 max-w-6xl items-center justify-between px-5 sm:h-28 sm:px-6">
         <Link href="/" aria-label="Мишаня в Стране Чудес" className="flex items-center">
           <Image
             src="/logo-ru.png"
@@ -139,7 +136,7 @@ export function HomeHero() {
             width={180}
             height={92}
             priority
-            className="h-14 w-auto sm:h-16"
+            className="h-[86px] w-auto sm:h-24"
           />
         </Link>
         <nav className="hidden items-center gap-6 text-sm font-bold text-zinc-700 md:flex">
@@ -150,13 +147,13 @@ export function HomeHero() {
           ))}
         </nav>
         <a
-          href={whatsappLink(WA_HELP)}
+          href={whatsappLink(WA_MESSAGES.default)}
           target="_blank"
           rel="noreferrer"
           aria-label="Написать в WhatsApp"
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[var(--color-whatsapp)] px-4 text-sm font-bold text-white shadow-lg transition active:scale-95"
+          className="inline-flex h-14 min-w-14 items-center justify-center gap-2 rounded-full bg-[var(--color-whatsapp)] px-4 text-sm font-bold text-white shadow-lg transition active:scale-95 sm:h-16 sm:min-w-16 sm:px-5 sm:text-base"
         >
-          <MessageCircle className="h-4 w-4" strokeWidth={2.4} />
+          <MessageCircle className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.4} />
           <span className="hidden sm:inline">WhatsApp</span>
         </a>
       </header>
@@ -221,7 +218,7 @@ export function HomeHero() {
               )}
             />
             <a
-              href={whatsappLink(WA_HELP)}
+              href={whatsappLink(WA_MESSAGES.default)}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-4 text-base font-bold text-zinc-900 shadow-md ring-1 ring-black/5 transition hover:bg-zinc-50 active:scale-95"

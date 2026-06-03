@@ -4,7 +4,7 @@ import { WA_DISPLAY } from "@/lib/whatsapp";
 const LINKS = [
   { href: "/about", label: "О нас" },
   { href: "/formats", label: "Форматы" },
-  { href: "/all", label: "Программы" },
+  { href: "/ru/all", label: "Программы" },
   { href: "/gallery", label: "Фото и отзывы" },
   { href: "/contacts", label: "Контакты" },
 ];
@@ -16,7 +16,8 @@ export function PublicFooter() {
         <div>
           <div className="text-lg font-black">Мишаня в Стране Чудес</div>
           <div className="mt-1 text-sm text-white/60">
-            Детские праздники, шоу и персонажи в Израиле
+            Детские праздники, шоу и персонажи в Израиле. Также: Михаил в Стране Чудес,
+            Страна Чудес.
           </div>
           <div className="mt-3 text-sm font-bold text-white/82">{WA_DISPLAY}</div>
         </div>

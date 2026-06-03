@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description:
     "Все программы детских праздников Мишани с ценами, описанием и возможностью подобрать вариант под ребенка.",
   alternates: {
-    canonical: "/all",
+    canonical: "/ru/all",
   },
   robots: {
     index: false,

@@ -6,12 +6,10 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, MessageCircle, X } from "lucide-react";
-import { whatsappLink } from "@/lib/whatsapp";
+import { WA_MESSAGES, whatsappLink } from "@/lib/whatsapp";
 
 const BOY_AGES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const GIRL_AGES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-const WA_PROGRAM_HELP =
-  "Здравствуйте! Хочу узнать про все ваши программы и подобрать подходящий вариант.";
 
 type DevPriceMenuProps = {
   theme?: "light" | "dark";
@@ -82,7 +80,7 @@ export function DevPriceMenu({ theme = "light", trigger }: DevPriceMenuProps) {
             </div>
             <div className="grid grid-cols-5 gap-1.5">
               {BOY_AGES.map((age) => (
-                <DevPriceLink key={age} href={`/boy/${age}`} label={`${age}`} compact onSelect={closeMenu} />
+                <DevPriceLink key={age} href={`/ru/boy/${age}`} label={`${age}`} compact onSelect={closeMenu} />
               ))}
             </div>
           </div>
@@ -99,13 +97,13 @@ export function DevPriceMenu({ theme = "light", trigger }: DevPriceMenuProps) {
             </div>
             <div className="grid grid-cols-5 gap-1.5">
               {GIRL_AGES.map((age) => (
-                <DevPriceLink key={age} href={`/girl/${age}`} label={`${age}`} compact onSelect={closeMenu} />
+                <DevPriceLink key={age} href={`/ru/girl/${age}`} label={`${age}`} compact onSelect={closeMenu} />
               ))}
             </div>
           </div>
 
           <a
-            href={whatsappLink(WA_PROGRAM_HELP)}
+            href={whatsappLink(WA_MESSAGES.default)}
             target="_blank"
             rel="noreferrer"
             className="flex items-center justify-center gap-2 rounded-lg bg-[var(--color-whatsapp)] px-3 py-3 text-center text-sm font-black text-white transition active:scale-95"

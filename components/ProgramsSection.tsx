@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, animate, motion, useMotionValue } from "framer-motion";
 import { Baby, Banknote, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, MapPin, Users, X } from "lucide-react";
-import type { AudienceContext, FilterState, Hero, Program, SegmentId } from "@/lib/types";
+import type { AudienceContext, Gender, Hero, Program, SegmentId } from "@/lib/types";
 import { filterHeroes, filterPrograms } from "@/lib/filtering";
 import { sortHeroes } from "@/lib/heroOrder";
 import { whatsappLink, WA_MESSAGES } from "@/lib/whatsapp";
+import { formatProgramPriceLabel, formatShekelPrice, hasStartingPrice } from "@/lib/prices";
 import { ADDONS } from "@/data/addons";
 import { getHeroEmoji, getHeroImage } from "@/data/heroes";
 
@@ -166,20 +167,139 @@ const GIRL_MASCOT_HERO_IDS = {
   ],
 } as const;
 
-const KIDS_OPTIONS = [
-  { value: "small" as const, label: "До 15" },
-  { value: "large" as const, label: "Больше 15" },
-];
-const LOCATION_OPTIONS = [
-  { value: "indoor" as const, label: "В помещении" },
-  { value: "outdoor" as const, label: "На улице" },
-];
-const LANGUAGE_OPTIONS = [
-  { value: "ru" as const, label: "Русский" },
-  { value: "he" as const, label: "Иврит" },
-  { value: "en" as const, label: "Английский" },
-  { value: "mixed" as const, label: "Смешанный" },
-];
+function formatPrice(price: number): string {
+  return formatShekelPrice(price);
+}
+
+function programPriceLabel(program: Program, amount = program.priceFrom): string {
+  return formatProgramPriceLabel(program.id, amount);
+}
+
+function programPriceCtaLabel(program: Program, amount: number): string {
+  return hasStartingPrice(program.id)
+    ? `от ${formatPrice(amount)}`
+    : `за ${formatPrice(amount)}`;
+}
+
+function ageLabel(age: number): string {
+  if (age === 1) return "1 год";
+  if (age >= 2 && age <= 4) return `${age} года`;
+  return `${age} лет`;
+}
+
+type AudienceIntro = {
+  lead: string;
+  body: string;
+};
+
+const AGE_INTROS: Record<Gender, Record<number, AudienceIntro>> = {
+  boy: {
+    1: {
+      lead: "В 1 год праздник должен быть мягким и спокойным.",
+      body: "Лучше заходят короткие игры, музыка, мыльные пузыри и добрые герои рядом с родителями, без шума и перегруза.",
+    },
+    2: {
+      lead: "В 2 года мальчикам уже хочется двигаться и всё трогать.",
+      body: "Подойдут простые задания, танцы, пузыри, машинки и герои с понятными действиями: побежать, поймать, повторить, победить.",
+    },
+    3: {
+      lead: "В 3 года мальчики любят быть героями маленького приключения.",
+      body: "Ниже собраны программы с динамичными персонажами, простыми миссиями, танцами и активными играми без сложных правил.",
+    },
+    4: {
+      lead: "В 4 года уже отлично работают сюжет, команда и герой.",
+      body: "Супергерои, спасательные миссии, гонки, весёлые испытания и яркий реквизит помогают детям быстро включиться в праздник.",
+    },
+    5: {
+      lead: "В 5 лет хочется больше драйва и настоящих побед.",
+      body: "Подойдут программы с эстафетами, командными заданиями, супергероями, ростовыми куклами и понятным финалом, где именинник в центре.",
+    },
+    6: {
+      lead: "В 6 лет детям уже важны соревнование, сюжет и эффектность.",
+      body: "Выбираем форматы с активными играми, шоу-моментами, командными испытаниями и героями, которые выглядят по-настоящему ярко.",
+    },
+    7: {
+      lead: "В 7 лет праздник должен быть быстрым, смешным и азартным.",
+      body: "Хорошо заходят квесты, супергерои, Minecraft-стиль, челленджи, танцевальные задания и игры, где можно проявить характер.",
+    },
+    8: {
+      lead: "В 8 лет дети ценят не только героя, но и саму игру.",
+      body: "Нужны задания посложнее, больше юмора, командная динамика, современные темы и шоу-эффекты, чтобы праздник ощущался взрослее.",
+    },
+    9: {
+      lead: "В 9 лет мальчикам важны энергия, стиль и ощущение вызова.",
+      body: "Подойдут активные программы, баттлы, командные испытания, современные персонажи и форматы, где дети не просто смотрят, а участвуют.",
+    },
+    10: {
+      lead: "В 10 лет лучше работают взрослый темп и сильная идея.",
+      body: "Выбираем программы с сильной подачей: больше шоу, челленджей, юмора, командной борьбы и современных тем для их возраста.",
+    },
+  },
+  girl: {
+    1: {
+      lead: "В 1 год важны нежность, спокойный ритм и красивые эмоции.",
+      body: "Подойдут короткие музыкальные игры, пузыри, мягкие персонажи и сказочная атмосфера, чтобы малышке было комфортно рядом с родителями.",
+    },
+    2: {
+      lead: "В 2 года девочкам чаще всего заходят музыка, движение и мягкое волшебство.",
+      body: "Лучше выбирать программы с понятными играми, танцами, пузырями, добрыми героями и красивыми моментами без длинного сюжета.",
+    },
+    3: {
+      lead: "В 3 года особенно работают сказка, музыка и понятный сюжет.",
+      body: "Ниже собраны яркие программы с любимыми героинями, танцами, простыми заданиями и красивым финалом для именинницы.",
+    },
+    4: {
+      lead: "В 4 года девочки уже легко входят в роль и верят в историю.",
+      body: "Принцессы, единорожки, феи, Леди Баг, танцы и волшебные задания помогают сделать праздник живым, нежным и активным.",
+    },
+    5: {
+      lead: "В 5 лет хочется сказки, движения и внимания к имениннице.",
+      body: "Хорошо заходят программы с героиней на выбор, танцами, красивыми заданиями, ростовой куклой и моментами для фото.",
+    },
+    6: {
+      lead: "В 6 лет девочкам уже важны образ, музыка и чувство праздника.",
+      body: "Подойдут программы с яркими героинями, танцевальными блоками, шоу-элементами, конкурсами и красивым поздравлением в финале.",
+    },
+    7: {
+      lead: "В 7 лет праздник становится более стильным и самостоятельным.",
+      body: "Можно добавлять TikTok-настроение, K-pop, Wednesday, танцы, челленджи и программы, где девочки чувствуют себя частью команды.",
+    },
+    8: {
+      lead: "В 8 лет девочкам важны стиль, музыка и необычный формат.",
+      body: "Хорошо работают современные героини, танцевальные задания, K-pop, неон, шоу-эффекты и игры, где есть выбор и самовыражение.",
+    },
+    9: {
+      lead: "В 9 лет хочется уже не малышовый праздник, а яркое событие.",
+      body: "Подойдут K-pop, TikTok, Wednesday, неоновые форматы, челленджи, танцы и шоу, где дети выглядят взрослее и увереннее.",
+    },
+    10: {
+      lead: "В 10 лет лучше выбирать формат с характером и современным настроением.",
+      body: "Нужны танцы, челленджи, K-pop, неон и эффектные шоу — больше стиля, общения и ярких кадров.",
+    },
+  },
+};
+
+function audienceMessageValue(audience?: AudienceContext): string | undefined {
+  if (!audience?.age || !audience.gender) return undefined;
+  return `${audience.gender === "boy" ? "мальчик" : "девочка"} ${ageLabel(audience.age)}`;
+}
+
+function audienceIntroText(audience?: AudienceContext): AudienceIntro {
+  if (audience?.age && audience.gender) {
+    const copy = AGE_INTROS[audience.gender][audience.age];
+    if (copy) return copy;
+  }
+
+  return {
+    lead: "Поможем выбрать без лишней путаницы.",
+    body: "Ниже собраны программы, с которых проще всего начать выбор. Детали подстроим под ребёнка, площадку и настроение праздника.",
+  };
+}
+
+function getProgramIdFromUrl(): string | null {
+  if (typeof window === "undefined") return null;
+  return new URLSearchParams(window.location.search).get("program")?.trim() || null;
+}
 
 function heroChoiceLabel(label: string): string {
   const normalized = label.toLowerCase();
@@ -234,21 +354,13 @@ function getProgramCover(
 }
 
 export function ProgramsSection({ segment, accent, programs, heroes, audience }: Props) {
-  const [filters, setFilters] = useState<FilterState>({
-    kidsCount: null,
-    location: null,
-    language: null,
-  });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [slideDirection, setSlideDirection] = useState<-1 | 1>(1);
+  const audienceIntro = audienceIntroText(audience);
 
-  const visibleProgramsBase = useMemo(
+  const visiblePrograms = useMemo(
     () => filterPrograms(programs, segment, { kidsCount: null, location: null, language: null }, audience),
     [programs, segment, audience],
-  );
-  const visiblePrograms = useMemo(
-    () => filterPrograms(programs, segment, filters, audience),
-    [programs, segment, filters, audience],
   );
 
   const selectedIndex = selectedId
@@ -257,12 +369,16 @@ export function ProgramsSection({ segment, accent, programs, heroes, audience }:
   const selectedProgram = selectedId
     ? visiblePrograms[selectedIndex] ?? programs.find((p) => p.id === selectedId) ?? null
     : null;
+  const selectedPosition = selectedIndex >= 0 ? selectedIndex + 1 : undefined;
   const canGoPrevious = selectedIndex > 0;
   const canGoNext = selectedIndex >= 0 && selectedIndex < visiblePrograms.length - 1;
 
   useEffect(() => {
-    const programId = new URLSearchParams(window.location.search).get("program");
-    if (programId) setSelectedId(programId);
+    const programId = getProgramIdFromUrl();
+    if (!programId) return;
+
+    const timer = window.setTimeout(() => setSelectedId(programId), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const navigateProgram = useCallback(
@@ -295,30 +411,12 @@ export function ProgramsSection({ segment, accent, programs, heroes, audience }:
 
   return (
     <section className="mx-auto max-w-3xl px-5 sm:px-6 pb-10">
-      {/* Filters */}
-      <div className="mt-6 sm:mt-8 grid grid-cols-3 gap-2">
-        <FilterDropdown
-          label="Дети"
-          options={KIDS_OPTIONS}
-          value={filters.kidsCount}
-          onChange={(v) => setFilters((f) => ({ ...f, kidsCount: v }))}
-          accent={accent}
-        />
-        <FilterDropdown
-          label="Место"
-          options={LOCATION_OPTIONS}
-          value={filters.location}
-          onChange={(v) => setFilters((f) => ({ ...f, location: v }))}
-          accent={accent}
-        />
-        <FilterDropdown
-          label="Язык"
-          options={LANGUAGE_OPTIONS}
-          value={filters.language}
-          onChange={(v) => setFilters((f) => ({ ...f, language: v }))}
-          accent={accent}
-        />
-      </div>
+      {audience?.age && audience.gender && (
+        <div className="mt-5 rounded-3xl bg-white px-4 py-3 text-sm leading-6 shadow-[var(--shadow-card)] ring-1 ring-black/[0.04]">
+          <span className="font-black">{audienceIntro.lead}</span>{" "}
+          {audienceIntro.body}
+        </div>
+      )}
 
       {/* Programs grid */}
       <div className="mt-8 grid sm:grid-cols-2 gap-4">
@@ -334,17 +432,10 @@ export function ProgramsSection({ segment, accent, programs, heroes, audience }:
         ))}
         {visiblePrograms.length === 0 && (
           <div className="sm:col-span-2 text-center py-12 text-[var(--color-ink-soft)] text-sm">
-            По выбранным фильтрам нет программ. Попробуйте снять один из фильтров.
+            Для этой подборки пока нет программ.
           </div>
         )}
       </div>
-
-      {visiblePrograms.length > 0 &&
-        visiblePrograms.length !== visibleProgramsBase.length && (
-          <p className="mt-4 text-xs text-[var(--color-ink-soft)] text-center">
-            Показано {visiblePrograms.length} из {visibleProgramsBase.length} программ
-          </p>
-        )}
 
       <AnimatePresence>
         {selectedProgram && (
@@ -355,8 +446,7 @@ export function ProgramsSection({ segment, accent, programs, heroes, audience }:
             segment={segment}
             heroes={heroes}
             audience={audience}
-            languageFilter={filters.language}
-            position={selectedIndex + 1}
+            position={selectedPosition}
             total={visiblePrograms.length}
             canGoPrevious={canGoPrevious}
             canGoNext={canGoNext}
@@ -367,108 +457,6 @@ export function ProgramsSection({ segment, accent, programs, heroes, audience }:
         )}
       </AnimatePresence>
     </section>
-  );
-}
-
-// ---------- FilterDropdown ----------
-
-type FilterDropdownProps<T extends string> = {
-  label: string;
-  options: { value: T; label: string }[];
-  value: T | null;
-  onChange: (v: T | null) => void;
-  accent: string;
-};
-
-function FilterDropdown<T extends string>({
-  label,
-  options,
-  value,
-  onChange,
-  accent,
-}: FilterDropdownProps<T>) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onClick = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", onClick);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  const selected = options.find((o) => o.value === value);
-  const isActive = selected != null;
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className={`relative z-20 w-full px-3 py-2.5 text-sm font-medium border transition active:scale-[0.97] flex items-center justify-between gap-1.5 ${
-          open ? "rounded-t-2xl rounded-b-none" : "rounded-full"
-        }`}
-        style={
-          isActive
-            ? { backgroundColor: accent, borderColor: accent, color: "white" }
-            : {
-                backgroundColor: "white",
-                borderColor: "var(--color-line)",
-                color: "var(--color-ink)",
-              }
-        }
-      >
-        <span className="truncate text-left">{selected?.label ?? label}</span>
-        <ChevronDown
-          className={`w-4 h-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
-          strokeWidth={2.5}
-        />
-      </button>
-
-      {open && (
-        <div className="absolute top-full left-0 right-0 -mt-px z-20 rounded-t-none rounded-b-2xl bg-white shadow-[0_16px_40px_rgba(15,15,20,0.15)] border border-t-0 border-[var(--color-line)] overflow-hidden">
-          {isActive && (
-            <button
-              type="button"
-              onClick={() => {
-                onChange(null);
-                setOpen(false);
-              }}
-              className="w-full text-left px-4 py-2.5 text-sm text-[var(--color-ink-soft)] hover:bg-zinc-50 border-b border-[var(--color-line)]"
-            >
-              Сбросить
-            </button>
-          )}
-          {options.map((o) => {
-            const active = value === o.value;
-            return (
-              <button
-                key={o.value}
-                type="button"
-                onClick={() => {
-                  onChange(active ? null : o.value);
-                  setOpen(false);
-                }}
-                className="w-full text-left px-4 py-2.5 text-sm hover:bg-zinc-50 flex items-center justify-between gap-2"
-                style={active ? { color: accent, fontWeight: 600 } : undefined}
-              >
-                {o.label}
-                {active && <Check className="w-4 h-4" strokeWidth={2.5} />}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -563,8 +551,7 @@ function ProgramCard({
         <div className="mt-2 flex items-center justify-center flex-wrap gap-x-2 gap-y-1.5">
           {/* Price pill */}
           <div className="apple-glass inline-flex items-baseline gap-1 rounded-full px-3 py-1.5 text-sm font-bold text-[var(--color-ink)]">
-            <span className="text-[10px] font-medium opacity-60">от</span>
-            {program.priceFrom.toLocaleString("ru-RU")} ₪
+            {programPriceLabel(program)}
           </div>
 
           <span className="inline-flex items-center gap-1 text-xs text-[var(--color-ink-soft)]">
@@ -597,7 +584,6 @@ function ProgramModal({
   segment,
   heroes,
   audience,
-  languageFilter,
   position,
   total,
   canGoPrevious,
@@ -611,8 +597,7 @@ function ProgramModal({
   segment: SegmentId;
   heroes: Hero[];
   audience?: AudienceContext;
-  languageFilter: FilterState["language"];
-  position: number;
+  position?: number;
   total: number;
   canGoPrevious: boolean;
   canGoNext: boolean;
@@ -646,6 +631,7 @@ function ProgramModal({
   const hasCustomChoice = selectedHeroChoices.length > 0 || selectedAddons.length > 0;
   const indoorOnly = program.locations.length === 1 && program.locations[0] === "indoor";
   const orderMessage = WA_MESSAGES.programOrder({
+    programId: program.id,
     programName: program.title,
     durationLabel: program.durationLabel,
     heroChoices: selectedHeroChoices.map((choice) => ({
@@ -654,7 +640,9 @@ function ProgramModal({
     })),
     addons: selectedAddons.map((addon) => addon.name),
     totalPriceFrom,
+    audienceLabel: audienceMessageValue(audience),
   });
+  const ctaLabel = `Написать про ${program.title} ${programPriceCtaLabel(program, totalPriceFrom)}`;
 
   useEffect(() => {
     return () => {
@@ -810,6 +798,9 @@ function ProgramModal({
       transition={{ duration: 0.2, ease: APPLE_EASE }}
     >
       <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Программа ${program.title}`}
         className="relative w-full sm:max-w-2xl bg-white sm:rounded-3xl shadow-2xl h-[100dvh] sm:h-auto sm:max-h-[95vh] overflow-y-auto overflow-x-hidden overscroll-y-contain"
         onClick={(e) => e.stopPropagation()}
         onPointerDown={rememberSwipeStart}
@@ -883,7 +874,7 @@ function ProgramModal({
           )}
         </div>
 
-        <div className="p-5 sm:p-7">
+        <div className="p-5 pb-28 sm:p-7 sm:pb-7">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center">
             {program.title}
           </h2>
@@ -892,7 +883,7 @@ function ProgramModal({
               {program.tagline}
             </p>
           )}
-          {total > 1 && (
+          {total > 1 && position !== undefined && (
             <p className="mt-2 text-center text-xs font-medium tabular-nums text-[var(--color-ink-soft)]">
               {position} / {total}
             </p>
@@ -942,13 +933,27 @@ function ProgramModal({
             />
             <div className="relative text-[var(--color-ink)]">
               <div className="text-xs uppercase tracking-wider opacity-90 font-medium">
-                Стоимость от
+                {hasStartingPrice(program.id) ? "Стоимость от" : "Стоимость"}
               </div>
               <div className="mt-1 text-3xl sm:text-4xl font-bold tracking-tight tabular-nums">
-                {totalPriceFrom.toLocaleString("ru-RU")} ₪
+                {formatPrice(totalPriceFrom)}
               </div>
               <Banknote className="w-5 h-5 mx-auto mt-1 opacity-90" strokeWidth={2.2} />
             </div>
+          </div>
+
+          <div className="sticky bottom-0 z-20 -mx-5 mt-4 bg-white/95 px-5 py-3 backdrop-blur sm:static sm:mx-auto sm:w-[85%] sm:bg-transparent sm:px-0 sm:py-0">
+            <a
+              href={whatsappLink(orderMessage)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-whatsapp)] px-5 py-4 text-base font-semibold text-white shadow-lg transition active:scale-[0.98]"
+            >
+              {ctaLabel}
+            </a>
+            <p className="mt-2 text-center text-[11px] font-semibold text-[var(--color-ink-soft)]">
+              В WhatsApp уже подставлены программа, длительность и цена.
+            </p>
           </div>
 
           {/* Includes — iOS list style */}
@@ -1021,7 +1026,7 @@ function ProgramModal({
               filterHeroes(
                 heroes.filter((h) => h.kind === slot.kind && !excludedHeroIds.has(h.id)),
                 segment,
-                languageFilter,
+                null,
                 girlHeroIds || useUniversalHeroPool ? [] : slot.includedHeroIds,
                 audience,
                 onlyHeroIds,
@@ -1094,6 +1099,7 @@ function ProgramModal({
 
           {hasCustomChoice && (
             <ProgramChoiceSummary
+              programId={program.id}
               programName={program.title}
               durationLabel={program.durationLabel}
               heroChoices={selectedHeroChoices}
@@ -1102,16 +1108,13 @@ function ProgramModal({
             />
           )}
 
-          {/* WhatsApp main CTA */}
           <a
             href={whatsappLink(orderMessage)}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-7 w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-whatsapp)] px-5 py-4 text-base font-semibold text-white shadow-lg transition active:scale-[0.98]"
           >
-            {hasCustomChoice
-              ? "Написать менеджеру с этим выбором"
-              : "Написать менеджеру про эту программу"}
+            Узнать подробнее про эту программу
           </a>
         </div>
           </motion.div>
@@ -1252,7 +1255,7 @@ function RecommendedAddonsPanel({
               {addon.name}
             </div>
             <div className="mt-1 text-xs font-medium text-[var(--color-ink-soft)]">
-              от {addon.priceFrom.toLocaleString("ru-RU")} ₪
+              от {formatPrice(addon.priceFrom)}
             </div>
           </button>
           );
@@ -1263,12 +1266,14 @@ function RecommendedAddonsPanel({
 }
 
 function ProgramChoiceSummary({
+  programId,
   programName,
   durationLabel,
   heroChoices,
   addons,
   totalPriceFrom,
 }: {
+  programId: string;
   programName: string;
   durationLabel: string;
   heroChoices: HeroChoice[];
@@ -1298,7 +1303,7 @@ function ProgramChoiceSummary({
         <div className="apple-glass-strong flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-[var(--color-ink)]">
           <span className="text-xs font-medium opacity-70">Итого</span>
           <span className="text-base font-bold tabular-nums">
-            от {totalPriceFrom.toLocaleString("ru-RU")} ₪
+            {formatProgramPriceLabel(programId, totalPriceFrom)}
           </span>
         </div>
       </div>

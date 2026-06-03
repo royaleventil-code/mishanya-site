@@ -26,7 +26,7 @@ export default function NotFound() {
               На главную
             </Link>
             <Link
-              href="/all"
+              href="/ru/all"
               className="inline-flex justify-center rounded-full border border-[var(--color-line)] bg-white px-6 py-3.5 text-base font-black text-[var(--color-ink)] transition active:scale-95"
             >
               Программы

@@ -2,9 +2,7 @@
 
 import { MessageCircle, Phone } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
-import { WA_DISPLAY, whatsappLink } from "@/lib/whatsapp";
-
-const WA = "Здравствуйте! Хочу организовать детский праздник 🎉 Подскажите детали, пожалуйста.";
+import { WA_DISPLAY, WA_MESSAGES, whatsappLink } from "@/lib/whatsapp";
 
 export function FinalCta() {
   const reduce = useReducedMotion();
@@ -30,7 +28,7 @@ export function FinalCta() {
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <a
-              href={whatsappLink(WA)}
+              href={whatsappLink(WA_MESSAGES.default)}
               target="_blank"
               rel="noreferrer"
               className="cta-glow inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-whatsapp)] px-8 py-4 text-base font-black text-white transition active:scale-95"

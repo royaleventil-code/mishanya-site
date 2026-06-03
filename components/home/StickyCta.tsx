@@ -1,9 +1,7 @@
 "use client";
 
 import { MessageCircle } from "lucide-react";
-import { whatsappLink } from "@/lib/whatsapp";
-
-const WA = "Здравствуйте! Хочу организовать детский праздник 🎉";
+import { WA_MESSAGES, whatsappLink } from "@/lib/whatsapp";
 
 export function StickyCta() {
   return (
@@ -12,7 +10,7 @@ export function StickyCta() {
       style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
     >
       <a
-        href={whatsappLink(WA)}
+        href={whatsappLink(WA_MESSAGES.default)}
         target="_blank"
         rel="noreferrer"
         className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-whatsapp)] py-3.5 text-base font-black text-white shadow-lg active:scale-95"

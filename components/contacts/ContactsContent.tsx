@@ -14,9 +14,8 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
-import { WA_DISPLAY, whatsappLink } from "@/lib/whatsapp";
+import { WA_DISPLAY, WA_MESSAGES, whatsappLink } from "@/lib/whatsapp";
 
-const HERO_MESSAGE = "Здравствуйте! Хочу организовать детский праздник 🎉";
 const TEL_HREF = `tel:${WA_DISPLAY.replace(/[^+\d]/g, "")}`;
 
 const CONTACT_CARDS = [
@@ -26,7 +25,7 @@ const CONTACT_CARDS = [
     title: "WhatsApp",
     text: "Самый быстрый способ — ответим в течение нескольких минут.",
     value: WA_DISPLAY,
-    href: whatsappLink(HERO_MESSAGE),
+    href: whatsappLink(WA_MESSAGES.default),
     external: true,
     cta: "Написать",
   },
@@ -116,7 +115,7 @@ export function ContactsContent() {
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <a
-              href={whatsappLink(HERO_MESSAGE)}
+              href={whatsappLink(WA_MESSAGES.default)}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-whatsapp)] px-8 py-4 text-base font-black text-white shadow-lg transition active:scale-95"
@@ -274,7 +273,7 @@ export function ContactsContent() {
               </div>
             </div>
             <a
-              href={whatsappLink(HERO_MESSAGE)}
+              href={whatsappLink(WA_MESSAGES.default)}
               target="_blank"
               rel="noreferrer"
               className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--color-whatsapp)] px-8 py-4 text-base font-black text-white shadow-lg transition active:scale-95"
@@ -292,7 +291,7 @@ export function ContactsContent() {
 
           <p className="mt-6 text-sm text-[var(--color-ink-soft)]">
             Хотите сперва посмотреть программы?{" "}
-            <Link href="/all" className="font-black text-[#0a84ff]">
+            <Link href="/ru/all" className="font-black text-[#0a84ff]">
               Открыть каталог
             </Link>
           </p>

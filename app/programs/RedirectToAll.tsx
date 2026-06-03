@@ -11,7 +11,7 @@ type Props = {
 };
 
 export function RedirectToAll({
-  target = "/all",
+  target = "/ru/all",
   title = "Открываем все программы",
   text = "Мы перенесли каталог программ на новую страницу с ценами и удобным выбором.",
 }: Props) {

@@ -61,10 +61,13 @@ export function HeroesStrip() {
     (delay = AUTO_SPIN_DELAY_MS) => {
       if (reduce) return;
       clearAutoSpinTimer();
-      autoSpinTimeoutRef.current = window.setTimeout(() => {
+
+      function tick() {
         scrollToNextHero();
-        scheduleAutoSpin(AUTO_SPIN_DELAY_MS);
-      }, delay);
+        autoSpinTimeoutRef.current = window.setTimeout(tick, AUTO_SPIN_DELAY_MS);
+      }
+
+      autoSpinTimeoutRef.current = window.setTimeout(tick, delay);
     },
     [clearAutoSpinTimer, reduce, scrollToNextHero],
   );

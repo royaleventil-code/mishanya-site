@@ -10,7 +10,7 @@ import { WA_MESSAGES, whatsappLink } from "@/lib/whatsapp";
 const NAV = [
   { href: "/about", label: "О нас" },
   { href: "/formats", label: "Форматы" },
-  { href: "/all", label: "Программы" },
+  { href: "/ru/all", label: "Программы" },
   { href: "/gallery", label: "Фото" },
   { href: "/contacts", label: "Контакты" },
 ];

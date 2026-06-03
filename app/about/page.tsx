@@ -17,9 +17,7 @@ import {
 import { motion, useReducedMotion } from "framer-motion";
 import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
-import { WA_DISPLAY, whatsappLink } from "@/lib/whatsapp";
-
-const WA = "Здравствуйте! Хочу узнать подробнее про детский праздник 🎉";
+import { WA_DISPLAY, WA_MESSAGES, whatsappLink } from "@/lib/whatsapp";
 
 const STATS = [
   { value: "11", suffix: " лет", label: "дарим радость детям", color: "#ff9f0a" },
@@ -99,12 +97,12 @@ export default function AboutPage() {
             <p className="mt-5 text-base leading-7 text-[var(--color-ink-soft)] sm:text-lg">
               «Мишаня в Стране Чудес» — это команда из агентства{" "}
               <span className="font-bold text-zinc-800">Royal Event Israel</span>, которая
-              превращает дни рождения в настоящую сказку. От камерного праздника дома до большого
+              превращает дни рождения в настоящую сказку. От домашнего праздника до большого
               шоу с любимыми героями — мы берём на себя всё, а вы наслаждаетесь счастьем ребёнка.
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <a
-                href={whatsappLink(WA)}
+                href={whatsappLink(WA_MESSAGES.default)}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-[linear-gradient(100deg,#ff375f,#ff5a7a)] px-7 py-4 text-base font-black text-white shadow-[0_14px_30px_rgba(255,55,95,0.4)] transition active:scale-95"
@@ -113,7 +111,7 @@ export default function AboutPage() {
                 Обсудить праздник
               </a>
               <Link
-                href="/all"
+                href="/ru/all"
                 className="group inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-4 text-base font-black text-zinc-900 shadow-[var(--shadow-card)] ring-1 ring-black/[0.04] transition active:scale-95"
               >
                 Наши программы
@@ -355,7 +353,7 @@ export default function AboutPage() {
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <a
-                href={whatsappLink(WA)}
+                href={whatsappLink(WA_MESSAGES.default)}
                 target="_blank"
                 rel="noreferrer"
                 className="cta-glow inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-whatsapp)] px-8 py-4 text-base font-black text-white transition active:scale-95"

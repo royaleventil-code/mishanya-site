@@ -2,7 +2,7 @@
 
 import { BadgeCheck, MessageCircle, Palette } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
-import { whatsappLink } from "@/lib/whatsapp";
+import { WA_MESSAGES, whatsappLink } from "@/lib/whatsapp";
 
 const STEPS = [
   {
@@ -24,8 +24,6 @@ const STEPS = [
     text: "Команда приезжает готовой — вы наслаждаетесь эмоциями детей.",
   },
 ];
-
-const WA = "Здравствуйте! Хочу организовать детский праздник. Возраст, дата и город: ";
 
 export function HowItWorks() {
   const reduce = useReducedMotion();
@@ -71,7 +69,7 @@ export function HowItWorks() {
 
         <div className="mt-8">
           <a
-            href={whatsappLink(WA)}
+            href={whatsappLink(WA_MESSAGES.default)}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-whatsapp)] px-7 py-4 text-base font-black text-white shadow-lg transition active:scale-95"

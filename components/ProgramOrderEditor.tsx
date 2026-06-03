@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Check, Clipboard, RotateCcw } from "lucide-react";
 import { PROGRAMS } from "@/data/programs";
+import { formatProgramPriceLabel } from "@/lib/prices";
 
 const STORAGE_KEY = "mishanya-program-order-v1";
 
@@ -149,7 +150,7 @@ export function ProgramOrderEditor() {
               <div className="min-w-0">
                 <div className="truncate text-base font-bold">{item.title}</div>
                 <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-xs text-[var(--color-ink-soft)]">
-                  <span>от {item.priceFrom.toLocaleString("ru-RU")} ₪</span>
+                  <span>{formatProgramPriceLabel(item.id, item.priceFrom)}</span>
                   <span>{item.durationLabel}</span>
                 </div>
               </div>

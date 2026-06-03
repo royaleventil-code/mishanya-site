@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { WA_DISPLAY, whatsappLink } from "@/lib/whatsapp";
+import { WA_DISPLAY, WA_MESSAGES, whatsappLink } from "@/lib/whatsapp";
 
 export function SiteFooter() {
   return (
@@ -15,14 +15,15 @@ export function SiteFooter() {
             className="h-16 w-auto"
           />
           <p className="mt-3 text-sm leading-6 text-white/60">
-            Детские праздники и шоу по всему Израилю. 11 лет дарим радость детям.
+            Детские праздники и шоу по всему Израилю. Нас также ищут как Михаил в Стране Чудес
+            или просто Страна Чудес.
           </p>
         </div>
 
         <div className="flex flex-col gap-2 text-sm">
           <div className="font-black text-white/90">Контакты</div>
           <a
-            href={whatsappLink("Здравствуйте! Хочу узнать про детский праздник.")}
+            href={whatsappLink(WA_MESSAGES.default)}
             target="_blank"
             rel="noreferrer"
             className="text-white/70 transition hover:text-white"
@@ -64,7 +65,7 @@ export function SiteFooter() {
 
         <div className="flex flex-col gap-2 text-sm">
           <div className="font-black text-white/90">Сайт</div>
-          <Link href="/all" className="text-white/70 transition hover:text-white">
+          <Link href="/ru/all" className="text-white/70 transition hover:text-white">
             Программы
           </Link>
           <Link href="/gallery" className="text-white/70 transition hover:text-white">

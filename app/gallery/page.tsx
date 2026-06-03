@@ -25,14 +25,11 @@ import {
   type ProofImage,
   type ProofLinkImage,
 } from "@/data/social-proof";
-import { WA_DISPLAY, whatsappLink } from "@/lib/whatsapp";
+import { WA_DISPLAY, WA_MESSAGES, whatsappLink } from "@/lib/whatsapp";
 
 const FB_REVIEWS = "https://www.facebook.com/royaleventisrael/reviews/?ref=page_internal";
 const YT_CHANNEL = "https://www.youtube.com/channel/UCo189jVSku-2H_0Rgrw9JCw";
 const INSTAGRAM = "https://www.instagram.com/show.mishanya/";
-const WA_MESSAGE =
-  "Здравствуйте! Посмотрел(а) фото и отзывы — хочу организовать детский праздник 🎉 Подскажите детали, пожалуйста.";
-
 const PROOF_SETS = [
   KIDS_1_3_PROOF,
   BOYS_4_5_PROOF,
@@ -286,7 +283,7 @@ export default function GalleryPage() {
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <a
-                href={whatsappLink(WA_MESSAGE)}
+                href={whatsappLink(WA_MESSAGES.default)}
                 target="_blank"
                 rel="noreferrer"
                 className="cta-glow inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-[var(--color-whatsapp)] px-8 py-4 text-base font-black text-white transition active:scale-95"

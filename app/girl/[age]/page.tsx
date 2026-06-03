@@ -1,9 +1,31 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SegmentPage } from "@/components/SegmentPage";
+import { createAgeProgramsMetadata } from "@/lib/seo";
 import { heroTitle, segmentFromAge } from "@/lib/segments";
 
 export function generateStaticParams() {
   return Array.from({ length: 10 }, (_, index) => ({ age: String(index + 1) }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ age: string }>;
+}): Promise<Metadata> {
+  const { age } = await params;
+  const ageNum = Number.parseInt(age, 10);
+  if (!Number.isFinite(ageNum) || ageNum < 1 || ageNum > 10) {
+    return {
+      title: "Программы для девочек | Мишаня в Стране Чудес",
+    };
+  }
+
+  return createAgeProgramsMetadata({
+    gender: "girl",
+    age: ageNum,
+    path: `/girl/${ageNum}`,
+  });
 }
 
 export default async function GirlAgePage({

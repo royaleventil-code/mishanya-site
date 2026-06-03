@@ -17,18 +17,18 @@ export async function generateMetadata({
   const ageNum = Number.parseInt(age, 10);
   if (!Number.isFinite(ageNum) || ageNum < 1 || ageNum > 10) {
     return {
-      title: "Программы для мальчиков | Мишаня в Стране Чудес",
+      title: "Программы для девочек | Мишаня в Стране Чудес",
     };
   }
 
   return createAgeProgramsMetadata({
-    gender: "boy",
+    gender: "girl",
     age: ageNum,
-    path: `/boy/${ageNum}`,
+    path: `/ru/girl/${ageNum}`,
   });
 }
 
-export default async function BoyAgePage({
+export default async function RuGirlAgePage({
   params,
 }: {
   params: Promise<{ age: string }>;
@@ -37,12 +37,12 @@ export default async function BoyAgePage({
   const ageNum = Number.parseInt(age, 10);
   if (!Number.isFinite(ageNum) || ageNum < 1 || ageNum > 10) notFound();
 
-  const segment = segmentFromAge(ageNum, "boy");
+  const segment = segmentFromAge(ageNum, "girl");
   return (
     <SegmentPage
       segment={segment}
-      title={heroTitle(segment, ageNum, "boy")}
-      audience={{ gender: "boy", age: ageNum }}
+      title={heroTitle(segment, ageNum, "girl")}
+      audience={{ gender: "girl", age: ageNum }}
     />
   );
 }

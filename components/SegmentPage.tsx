@@ -61,20 +61,22 @@ export function SegmentPage({ segment, title, emojiOverride, audience }: Props) 
   return (
     <>
       <PublicHeader />
-      <Hero emoji={emojiOverride ?? cfg.emoji} title={title} accent={cfg.accent} />
-      <ProgramsSection
-        segment={segment}
-        accent={cfg.accent}
-        programs={PROGRAMS}
-        heroes={HEROES}
-        audience={audience}
-      />
-      <SocialProofSection proofSet={proofSet} />
-      <HowItWorks />
-      <Trust />
-      <Faq />
-      <FinalCta accent={cfg.accent} />
-      <PublicFooter />
+      <main className="pb-24 sm:pb-0">
+        <Hero emoji={emojiOverride ?? cfg.emoji} title={title} accent={cfg.accent} />
+        <ProgramsSection
+          segment={segment}
+          accent={cfg.accent}
+          programs={PROGRAMS}
+          heroes={HEROES}
+          audience={audience}
+        />
+        <SocialProofSection proofSet={proofSet} />
+        <HowItWorks />
+        <Trust />
+        <Faq />
+        <FinalCta accent={cfg.accent} />
+        <PublicFooter />
+      </main>
       <StickyMobileCta />
     </>
   );
