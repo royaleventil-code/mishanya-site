@@ -9,13 +9,7 @@ export function whatsappLink(message: string): string {
 
 const GENERAL_INQUIRY_LINES = [
   "Здравствуйте! Хочу детский праздник.",
-  "Программа: помогите подобрать",
-  "Возраст ребёнка:",
-  "Дата:",
-  "Город:",
-  "Количество детей:",
-  "Место:",
-  "Язык:",
+  "Помогите подобрать программу",
 ];
 
 export const WA_MESSAGES = {
@@ -23,13 +17,8 @@ export const WA_MESSAGES = {
   audience: (audienceLabel: string) =>
     [
       "Здравствуйте! Хочу детский праздник.",
-      "Программа: помогите подобрать",
+      "Помогите подобрать программу",
       `Возраст ребёнка: ${audienceLabel}`,
-      "Дата:",
-      "Город:",
-      "Количество детей:",
-      "Место:",
-      "Язык:",
     ].join("\n"),
   program: (name: string, durationLabel?: string, priceFrom?: number, programId = "") => {
     const programLine = [
@@ -44,11 +33,6 @@ export const WA_MESSAGES = {
       "Здравствуйте! Хочу детский праздник.",
       programLine,
       "Возраст ребёнка:",
-      "Дата:",
-      "Город:",
-      "Количество детей:",
-      "Место:",
-      "Язык:",
     ].join("\n");
   },
   programWithHero: (programName: string, heroName: string) =>
@@ -57,11 +41,6 @@ export const WA_MESSAGES = {
       `Программа: ${programName}`,
       `Герой: ${heroName}`,
       "Возраст ребёнка:",
-      "Дата:",
-      "Город:",
-      "Количество детей:",
-      "Место:",
-      "Язык:",
     ].join("\n"),
   programWithAddon: (programName: string, addonName: string) =>
     [
@@ -69,11 +48,6 @@ export const WA_MESSAGES = {
       `Программа: ${programName}`,
       `Дополнительная опция: ${addonName}`,
       "Возраст ребёнка:",
-      "Дата:",
-      "Город:",
-      "Количество детей:",
-      "Место:",
-      "Язык:",
     ].join("\n"),
   programOrder: ({
     programName,
@@ -109,14 +83,7 @@ export const WA_MESSAGES = {
       lines.push(`Дополнительные опции: ${addons.join(", ")}`);
     }
 
-    lines.push(
-      `Возраст ребёнка: ${audienceLabel ?? ""}`,
-      "Дата:",
-      "Город:",
-      "Количество детей:",
-      "Место:",
-      "Язык:",
-    );
+    lines.push(`Возраст ребёнка: ${audienceLabel ?? ""}`);
 
     return lines.join("\n");
   },

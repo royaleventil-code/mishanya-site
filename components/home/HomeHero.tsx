@@ -33,9 +33,9 @@ const HERO_ADVANTAGES: HeroAdvantage[] = [
     color: "#0a84ff",
   },
   {
-    value: "783 отзыва",
-    counter: { from: 0, to: 783, suffix: " отзыва" },
-    label: "средняя оценка 5,0",
+    value: "783",
+    counter: { from: 0, to: 783 },
+    label: "отзыва родителей · 5,0",
     color: "#ff375f",
   },
   {
