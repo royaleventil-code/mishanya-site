@@ -94,7 +94,7 @@ export const PROGRAMS: Program[] = [
       { segment: "all", cover: "/programs/start-universal.png" },
       { gender: "boy", minAge: 1, maxAge: 99, cover: "/programs/start.png" },
       { gender: "girl", minAge: 1, maxAge: 3, cover: "/programs/start-girls-1-3.webp" },
-      { gender: "girl", minAge: 4, maxAge: 99, cover: "/programs/start-girls.png" },
+      { gender: "girl", minAge: 4, maxAge: 99, cover: "/generated/start-girls-4-cover-costume-v2.png" },
     ],
   },
 {

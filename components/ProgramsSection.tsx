@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, animate, motion, useMotionValue } from "framer-motion";
 import { Baby, Banknote, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, MapPin, MessageCircle, Users, X } from "lucide-react";
 import type { AudienceContext, Gender, Hero, Program, SegmentId } from "@/lib/types";
@@ -275,8 +276,8 @@ const AGE_INTROS: Record<Gender, Record<number, AudienceIntro>> = {
       body: "Подойдут программы с эстафетами, командными заданиями, супергероями, ростовыми куклами и понятным финалом, где именинник в центре.",
     },
     6: {
-      lead: "В 6 лет детям уже важны соревнование, сюжет и эффектность.",
-      body: "Выбираем форматы с активными играми, шоу-моментами, командными испытаниями и героями, которые выглядят по-настоящему ярко.",
+      lead: "В 6 лет мальчику уже хочется праздника с драйвом, сюжетом и настоящим участием.",
+      body: "Мы подбираем программы, где есть движение, командные задания, яркие герои и моменты, в которых именинник чувствует себя главным.",
     },
     7: {
       lead: "В 7 лет праздник должен быть быстрым, смешным и азартным.",
@@ -416,6 +417,7 @@ function getProgramCover(
 export function ProgramsSection({ segment, accent, programs, heroes, audience }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [slideDirection, setSlideDirection] = useState<-1 | 1>(1);
+  const [modalRoot, setModalRoot] = useState<HTMLElement | null>(null);
   const audienceIntro = audienceIntroText(audience);
 
   const visiblePrograms = useMemo(
@@ -432,6 +434,10 @@ export function ProgramsSection({ segment, accent, programs, heroes, audience }:
   const selectedPosition = selectedIndex >= 0 ? selectedIndex + 1 : undefined;
   const canGoPrevious = selectedIndex > 0;
   const canGoNext = selectedIndex >= 0 && selectedIndex < visiblePrograms.length - 1;
+
+  useEffect(() => {
+    setModalRoot(document.body);
+  }, []);
 
   useEffect(() => {
     const programId = getProgramIdFromUrl();
@@ -472,9 +478,9 @@ export function ProgramsSection({ segment, accent, programs, heroes, audience }:
   return (
     <section className="mx-auto max-w-3xl px-5 sm:px-6 pb-10">
       {audience?.age && audience.gender && (
-        <div className="mt-5 rounded-3xl bg-white px-4 py-3 text-sm leading-6 shadow-[var(--shadow-card)] ring-1 ring-black/[0.04]">
-          <span className="font-black">{audienceIntro.lead}</span>{" "}
-          {audienceIntro.body}
+        <div className="mt-5 rounded-3xl bg-white px-5 py-4 text-center text-[15px] leading-7 shadow-[var(--shadow-card)] ring-1 ring-black/[0.04] sm:text-base">
+          <span className="block font-black">{audienceIntro.lead}</span>
+          <span className="mt-1 block text-[var(--color-ink-soft)]">{audienceIntro.body}</span>
         </div>
       )}
 
@@ -497,25 +503,29 @@ export function ProgramsSection({ segment, accent, programs, heroes, audience }:
         )}
       </div>
 
-      <AnimatePresence>
-        {selectedProgram && (
-          <ProgramModal
-            key="program-modal"
-            program={selectedProgram}
-            accent={accent}
-            segment={segment}
-            heroes={heroes}
-            audience={audience}
-            position={selectedPosition}
-            total={visiblePrograms.length}
-            canGoPrevious={canGoPrevious}
-            canGoNext={canGoNext}
-            slideDirection={slideDirection}
-            onNavigate={navigateProgram}
-            onClose={() => setSelectedId(null)}
-          />
+      {modalRoot &&
+        createPortal(
+          <AnimatePresence>
+            {selectedProgram && (
+              <ProgramModal
+                key="program-modal"
+                program={selectedProgram}
+                accent={accent}
+                segment={segment}
+                heroes={heroes}
+                audience={audience}
+                position={selectedPosition}
+                total={visiblePrograms.length}
+                canGoPrevious={canGoPrevious}
+                canGoNext={canGoNext}
+                slideDirection={slideDirection}
+                onNavigate={navigateProgram}
+                onClose={() => setSelectedId(null)}
+              />
+            )}
+          </AnimatePresence>,
+          modalRoot,
         )}
-      </AnimatePresence>
     </section>
   );
 }
