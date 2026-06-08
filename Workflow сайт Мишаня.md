@@ -6,7 +6,7 @@
 
 Рабочая папка сайта:
 
-`C:\Users\User\Desktop\Cloude CODE\1. Продажи Мишаня\New SITE`
+`D:\Cloude CODE\1. Продажи Мишаня\New SITE`
 
 GitHub-репозиторий:
 

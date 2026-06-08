@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import type { Gender } from "@/lib/types";
 
 export const SITE_NAME = "Мишаня в Стране Чудес";
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://mishanya-site.pages.dev";
+const DEFAULT_SITE_URL = "https://mishanya-show.com";
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || DEFAULT_SITE_URL).replace(/\/$/, "");
 export const BRAND_ALIASES = [
   "Мишаня",
   "Михаил в Стране Чудес",

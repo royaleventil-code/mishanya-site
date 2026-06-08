@@ -61,8 +61,13 @@ const jsonLd = [
     "@id": siteUrl("/#website"),
     name: SITE_NAME,
     alternateName: BRAND_ALIASES,
+    description:
+      "Детские праздники, герои и шоу-программы в Израиле на русском и иврите.",
     url: siteUrl("/"),
-    inLanguage: "ru",
+    inLanguage: ["ru", "he"],
+    publisher: {
+      "@id": siteUrl("/#organization"),
+    },
   },
   {
     "@context": "https://schema.org",
@@ -70,14 +75,31 @@ const jsonLd = [
     "@id": siteUrl("/#organization"),
     name: SITE_NAME,
     alternateName: BRAND_ALIASES,
+    description:
+      "Команда детских праздников и шоу в Израиле: программы с героями, ведущими, шоу-блоками и выездом по стране.",
     url: siteUrl("/"),
     logo: siteUrl("/logo-ru.png"),
     image: siteUrl("/generated/program-party.webp"),
     telephone: "+972546163260",
     email: "royal.eventil@gmail.com",
+    priceRange: "₪₪",
+    availableLanguage: ["Russian", "Hebrew"],
     areaServed: {
       "@type": "Country",
       name: "Israel",
+    },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: "5.0",
+      reviewCount: 783,
+      bestRating: 5,
+      worstRating: 1,
+    },
+    contactPoint: {
+      "@type": "ContactPoint",
+      telephone: "+972546163260",
+      contactType: "customer service",
+      availableLanguage: ["Russian", "Hebrew"],
     },
     sameAs: [
       "https://www.instagram.com/show.mishanya/",

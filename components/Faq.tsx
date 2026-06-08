@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 const ITEMS = [
   {
@@ -27,12 +27,29 @@ const ITEMS = [
   },
 ];
 
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: ITEMS.map((item) => ({
+    "@type": "Question",
+    name: item.q,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: item.a,
+    },
+  })),
+};
+
 export function Faq() {
   const [open, setOpen] = useState<number | null>(null);
   const reduce = useReducedMotion();
 
   return (
     <section className="mx-auto max-w-3xl px-5 py-10 sm:px-6 sm:py-14">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <p className="text-sm font-black uppercase tracking-wide text-[#ff9f0a]">
         Вопросы
       </p>
@@ -67,21 +84,17 @@ export function Faq() {
                   strokeWidth={2.6}
                 />
               </button>
-              <AnimatePresence initial={false}>
-                {isOpen && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="overflow-hidden"
-                  >
-                    <p className="-mt-1 px-5 pb-5 text-sm leading-relaxed text-[var(--color-ink-soft)] sm:px-6 sm:pb-6">
-                      {item.a}
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <motion.div
+                initial={false}
+                animate={isOpen ? { height: "auto", opacity: 1 } : { height: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="overflow-hidden"
+                aria-hidden={!isOpen}
+              >
+                <p className="-mt-1 px-5 pb-5 text-sm leading-relaxed text-[var(--color-ink-soft)] sm:px-6 sm:pb-6">
+                  {item.a}
+                </p>
+              </motion.div>
             </motion.div>
           );
         })}
