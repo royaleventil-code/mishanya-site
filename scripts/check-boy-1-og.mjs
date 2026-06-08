@@ -4,9 +4,9 @@ const imagePath = "public/og/boy-1-whatsapp-preview.png";
 const htmlPath = "out/ru/boy/1.html";
 const otherHtmlPath = "out/ru/boy/2.html";
 const expectedImageUrl = "https://mishanya-show.com/og/boy-1-whatsapp-preview.png";
-const expectedTitle = "Программы для мальчика одного года | Мишаня в Стране Чудес";
+const expectedTitle = "Программа для мальчика 1 год | Мишаня в Стране Чудес";
 const expectedDescription =
-  "Подборка праздников, героев и шоу для мальчика одного года: цены, фото, видео и быстрый выбор программы.";
+  "Программа праздника для мальчика 1 год: герои, шоу, цены, фото, видео и быстрый выбор.";
 
 function assert(condition, message) {
   if (!condition) {

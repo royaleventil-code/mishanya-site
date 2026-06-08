@@ -16,9 +16,9 @@ export const BRAND_ALIASES = [
 
 const DEFAULT_IMAGE = "/generated/program-party.webp";
 const BOY_1_PILOT_IMAGE = "/og/boy-1-whatsapp-preview.png";
-const BOY_1_PILOT_TITLE = `Программы для мальчика одного года | ${SITE_NAME}`;
+const BOY_1_PILOT_TITLE = `Программа для мальчика 1 год | ${SITE_NAME}`;
 const BOY_1_PILOT_DESCRIPTION =
-  "Подборка праздников, героев и шоу для мальчика одного года: цены, фото, видео и быстрый выбор программы.";
+  "Программа праздника для мальчика 1 год: герои, шоу, цены, фото, видео и быстрый выбор.";
 
 export function siteUrl(path = "/"): string {
   return new URL(path, SITE_URL).toString();
