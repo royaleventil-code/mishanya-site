@@ -15,10 +15,7 @@ export const BRAND_ALIASES = [
 ];
 
 const DEFAULT_IMAGE = "/generated/program-party.webp";
-const BOY_1_PILOT_IMAGE = "/og/boy-1-whatsapp-preview.png";
-const BOY_1_PILOT_TITLE = `Программа для мальчика 1 год | ${SITE_NAME}`;
-const BOY_1_PILOT_DESCRIPTION =
-  "Программа праздника для мальчика 1 год: герои, шоу, цены, фото, видео и быстрый выбор.";
+const BOY_WHATSAPP_PREVIEW_AGES = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
 export function siteUrl(path = "/"): string {
   return new URL(path, SITE_URL).toString();
@@ -126,16 +123,22 @@ export function createAgeProgramsMetadata({
 }): Metadata {
   const audience = childLabel(gender, age);
   const capitalizedAudience = audience[0].toUpperCase() + audience.slice(1);
-  const isBoyOnePilot = gender === "boy" && age === 1 && path === "/ru/boy/1";
+  const hasBoyWhatsappPreview =
+    gender === "boy" && BOY_WHATSAPP_PREVIEW_AGES.has(age) && path === `/ru/boy/${age}`;
+  const ageLabel = childAgeLabel(age);
 
   return createPageMetadata({
-    title: isBoyOnePilot ? BOY_1_PILOT_TITLE : `Программы для ${audience} | ${SITE_NAME}`,
-    description: isBoyOnePilot
-      ? BOY_1_PILOT_DESCRIPTION
+    title: hasBoyWhatsappPreview
+      ? `Программа для мальчика ${ageLabel} | ${SITE_NAME}`
+      : `Программы для ${audience} | ${SITE_NAME}`,
+    description: hasBoyWhatsappPreview
+      ? `Программа праздника для мальчика ${ageLabel}: герои, шоу, цены, фото, видео и быстрый выбор.`
       : `${capitalizedAudience}: готовые программы с ценами, героями и шоу. Подберем праздник под возраст, формат и место проведения в Израиле.`,
     path,
     canonicalPath: ruProgramPath(`/${gender}/${age}`),
-    image: isBoyOnePilot ? BOY_1_PILOT_IMAGE : audiencePreviewImage(gender, age),
-    imageHeight: isBoyOnePilot ? 1200 : undefined,
+    image: hasBoyWhatsappPreview
+      ? `/og/boy-${age}-whatsapp-preview.png`
+      : audiencePreviewImage(gender, age),
+    imageHeight: hasBoyWhatsappPreview ? 1200 : undefined,
   });
 }

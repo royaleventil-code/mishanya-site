@@ -1,12 +1,7 @@
 import { readFileSync } from "node:fs";
 
-const imagePath = "public/og/boy-1-whatsapp-preview.png";
-const htmlPath = "out/ru/boy/1.html";
-const otherHtmlPath = "out/ru/boy/2.html";
-const expectedImageUrl = "https://mishanya-show.com/og/boy-1-whatsapp-preview.png";
-const expectedTitle = "Программа для мальчика 1 год | Мишаня в Стране Чудес";
-const expectedDescription =
-  "Программа праздника для мальчика 1 год: герои, шоу, цены, фото, видео и быстрый выбор.";
+const ages = Array.from({ length: 10 }, (_, index) => index + 1);
+const siteName = "Мишаня в Стране Чудес";
 
 function assert(condition, message) {
   if (!condition) {
@@ -23,40 +18,49 @@ function pngSize(path) {
   };
 }
 
-const imageSize = pngSize(imagePath);
-assert(imageSize.width === 1200, `${imagePath} width is ${imageSize.width}, expected 1200`);
-assert(imageSize.height === 1200, `${imagePath} height is ${imageSize.height}, expected 1200`);
+function childAgeLabel(age) {
+  if (age === 1) return "1 год";
+  if (age >= 2 && age <= 4) return `${age} года`;
+  return `${age} лет`;
+}
 
-const html = readFileSync(htmlPath, "utf8");
-assert(
-  html.includes(`<meta property="og:title" content="${expectedTitle}"/>`),
-  "boy 1 page is missing the pilot og:title",
-);
-assert(
-  html.includes(`<meta property="og:description" content="${expectedDescription}"/>`),
-  "boy 1 page is missing the pilot og:description",
-);
-assert(
-  html.includes(`<meta property="og:image" content="${expectedImageUrl}"/>`),
-  "boy 1 page is missing the pilot og:image",
-);
-assert(
-  html.includes('<meta property="og:image:width" content="1200"/>'),
-  "boy 1 page is missing the pilot og:image:width",
-);
-assert(
-  html.includes('<meta property="og:image:height" content="1200"/>'),
-  "boy 1 page is missing the pilot og:image:height",
-);
-assert(
-  html.includes(`<meta name="twitter:image" content="${expectedImageUrl}"/>`),
-  "boy 1 page is missing the pilot twitter:image",
-);
+for (const age of ages) {
+  const imagePath = `public/og/boy-${age}-whatsapp-preview.png`;
+  const htmlPath = `out/ru/boy/${age}.html`;
+  const ageLabel = childAgeLabel(age);
+  const expectedImageUrl = `https://mishanya-show.com/og/boy-${age}-whatsapp-preview.png`;
+  const expectedTitle = `Программа для мальчика ${ageLabel} | ${siteName}`;
+  const expectedDescription = `Программа праздника для мальчика ${ageLabel}: герои, шоу, цены, фото, видео и быстрый выбор.`;
 
-const otherHtml = readFileSync(otherHtmlPath, "utf8");
-assert(
-  !otherHtml.includes(expectedImageUrl),
-  "boy 2 page should not use the boy 1 pilot image",
-);
+  const imageSize = pngSize(imagePath);
+  assert(imageSize.width === 1200, `${imagePath} width is ${imageSize.width}, expected 1200`);
+  assert(imageSize.height === 1200, `${imagePath} height is ${imageSize.height}, expected 1200`);
 
-console.log("Boy 1 OG preview checks passed.");
+  const html = readFileSync(htmlPath, "utf8");
+  assert(
+    html.includes(`<meta property="og:title" content="${expectedTitle}"/>`),
+    `boy ${age} page is missing the expected og:title`,
+  );
+  assert(
+    html.includes(`<meta property="og:description" content="${expectedDescription}"/>`),
+    `boy ${age} page is missing the expected og:description`,
+  );
+  assert(
+    html.includes(`<meta property="og:image" content="${expectedImageUrl}"/>`),
+    `boy ${age} page is missing the expected og:image`,
+  );
+  assert(
+    html.includes('<meta property="og:image:width" content="1200"/>'),
+    `boy ${age} page is missing the expected og:image:width`,
+  );
+  assert(
+    html.includes('<meta property="og:image:height" content="1200"/>'),
+    `boy ${age} page is missing the expected og:image:height`,
+  );
+  assert(
+    html.includes(`<meta name="twitter:image" content="${expectedImageUrl}"/>`),
+    `boy ${age} page is missing the expected twitter:image`,
+  );
+}
+
+console.log("Boy OG preview checks passed.");
