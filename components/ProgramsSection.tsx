@@ -362,6 +362,27 @@ function getProgramIdFromUrl(): string | null {
   return new URLSearchParams(window.location.search).get("program")?.trim() || null;
 }
 
+function syncProgramIdToUrl(programId: string | null, mode: "push" | "replace") {
+  if (typeof window === "undefined") return;
+
+  const url = new URL(window.location.href);
+  if (programId) {
+    url.searchParams.set("program", programId);
+  } else {
+    url.searchParams.delete("program");
+  }
+
+  const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+  const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  if (nextUrl === currentUrl) return;
+
+  if (mode === "push") {
+    window.history.pushState(window.history.state, "", nextUrl);
+  } else {
+    window.history.replaceState(window.history.state, "", nextUrl);
+  }
+}
+
 function heroChoiceLabel(label: string): string {
   const normalized = label.toLowerCase();
   if (normalized.includes("ростовая")) return "Ростовая кукла";
@@ -440,11 +461,24 @@ export function ProgramsSection({ segment, accent, programs, heroes, audience }:
   }, []);
 
   useEffect(() => {
-    const programId = getProgramIdFromUrl();
-    if (!programId) return;
+    const syncSelectedProgramFromUrl = () => setSelectedId(getProgramIdFromUrl());
+    const timer = window.setTimeout(syncSelectedProgramFromUrl, 0);
+    window.addEventListener("popstate", syncSelectedProgramFromUrl);
 
-    const timer = window.setTimeout(() => setSelectedId(programId), 0);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("popstate", syncSelectedProgramFromUrl);
+    };
+  }, []);
+
+  const openProgram = useCallback((programId: string) => {
+    syncProgramIdToUrl(programId, "push");
+    setSelectedId(programId);
+  }, []);
+
+  const closeProgram = useCallback(() => {
+    syncProgramIdToUrl(null, "replace");
+    setSelectedId(null);
   }, []);
 
   const navigateProgram = useCallback(
@@ -454,6 +488,7 @@ export function ProgramsSection({ segment, accent, programs, heroes, audience }:
       const nextProgram = visiblePrograms[index + direction];
       if (nextProgram) {
         setSlideDirection(direction);
+        syncProgramIdToUrl(nextProgram.id, "replace");
         setSelectedId(nextProgram.id);
       }
     },
@@ -493,7 +528,7 @@ export function ProgramsSection({ segment, accent, programs, heroes, audience }:
             accent={accent}
             segment={segment}
             audience={audience}
-            onOpen={() => setSelectedId(p.id)}
+            onOpen={() => openProgram(p.id)}
           />
         ))}
         {visiblePrograms.length === 0 && (
@@ -520,7 +555,7 @@ export function ProgramsSection({ segment, accent, programs, heroes, audience }:
                 canGoNext={canGoNext}
                 slideDirection={slideDirection}
                 onNavigate={navigateProgram}
-                onClose={() => setSelectedId(null)}
+                onClose={closeProgram}
               />
             )}
           </AnimatePresence>,
