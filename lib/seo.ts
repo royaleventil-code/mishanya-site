@@ -16,8 +16,9 @@ export const BRAND_ALIASES = [
 
 const DEFAULT_IMAGE = "/generated/program-party.webp";
 const BOY_1_PILOT_IMAGE = "/og/boy-1-whatsapp-preview.png";
+const BOY_1_PILOT_TITLE = `Программы для мальчика одного года | ${SITE_NAME}`;
 const BOY_1_PILOT_DESCRIPTION =
-  "Подборка праздников, героев и шоу для мальчика 1 год: цены, фото, видео и быстрый выбор программы.";
+  "Подборка праздников, героев и шоу для мальчика одного года: цены, фото, видео и быстрый выбор программы.";
 
 export function siteUrl(path = "/"): string {
   return new URL(path, SITE_URL).toString();
@@ -52,6 +53,8 @@ export function createPageMetadata({
   path,
   canonicalPath = path,
   image = DEFAULT_IMAGE,
+  imageWidth = 1200,
+  imageHeight = 630,
   noIndex = false,
 }: {
   title: string;
@@ -59,6 +62,8 @@ export function createPageMetadata({
   path: string;
   canonicalPath?: string;
   image?: string;
+  imageWidth?: number;
+  imageHeight?: number;
   noIndex?: boolean;
 }): Metadata {
   return {
@@ -80,8 +85,8 @@ export function createPageMetadata({
       images: [
         {
           url: image,
-          width: 1200,
-          height: 630,
+          width: imageWidth,
+          height: imageHeight,
           alt: title,
         },
       ],
@@ -124,12 +129,13 @@ export function createAgeProgramsMetadata({
   const isBoyOnePilot = gender === "boy" && age === 1 && path === "/ru/boy/1";
 
   return createPageMetadata({
-    title: `Программы для ${audience} | ${SITE_NAME}`,
+    title: isBoyOnePilot ? BOY_1_PILOT_TITLE : `Программы для ${audience} | ${SITE_NAME}`,
     description: isBoyOnePilot
       ? BOY_1_PILOT_DESCRIPTION
       : `${capitalizedAudience}: готовые программы с ценами, героями и шоу. Подберем праздник под возраст, формат и место проведения в Израиле.`,
     path,
     canonicalPath: ruProgramPath(`/${gender}/${age}`),
     image: isBoyOnePilot ? BOY_1_PILOT_IMAGE : audiencePreviewImage(gender, age),
+    imageHeight: isBoyOnePilot ? 1200 : undefined,
   });
 }

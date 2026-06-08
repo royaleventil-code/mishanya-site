@@ -4,9 +4,9 @@ const imagePath = "public/og/boy-1-whatsapp-preview.png";
 const htmlPath = "out/ru/boy/1.html";
 const otherHtmlPath = "out/ru/boy/2.html";
 const expectedImageUrl = "https://mishanya-show.com/og/boy-1-whatsapp-preview.png";
-const expectedTitle = "Программы для мальчика 1 год | Мишаня в Стране Чудес";
+const expectedTitle = "Программы для мальчика одного года | Мишаня в Стране Чудес";
 const expectedDescription =
-  "Подборка праздников, героев и шоу для мальчика 1 год: цены, фото, видео и быстрый выбор программы.";
+  "Подборка праздников, героев и шоу для мальчика одного года: цены, фото, видео и быстрый выбор программы.";
 
 function assert(condition, message) {
   if (!condition) {
@@ -25,7 +25,7 @@ function pngSize(path) {
 
 const imageSize = pngSize(imagePath);
 assert(imageSize.width === 1200, `${imagePath} width is ${imageSize.width}, expected 1200`);
-assert(imageSize.height === 630, `${imagePath} height is ${imageSize.height}, expected 630`);
+assert(imageSize.height === 1200, `${imagePath} height is ${imageSize.height}, expected 1200`);
 
 const html = readFileSync(htmlPath, "utf8");
 assert(
@@ -39,6 +39,14 @@ assert(
 assert(
   html.includes(`<meta property="og:image" content="${expectedImageUrl}"/>`),
   "boy 1 page is missing the pilot og:image",
+);
+assert(
+  html.includes('<meta property="og:image:width" content="1200"/>'),
+  "boy 1 page is missing the pilot og:image:width",
+);
+assert(
+  html.includes('<meta property="og:image:height" content="1200"/>'),
+  "boy 1 page is missing the pilot og:image:height",
 );
 assert(
   html.includes(`<meta name="twitter:image" content="${expectedImageUrl}"/>`),
