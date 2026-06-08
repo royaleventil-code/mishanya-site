@@ -4,12 +4,19 @@ import sharp from "sharp";
 
 const outDir = join("public", "og");
 const ages = Array.from({ length: 10 }, (_, index) => index + 1);
+const items = [
+  { source: "home-whatsapp-source.png", preview: "home-whatsapp-preview.png" },
+  ...ages.flatMap((age) => [
+    { source: `boy-${age}-whatsapp-source.png`, preview: `boy-${age}-whatsapp-preview.png` },
+    { source: `girl-${age}-whatsapp-source.png`, preview: `girl-${age}-whatsapp-preview.png` },
+  ]),
+];
 
 mkdirSync(outDir, { recursive: true });
 
-for (const age of ages) {
-  const sourcePath = join(outDir, `boy-${age}-whatsapp-source.png`);
-  const outPath = join(outDir, `boy-${age}-whatsapp-preview.png`);
+for (const item of items) {
+  const sourcePath = join(outDir, item.source);
+  const outPath = join(outDir, item.preview);
 
   if (!existsSync(sourcePath)) {
     throw new Error(`${sourcePath} is missing`);

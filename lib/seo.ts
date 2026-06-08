@@ -15,7 +15,8 @@ export const BRAND_ALIASES = [
 ];
 
 const DEFAULT_IMAGE = "/generated/program-party.webp";
-const BOY_WHATSAPP_PREVIEW_AGES = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+export const HOME_WHATSAPP_PREVIEW_IMAGE = "/og/home-whatsapp-preview.png";
+const AGE_WHATSAPP_PREVIEW_AGES = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
 export function siteUrl(path = "/"): string {
   return new URL(path, SITE_URL).toString();
@@ -123,22 +124,23 @@ export function createAgeProgramsMetadata({
 }): Metadata {
   const audience = childLabel(gender, age);
   const capitalizedAudience = audience[0].toUpperCase() + audience.slice(1);
-  const hasBoyWhatsappPreview =
-    gender === "boy" && BOY_WHATSAPP_PREVIEW_AGES.has(age) && path === `/ru/boy/${age}`;
+  const hasAgeWhatsappPreview =
+    AGE_WHATSAPP_PREVIEW_AGES.has(age) && path === `/ru/${gender}/${age}`;
   const ageLabel = childAgeLabel(age);
+  const child = gender === "boy" ? "мальчика" : "девочки";
 
   return createPageMetadata({
-    title: hasBoyWhatsappPreview
-      ? `Программа для мальчика ${ageLabel} | ${SITE_NAME}`
+    title: hasAgeWhatsappPreview
+      ? `Программа для ${child} ${ageLabel} | ${SITE_NAME}`
       : `Программы для ${audience} | ${SITE_NAME}`,
-    description: hasBoyWhatsappPreview
-      ? `Программа праздника для мальчика ${ageLabel}: герои, шоу, цены, фото, видео и быстрый выбор.`
+    description: hasAgeWhatsappPreview
+      ? `Программа праздника для ${child} ${ageLabel}: герои, шоу, цены, фото, видео и быстрый выбор.`
       : `${capitalizedAudience}: готовые программы с ценами, героями и шоу. Подберем праздник под возраст, формат и место проведения в Израиле.`,
     path,
     canonicalPath: ruProgramPath(`/${gender}/${age}`),
-    image: hasBoyWhatsappPreview
-      ? `/og/boy-${age}-whatsapp-preview.png`
+    image: hasAgeWhatsappPreview
+      ? `/og/${gender}-${age}-whatsapp-preview.png`
       : audiencePreviewImage(gender, age),
-    imageHeight: hasBoyWhatsappPreview ? 1200 : undefined,
+    imageHeight: hasAgeWhatsappPreview ? 1200 : undefined,
   });
 }

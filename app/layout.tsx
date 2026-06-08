@@ -1,6 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Lilita_One, Nunito } from "next/font/google";
-import { BRAND_ALIASES, SITE_NAME, SITE_URL, siteUrl } from "@/lib/seo";
+import {
+  BRAND_ALIASES,
+  HOME_WHATSAPP_PREVIEW_IMAGE,
+  SITE_NAME,
+  SITE_URL,
+  siteUrl,
+} from "@/lib/seo";
 import "./globals.css";
 
 const inter = Inter({
@@ -38,9 +44,9 @@ export const metadata: Metadata = {
       "Мишаня в Стране Чудес: герои, шоу и готовые программы для детских праздников в Израиле. Нас также ищут как Михаил в Стране Чудес и Страна Чудес.",
     images: [
       {
-        url: "/generated/program-party.webp",
+        url: HOME_WHATSAPP_PREVIEW_IMAGE,
         width: 1200,
-        height: 630,
+        height: 1200,
         alt: SITE_NAME,
       },
     ],
@@ -50,7 +56,7 @@ export const metadata: Metadata = {
     title: `${SITE_NAME} — детские праздники в Израиле`,
     description:
       "Мишаня в Стране Чудес: герои, шоу и готовые программы для детских праздников в Израиле.",
-    images: ["/generated/program-party.webp"],
+    images: [HOME_WHATSAPP_PREVIEW_IMAGE],
   },
 };
 
@@ -79,7 +85,7 @@ const jsonLd = [
       "Команда детских праздников и шоу в Израиле: программы с героями, ведущими, шоу-блоками и выездом по стране.",
     url: siteUrl("/"),
     logo: siteUrl("/logo-ru.png"),
-    image: siteUrl("/generated/program-party.webp"),
+    image: siteUrl(HOME_WHATSAPP_PREVIEW_IMAGE),
     telephone: "+972546163260",
     email: "royal.eventil@gmail.com",
     priceRange: "₪₪",
