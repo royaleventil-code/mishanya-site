@@ -15,6 +15,9 @@ export const BRAND_ALIASES = [
 ];
 
 const DEFAULT_IMAGE = "/generated/program-party.webp";
+const BOY_1_PILOT_IMAGE = "/og/boy-1-whatsapp-preview.png";
+const BOY_1_PILOT_DESCRIPTION =
+  "Подборка праздников, героев и шоу для мальчика 1 год: цены, фото, видео и быстрый выбор программы.";
 
 export function siteUrl(path = "/"): string {
   return new URL(path, SITE_URL).toString();
@@ -118,12 +121,15 @@ export function createAgeProgramsMetadata({
 }): Metadata {
   const audience = childLabel(gender, age);
   const capitalizedAudience = audience[0].toUpperCase() + audience.slice(1);
+  const isBoyOnePilot = gender === "boy" && age === 1 && path === "/ru/boy/1";
 
   return createPageMetadata({
     title: `Программы для ${audience} | ${SITE_NAME}`,
-    description: `${capitalizedAudience}: готовые программы с ценами, героями и шоу. Подберем праздник под возраст, формат и место проведения в Израиле.`,
+    description: isBoyOnePilot
+      ? BOY_1_PILOT_DESCRIPTION
+      : `${capitalizedAudience}: готовые программы с ценами, героями и шоу. Подберем праздник под возраст, формат и место проведения в Израиле.`,
     path,
     canonicalPath: ruProgramPath(`/${gender}/${age}`),
-    image: audiencePreviewImage(gender, age),
+    image: isBoyOnePilot ? BOY_1_PILOT_IMAGE : audiencePreviewImage(gender, age),
   });
 }
