@@ -1,32 +1,13 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
+import { BidiText } from "@/components/BidiText";
+import { getDictionary } from "@/lib/dictionaries";
+import type { Locale } from "@/lib/i18n";
 
-const STATS = [
-  {
-    value: "10 000+",
-    label: "праздников",
-    color: "#0a84ff",
-  },
-  {
-    value: "11 лет",
-    label: "в Израиле",
-    color: "#5e5ce6",
-  },
-  {
-    value: "783",
-    label: "отзыва 5★",
-    color: "#ff9f0a",
-  },
-  {
-    value: "100M",
-    label: "просмотров YouTube",
-    color: "#ff375f",
-  },
-];
-
-export function Trust() {
+export function Trust({ locale = "ru" }: { locale?: Locale }) {
   const reduce = useReducedMotion();
+  const stats = getDictionary(locale).catalog.trust;
 
   return (
     <section className="relative overflow-hidden bg-[#0f0f14] py-12 text-white sm:py-20">
@@ -35,7 +16,7 @@ export function Trust() {
 
       <div className="relative mx-auto max-w-5xl px-5 sm:px-6">
         <div className="grid grid-cols-2 gap-6 sm:grid-cols-4 sm:gap-4">
-          {STATS.map((s, i) => (
+          {stats.map((s, i) => (
             <motion.div
               key={s.label}
               initial={reduce ? false : { opacity: 0, y: 24 }}
@@ -55,10 +36,10 @@ export function Trust() {
                   filter: `drop-shadow(0 0 14px ${s.color}66)`,
                 }}
               >
-                {s.value}
+                <BidiText locale={locale}>{s.value}</BidiText>
               </div>
               <div className="mt-2 whitespace-nowrap text-xs text-white/70 sm:text-sm">
-                {s.label}
+                <BidiText locale={locale}>{s.label}</BidiText>
               </div>
             </motion.div>
           ))}

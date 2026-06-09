@@ -1,4 +1,5 @@
 import type { Gender, SegmentId } from "./types";
+import type { Locale } from "@/lib/i18n";
 
 export function segmentFromAge(age: number, gender: Gender): SegmentId {
   if (age <= 3) return "baby";
@@ -53,22 +54,38 @@ export const SEGMENTS: Record<SegmentId, SegmentConfig> = {
   },
 };
 
-function ageLabel(age: number): string {
+function ageLabel(age: number, locale: Locale = "ru"): string {
+  if (locale === "he") return String(age);
   if (age === 1) return "1 год";
   if (age >= 2 && age <= 4) return `${age} года`;
   return `${age} лет`;
 }
 
-export function heroTitle(segment: SegmentId, age?: number, gender?: Gender): string {
+export function heroTitle(
+  segment: SegmentId,
+  age?: number,
+  gender?: Gender,
+  locale: Locale = "ru",
+): string {
+  if (locale === "he") {
+    if (segment === "baby") {
+      if (age && gender) return `תוכניות יום הולדת ${gender === "boy" ? "לבן" : "לבת"} ${age}`;
+      return "תוכניות לקטנטנים";
+    }
+    if (segment === "all") return "כל התוכניות";
+    const ageNum = age ?? (segment.endsWith("4-6") ? 5 : 8);
+    return `תוכניות יום הולדת ${segment.startsWith("boy") ? "לבן" : "לבת"} ${ageLabel(ageNum, locale)}`;
+  }
+
   if (segment === "baby") {
     if (age && gender) {
       const child = gender === "boy" ? "мальчика" : "девочки";
-      return `Программы для ${child} ${ageLabel(age)}`;
+      return `Программы для ${child} ${ageLabel(age, locale)}`;
     }
     return "Программы для малышей";
   }
   if (segment === "all") return "Все программы";
   const ageNum = age ?? (segment.endsWith("4-6") ? 5 : 8);
   const child = segment.startsWith("boy") ? "мальчика" : "девочки";
-  return `Программы для ${child} ${ageLabel(ageNum)}`;
+  return `Программы для ${child} ${ageLabel(ageNum, locale)}`;
 }

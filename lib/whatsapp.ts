@@ -1,3 +1,4 @@
+import type { Locale } from "@/lib/i18n";
 import { formatProgramPriceLabel } from "./prices";
 
 export const WA_NUMBER = "972546163260";
@@ -88,3 +89,77 @@ export const WA_MESSAGES = {
     return lines.join("\n");
   },
 } as const;
+
+export function getWhatsAppMessages(locale: Locale = "ru") {
+  if (locale === "ru") return WA_MESSAGES;
+
+  const defaultMessage = [
+    "שלום! אני רוצה יום הולדת לילדים.",
+    "אשמח לעזרה בבחירת תוכנית",
+  ].join("\n");
+
+  return {
+    default: defaultMessage,
+    audience: (audienceLabel: string) =>
+      [
+        "שלום! אני רוצה יום הולדת לילדים.",
+        "אשמח לעזרה בבחירת תוכנית",
+        `גיל הילד או הילדה: ${audienceLabel}`,
+      ].join("\n"),
+    program: (name: string, durationLabel?: string, priceFrom?: number, programId = "") => {
+      const programLine = [
+        `תוכנית: ${name}`,
+        durationLabel,
+        priceFrom ? formatProgramPriceLabel(programId, priceFrom, "he") : undefined,
+      ]
+        .filter(Boolean)
+        .join(", ");
+
+      return ["שלום! אני רוצה יום הולדת לילדים.", programLine, "גיל הילד או הילדה:"].join("\n");
+    },
+    programWithHero: (programName: string, heroName: string) =>
+      [
+        "שלום! אני רוצה יום הולדת לילדים.",
+        `תוכנית: ${programName}`,
+        `דמות: ${heroName}`,
+        "גיל הילד או הילדה:",
+      ].join("\n"),
+    programWithAddon: (programName: string, addonName: string) =>
+      [
+        "שלום! אני רוצה יום הולדת לילדים.",
+        `תוכנית: ${programName}`,
+        `תוספת: ${addonName}`,
+        "גיל הילד או הילדה:",
+      ].join("\n"),
+    programOrder: ({
+      programName,
+      programId,
+      durationLabel,
+      heroChoices,
+      addons,
+      totalPriceFrom,
+      audienceLabel,
+    }: Parameters<typeof WA_MESSAGES.programOrder>[0]) => {
+      const lines = [
+        "שלום! אני רוצה יום הולדת לילדים.",
+        `תוכנית: ${programName}, ${durationLabel}, ${formatProgramPriceLabel(programId, totalPriceFrom, "he")}`,
+      ];
+
+      heroChoices.forEach((choice) => {
+        lines.push(`${choice.label}: ${choice.name}`);
+      });
+
+      if (addons.length === 1) {
+        lines.push(`תוספת: ${addons[0]}`);
+      }
+
+      if (addons.length > 1) {
+        lines.push(`תוספות: ${addons.join(", ")}`);
+      }
+
+      lines.push(`גיל הילד או הילדה: ${audienceLabel ?? ""}`);
+
+      return lines.join("\n");
+    },
+  } as const;
+}

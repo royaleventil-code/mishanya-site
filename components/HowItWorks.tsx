@@ -3,6 +3,9 @@
 import { MessageCircle, ListChecks, Calendar, PartyPopper } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
+import { BidiText } from "@/components/BidiText";
+import { getDictionary } from "@/lib/dictionaries";
+import type { Locale } from "@/lib/i18n";
 
 type Step = {
   n: number;
@@ -12,39 +15,18 @@ type Step = {
   color: string;
 };
 
-const STEPS: Step[] = [
-  {
-    n: 1,
-    title: "Заявка",
-    desc: "Напишите в WhatsApp",
-    Icon: MessageCircle,
-    color: "#0a84ff",
-  },
-  {
-    n: 2,
-    title: "Подбор",
-    desc: "Согласуем программу и героя",
-    Icon: ListChecks,
-    color: "#5e5ce6",
-  },
-  {
-    n: 3,
-    title: "Подтверждение",
-    desc: "Бронируем дату",
-    Icon: Calendar,
-    color: "#ff9f0a",
-  },
-  {
-    n: 4,
-    title: "Праздник",
-    desc: "Приезжаем за час, дарим эмоции",
-    Icon: PartyPopper,
-    color: "#ff375f",
-  },
-];
+const ICONS = [MessageCircle, ListChecks, Calendar, PartyPopper] as const;
 
-export function HowItWorks() {
+export function HowItWorks({ locale = "ru" }: { locale?: Locale }) {
   const reduce = useReducedMotion();
+  const dict = getDictionary(locale);
+  const steps: Step[] = dict.catalog.howItWorks.steps.map((step, index) => ({
+    n: index + 1,
+    title: step.title,
+    desc: step.desc,
+    color: step.color,
+    Icon: ICONS[index] ?? MessageCircle,
+  }));
 
   return (
     <section
@@ -56,17 +38,17 @@ export function HowItWorks() {
     >
       <div className="text-center">
         <p className="text-sm font-black uppercase tracking-wide text-[#5e5ce6]">
-          Просто и понятно
+          {dict.catalog.howItWorks.eyebrow}
         </p>
         <h2 className="mt-2 font-[family-name:var(--font-nunito)] text-2xl font-black tracking-tight sm:text-3xl">
-          Как мы работаем
+          {dict.catalog.howItWorks.title}
         </h2>
       </div>
 
       <div className="mx-auto mt-12 w-full max-w-[760px] sm:mt-16">
-        {STEPS.map((step, idx) => {
+        {steps.map((step, idx) => {
           const isLeft = idx % 2 === 0;
-          const nextStep = STEPS[idx + 1];
+          const nextStep = steps[idx + 1];
           return (
             <div key={step.n}>
               <motion.div
@@ -76,7 +58,7 @@ export function HowItWorks() {
                 transition={{ duration: 0.5, delay: idx * 0.08, ease: "easeOut" }}
                 className={`flex ${isLeft ? "justify-start" : "justify-end"}`}
               >
-                <StepCard step={step} />
+                <StepCard locale={locale} step={step} />
               </motion.div>
               {nextStep && (
                 <ZigZagConnector
@@ -92,8 +74,9 @@ export function HowItWorks() {
   );
 }
 
-function StepCard({ step }: { step: Step }) {
+function StepCard({ locale, step }: { locale: Locale; step: Step }) {
   const { n, title, desc, Icon, color } = step;
+  const numberPositionClass = locale === "he" ? "left-7 sm:left-10" : "right-7 sm:right-10";
   return (
     <div
       className="relative flex w-full max-w-[520px] items-center gap-5 rounded-[32px] px-6 py-6 sm:gap-7 sm:px-8 sm:py-7"
@@ -146,15 +129,17 @@ function StepCard({ step }: { step: Step }) {
 
       <div className="min-w-0 flex-1">
         <h3 className="font-[family-name:var(--font-nunito)] text-2xl font-black leading-tight tracking-tight sm:text-[28px]">
-          {title}
+          <BidiText locale={locale}>{title}</BidiText>
         </h3>
         <p className="mt-2 text-base leading-snug text-[var(--color-ink-soft)] sm:text-lg">
-          {desc}
+          <BidiText locale={locale}>{desc}</BidiText>
         </p>
       </div>
 
       <span
-        className="absolute -top-4 right-7 grid h-14 w-14 place-items-center rounded-full font-[family-name:var(--font-nunito)] text-xl font-black tabular-nums sm:right-10 sm:h-16 sm:w-16 sm:text-2xl"
+        aria-hidden
+        className={`absolute -top-4 ${numberPositionClass} grid h-14 w-14 place-items-center rounded-full font-[family-name:var(--font-nunito)] text-xl font-black tabular-nums sm:h-16 sm:w-16 sm:text-2xl`}
+        dir="ltr"
         style={{
           background:
             "linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,255,255,0.68))",

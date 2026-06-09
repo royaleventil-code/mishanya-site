@@ -5,8 +5,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, MessageCircle } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
+import { BidiText } from "@/components/BidiText";
 import { DevPriceMenu } from "@/components/DevPriceMenu";
-import { WA_MESSAGES, whatsappLink } from "@/lib/whatsapp";
+import { LanguageSwitch } from "@/components/LanguageSwitch";
+import { getDictionary } from "@/lib/dictionaries";
+import { localePath, type Locale } from "@/lib/i18n";
+import { getWhatsAppMessages, whatsappLink } from "@/lib/whatsapp";
 
 type HeroAdvantage = {
   value: string;
@@ -18,39 +22,6 @@ type HeroAdvantage = {
   label: string;
   color: string;
 };
-
-const HERO_ADVANTAGES: HeroAdvantage[] = [
-  {
-    value: "11 лет",
-    counter: { from: 1, to: 11, suffix: " лет" },
-    label: "дарим праздники в Израиле",
-    color: "#ff9f0a",
-  },
-  {
-    value: "10 000+",
-    counter: { from: 1000, to: 10000, suffix: "+" },
-    label: "праздников провели",
-    color: "#0a84ff",
-  },
-  {
-    value: "783",
-    counter: { from: 0, to: 783 },
-    label: "отзыва родителей · 5,0",
-    color: "#ff375f",
-  },
-  {
-    value: "RU / HE",
-    label: "ведущие на русском и иврите",
-    color: "#5e5ce6",
-  },
-];
-
-const NAV = [
-  { href: "/ru/all", label: "Программы" },
-  { href: "/gallery", label: "Фото и видео" },
-  { href: "/about", label: "О нас" },
-  { href: "/contacts", label: "Контакты" },
-];
 
 type Dot = {
   left?: string;
@@ -86,8 +57,17 @@ const BALLOONS: Balloon[] = [
   { side: "right", pos: "19%", top: "60%", c1: "#c5b3ff", c2: "#5e5ce6", dur: 10, dy: 14 },
 ];
 
-export function HomeHero() {
+export function HomeHero({ locale = "ru" }: { locale?: Locale }) {
   const reduce = useReducedMotion();
+  const dict = getDictionary(locale);
+  const waMessages = getWhatsAppMessages(locale);
+  const nav = [
+    { href: localePath(locale, "/all"), label: dict.common.programs },
+    { href: localePath(locale, "/gallery"), label: dict.common.gallery },
+    { href: localePath(locale, "/about"), label: dict.common.about },
+    { href: localePath(locale, "/contacts"), label: dict.common.contacts },
+  ];
+  const hero = dict.home.hero;
 
   const container = {
     hidden: {},
@@ -172,10 +152,10 @@ export function HomeHero() {
 
       {/* header */}
       <header className="relative z-20 mx-auto flex h-24 max-w-6xl items-center justify-between px-5 sm:h-28 sm:px-6">
-        <Link href="/" aria-label="Мишаня в Стране Чудес" className="flex items-center">
+        <Link href={localePath(locale)} aria-label={dict.brand.logoAlt} className="flex items-center">
           <Image
-            src="/logo-ru.png"
-            alt="Мишаня в Стране Чудес"
+            src={dict.brand.logo}
+            alt={dict.brand.logoAlt}
             width={180}
             height={92}
             priority
@@ -183,22 +163,23 @@ export function HomeHero() {
           />
         </Link>
         <nav className="hidden items-center gap-6 text-sm font-bold text-zinc-700 md:flex">
-          {NAV.map((item) => (
+          {nav.map((item) => (
             <Link key={item.href} href={item.href} className="transition hover:text-zinc-950">
               {item.label}
             </Link>
           ))}
         </nav>
         <a
-          href={whatsappLink(WA_MESSAGES.default)}
+          href={whatsappLink(waMessages.default)}
           target="_blank"
           rel="noreferrer"
-          aria-label="Написать в WhatsApp"
+          aria-label={dict.common.writeWhatsapp}
           className="inline-flex h-14 min-w-14 items-center justify-center gap-2 rounded-full bg-[var(--color-whatsapp)] px-4 text-sm font-bold text-white shadow-lg transition active:scale-95 sm:h-16 sm:min-w-16 sm:px-5 sm:text-base"
         >
           <MessageCircle className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.4} />
-          <span className="hidden sm:inline">WhatsApp</span>
+          <span className="hidden sm:inline">{dict.common.whatsapp}</span>
         </a>
+        <LanguageSwitch locale={locale} compact />
       </header>
 
       {/* content */}
@@ -209,27 +190,28 @@ export function HomeHero() {
             className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3.5 py-1.5 text-xs font-bold text-zinc-700 shadow-sm ring-1 ring-black/5 backdrop-blur"
           >
             <span className="text-[#ffb400]">★★★★★</span>
-            <span>5,0 · 783 отзыва · 11 лет в Израиле</span>
+            <span><BidiText locale={locale}>{hero.badge}</BidiText></span>
           </motion.div>
 
           <motion.h1
             variants={rise}
             className="mt-4 font-[family-name:var(--font-nunito)] text-[40px] font-black leading-[1.02] tracking-tight text-zinc-950 sm:text-6xl sm:leading-[1.03]"
           >
-            Праздник{" "}
+            {hero.titleStart}{" "}
             <span className="bg-[linear-gradient(100deg,#ff375f,#ff4d6d_40%,#7c5cff)] bg-clip-text text-transparent">
-              мечты
+              {hero.titleAccent}
             </span>
-            <br className="hidden sm:block" /> для вашего ребёнка
+            <br className="hidden sm:block" /> {hero.titleEnd}
           </motion.h1>
 
           <motion.div
             variants={rise}
             className="mt-5 grid max-w-xl grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3"
           >
-            {HERO_ADVANTAGES.map((item) => (
+            {hero.advantages.map((item) => (
               <HeroStatCard
                 key={item.label}
+                locale={locale}
                 item={item}
                 reduce={reduce}
               />
@@ -238,6 +220,7 @@ export function HomeHero() {
 
           <motion.div variants={ctaRise} className="mt-7 flex flex-col gap-3 sm:flex-row">
             <DevPriceMenu
+              locale={locale}
               trigger={({ open, onClick }) => (
                 <button
                   type="button"
@@ -246,19 +229,19 @@ export function HomeHero() {
                   aria-haspopup="dialog"
                   className="group inline-flex items-center justify-center gap-2 rounded-full bg-[linear-gradient(100deg,#ff375f,#ff5a7a)] px-7 py-4 text-base font-black text-white shadow-[0_14px_30px_rgba(255,55,95,0.4)] transition-[box-shadow,transform,background] duration-300 ease-out hover:shadow-[0_18px_40px_rgba(255,55,95,0.5)] active:scale-[0.98]"
                 >
-                  Смотреть программы
-                  <ChevronRight className="h-5 w-5 transition group-hover:translate-x-0.5" strokeWidth={2.6} />
+                  <BidiText locale={locale}>{hero.programsCta}</BidiText>
+                  <ChevronRight className={`h-5 w-5 transition ${locale === "he" ? "rotate-180 group-hover:-translate-x-0.5" : "group-hover:translate-x-0.5"}`} strokeWidth={2.6} />
                 </button>
               )}
             />
             <a
-              href={whatsappLink(WA_MESSAGES.default)}
+              href={whatsappLink(waMessages.default)}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-4 text-base font-bold text-zinc-900 shadow-md ring-1 ring-black/5 transition hover:bg-zinc-50 active:scale-95"
             >
               <MessageCircle className="h-5 w-5 text-[var(--color-whatsapp)]" strokeWidth={2.4} />
-              Подобрать под ребёнка
+              <BidiText locale={locale}>{hero.personalCta}</BidiText>
             </a>
           </motion.div>
         </motion.div>
@@ -277,7 +260,7 @@ export function HomeHero() {
           >
             <Image
               src="/generated/program-party.webp"
-              alt="Герои и персонажи Мишани для детского праздника"
+              alt={hero.imageAlt}
               fill
               priority
               sizes="(max-width: 640px) 92vw, (max-width: 1024px) 46vw, 500px"
@@ -286,12 +269,14 @@ export function HomeHero() {
           </motion.div>
 
           <div className="absolute -left-3 -top-4 rounded-2xl bg-white/90 px-3.5 py-2 shadow-lg ring-1 ring-black/5 backdrop-blur">
-            <div className="text-base font-black leading-none text-zinc-950">★ 5,0</div>
-            <div className="mt-0.5 text-[10px] font-semibold text-[var(--color-ink-soft)]">783 отзыва</div>
+            <div className="text-base font-black leading-none text-zinc-950" dir="ltr">★ 5,0</div>
+            <div className="mt-0.5 text-[10px] font-semibold text-[var(--color-ink-soft)]"><BidiText locale={locale}>{hero.ratingCaption}</BidiText></div>
           </div>
-          <div className="absolute -bottom-4 -right-3 rounded-2xl bg-white/90 px-3.5 py-2 text-right shadow-lg ring-1 ring-black/5 backdrop-blur">
-            <div className="text-base font-black leading-none text-[#0a84ff]">10 000+</div>
-            <div className="mt-0.5 text-[10px] font-semibold text-[var(--color-ink-soft)]">праздников</div>
+          <div className="absolute -bottom-4 -right-3 rounded-2xl bg-white/90 px-3.5 py-2 text-end shadow-lg ring-1 ring-black/5 backdrop-blur">
+            <div className="text-base font-black leading-none text-[#0a84ff]" dir="ltr">
+              {hero.advantages[1]?.value ?? "10 000+"}
+            </div>
+            <div className="mt-0.5 text-[10px] font-semibold text-[var(--color-ink-soft)]"><BidiText locale={locale}>{hero.partiesCaption}</BidiText></div>
           </div>
         </motion.div>
       </div>
@@ -300,9 +285,11 @@ export function HomeHero() {
 }
 
 function HeroStatCard({
+  locale,
   item,
   reduce,
 }: {
+  locale: Locale;
   item: HeroAdvantage;
   reduce: boolean | null;
 }) {
@@ -319,6 +306,7 @@ function HeroStatCard({
       >
         {item.counter ? (
           <OdometerCounter
+            locale={locale}
             value={item.value}
             from={item.counter.from}
             to={item.counter.to}
@@ -326,23 +314,25 @@ function HeroStatCard({
             reduce={reduce}
           />
         ) : (
-          item.value
+          <BidiText locale={locale}>{item.value}</BidiText>
         )}
       </div>
       <div className="mt-1 text-[11px] font-bold leading-snug text-[var(--color-ink-soft)] sm:text-xs">
-        {item.label}
+        <BidiText locale={locale}>{item.label}</BidiText>
       </div>
     </div>
   );
 }
 
 function OdometerCounter({
+  locale,
   value,
   from,
   to,
   suffix = "",
   reduce,
 }: {
+  locale: Locale;
   value: string;
   from: number;
   to: number;
@@ -352,10 +342,7 @@ function OdometerCounter({
   const [current, setCurrent] = useState(reduce ? to : from);
 
   useEffect(() => {
-    if (reduce) {
-      setCurrent(to);
-      return;
-    }
+    if (reduce) return;
 
     let frame = 0;
     const duration = 2200;
@@ -374,18 +361,26 @@ function OdometerCounter({
       frame = window.requestAnimationFrame(step);
     };
 
-    setCurrent(from);
-    frame = window.requestAnimationFrame(tick);
+    frame = window.requestAnimationFrame((startTime) => {
+      setCurrent(from);
+      tick(startTime);
+    });
 
     return () => {
       window.cancelAnimationFrame(frame);
     };
   }, [from, reduce, to]);
 
-  if (reduce) return <span>{value}</span>;
+  if (reduce) {
+    return (
+      <bdi dir="ltr" className="whitespace-nowrap">
+        {value}
+      </bdi>
+    );
+  }
 
-  const formattedValue = formatOdometerNumber(current);
-  const finalValue = formatOdometerNumber(to);
+  const formattedValue = formatOdometerNumber(current, locale);
+  const finalValue = formatOdometerNumber(to, locale);
   const needsSuffixGap = suffix.startsWith(" ");
   const visibleSuffix = needsSuffixGap ? suffix.trimStart() : suffix;
 
@@ -393,6 +388,7 @@ function OdometerCounter({
     <span
       aria-label={value}
       className="inline-flex items-baseline whitespace-nowrap tabular-nums"
+      dir="ltr"
       role="text"
     >
       <span
@@ -411,6 +407,7 @@ function OdometerCounter({
   );
 }
 
-function formatOdometerNumber(value: number): string {
-  return Math.max(0, value).toLocaleString("ru-RU").replace(/\u00a0/g, " ");
+function formatOdometerNumber(value: number, locale: Locale): string {
+  const numberLocale = locale === "he" ? "en-US" : "ru-RU";
+  return Math.max(0, value).toLocaleString(numberLocale).replace(/\u00a0/g, " ");
 }

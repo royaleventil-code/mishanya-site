@@ -3,14 +3,19 @@
 import { useCallback, useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
-import { HEROES, getHeroImage } from "@/data/heroes";
+import { BidiText } from "@/components/BidiText";
+import { getHeroImage } from "@/data/heroes";
+import { getDictionary } from "@/lib/dictionaries";
+import { type Locale } from "@/lib/i18n";
+import { getLocalizedHeroes } from "@/lib/localized-data";
 
-const TILES = HEROES.filter((h) => getHeroImage(h.id));
 const AUTO_SPIN_DELAY_MS = 5000;
 const AUTO_SCROLL_SETTLE_MS = 1000;
 
-export function HeroesStrip() {
+export function HeroesStrip({ locale = "ru" }: { locale?: Locale }) {
   const reduce = useReducedMotion();
+  const dict = getDictionary(locale);
+  const tiles = getLocalizedHeroes(locale).filter((h) => getHeroImage(h.id));
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const autoSpinTimeoutRef = useRef<number | null>(null);
   const autoScrollReleaseRef = useRef<number | null>(null);
@@ -99,13 +104,12 @@ export function HeroesStrip() {
   return (
     <section className="overflow-hidden bg-[#fffaf4] py-14 sm:py-20">
       <div className="mx-auto max-w-6xl px-5 sm:px-6">
-        <p className="text-sm font-black uppercase tracking-wide text-[#5e5ce6]">Любимые герои</p>
+        <p className="text-sm font-black uppercase tracking-wide text-[#5e5ce6]">{dict.home.heroesStrip.eyebrow}</p>
         <h2 className="mt-2 font-[family-name:var(--font-nunito)] text-[32px] font-black leading-tight tracking-tight text-zinc-950 sm:text-5xl">
-          80+ персонажей, которых обожают дети
+          <BidiText locale={locale}>{dict.home.heroesStrip.title}</BidiText>
         </h2>
         <p className="mt-3 max-w-2xl text-base leading-7 text-[var(--color-ink-soft)] sm:text-lg">
-          Супергерои, принцессы, ростовые куклы и тематические образы — подберём любимца вашего
-          ребёнка.
+          <BidiText locale={locale}>{dict.home.heroesStrip.description}</BidiText>
         </p>
       </div>
 
@@ -118,7 +122,7 @@ export function HeroesStrip() {
         onMouseEnter={restartAutoSpinAfterUserAction}
         className="hide-scrollbar mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth px-5 pb-4 sm:gap-6 sm:px-6"
       >
-        {TILES.map((h, i) => {
+        {tiles.map((h, i) => {
           const img = getHeroImage(h.id) as string;
           return (
             <motion.div
@@ -145,7 +149,7 @@ export function HeroesStrip() {
                   />
                 </div>
                 <div className="relative mx-auto -mt-1 inline-flex max-w-[92%] items-center justify-center rounded-full border border-white/70 bg-white/92 px-4 py-2 text-sm font-black leading-tight text-zinc-950 shadow-[0_10px_26px_rgba(31,16,92,0.2)] backdrop-blur">
-                  <span className="truncate">{h.name}</span>
+                  <span className="truncate"><BidiText locale={locale}>{h.name}</BidiText></span>
                 </div>
               </div>
             </motion.div>

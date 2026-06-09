@@ -1,4 +1,5 @@
 import { ExternalLink, Globe2 } from "lucide-react";
+import { BidiText } from "@/components/BidiText";
 import {
   KIDS_1_3_PROOF,
   SOCIAL_LINKS,
@@ -7,23 +8,35 @@ import {
   type ProofLinkImage,
   type ProofSet,
 } from "@/data/social-proof";
+import { getDictionary } from "@/lib/dictionaries";
+import type { Locale } from "@/lib/i18n";
+import { localizeProofImageAlt, localizeProofLinkLabel } from "@/lib/page-copy";
 
-export function SocialProofSection({ proofSet = KIDS_1_3_PROOF }: { proofSet?: ProofSet }) {
+export function SocialProofSection({
+  locale = "ru",
+  proofSet = KIDS_1_3_PROOF,
+}: {
+  locale?: Locale;
+  proofSet?: ProofSet;
+}) {
+  const dict = getDictionary(locale);
+  const proof = dict.catalog.proof;
+
   return (
     <section className="px-4 py-12 sm:py-16">
       <div className="mx-auto max-w-6xl">
         <div className="mb-7">
           <p className="text-sm font-bold text-[var(--color-ink-soft)]">
-            Фото и отзывы
+            <BidiText locale={locale}>{proof.eyebrow}</BidiText>
           </p>
           <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">
-            Праздники, которые уже прошли
+            <BidiText locale={locale}>{proof.title}</BidiText>
           </h2>
         </div>
 
-        <ProofGrid title="Фото наших праздников" items={proofSet.gallery} />
-        <ProofGrid title="Отзывы родителей" items={proofSet.reviews} variant="review" />
-        <ProofMediaGrid title="Видео и контакты" items={proofSet.media} />
+        <ProofGrid title={proof.photos} items={proofSet.gallery} locale={locale} />
+        <ProofGrid title={proof.reviews} items={proofSet.reviews} locale={locale} variant="review" />
+        <ProofMediaGrid title={proof.media} items={proofSet.media} locale={locale} />
       </div>
     </section>
   );
@@ -32,15 +45,17 @@ export function SocialProofSection({ proofSet = KIDS_1_3_PROOF }: { proofSet?: P
 function ProofGrid({
   title,
   items,
+  locale,
   variant = "photo",
 }: {
   title: string;
   items: ProofImage[];
+  locale: Locale;
   variant?: "photo" | "review";
 }) {
   return (
     <div className="mt-8">
-      <h3 className="mb-3 text-xl font-black">{title}</h3>
+      <h3 className="mb-3 text-xl font-black"><BidiText locale={locale}>{title}</BidiText></h3>
       <div
         className={
           variant === "review"
@@ -49,46 +64,67 @@ function ProofGrid({
         }
       >
         {items.map((item) => (
-          <ProofImageCard key={item.src} item={item} />
+          <ProofImageCard
+            key={item.src}
+            item={item}
+            locale={locale}
+            type={variant === "review" ? "review" : "gallery"}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function ProofMediaGrid({ title, items }: { title: string; items: ProofLinkImage[] }) {
+function ProofMediaGrid({
+  title,
+  items,
+  locale,
+}: {
+  title: string;
+  items: ProofLinkImage[];
+  locale: Locale;
+}) {
   return (
     <div className="mt-8">
-      <h3 className="mb-3 text-xl font-black">{title}</h3>
+      <h3 className="mb-3 text-xl font-black"><BidiText locale={locale}>{title}</BidiText></h3>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((item) => (
-          <ProofImageCard key={item.src} item={item} />
+          <ProofImageCard key={item.src} item={item} locale={locale} type="media" />
         ))}
-        <SocialLinksCard links={SOCIAL_LINKS} />
+        <SocialLinksCard links={SOCIAL_LINKS} locale={locale} />
       </div>
     </div>
   );
 }
 
-function SocialLinksCard({ links }: { links: ProofLink[] }) {
+function SocialLinksCard({ links, locale }: { links: ProofLink[]; locale: Locale }) {
+  const dict = getDictionary(locale);
+  const proof = dict.catalog.proof;
+
   return (
     <div className="rounded-3xl border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-card)]">
-      <p className="text-sm font-bold text-[var(--color-ink-soft)]">Мы онлайн</p>
-      <h4 className="mt-2 text-2xl font-black leading-tight">Наши соцсети</h4>
+      <p className="text-sm font-bold text-[var(--color-ink-soft)]"><BidiText locale={locale}>{proof.online}</BidiText></p>
+      <h4 className="mt-2 text-2xl font-black leading-tight"><BidiText locale={locale}>{proof.social}</BidiText></h4>
       <p className="mt-2 text-sm leading-snug text-[var(--color-ink-soft)]">
-        Подпишитесь, смотрите видео с праздников и отзывы родителей.
+        <BidiText locale={locale}>{proof.socialDescription}</BidiText>
       </p>
       <div className="mt-5 grid gap-3">
         {links.map((link) => (
-          <SocialLinkItem key={link.label} link={link} />
+          <SocialLinkItem key={link.label} link={link} locale={locale} />
         ))}
       </div>
     </div>
   );
 }
 
-function SocialLinkItem({ link }: { link: ProofLink }) {
+function SocialLinkItem({ link, locale }: { link: ProofLink; locale: Locale }) {
   const brand = getSocialBrand(link.label);
+  const dict = getDictionary(locale);
+  const visibleLabel =
+    locale === "he" && link.label.toLowerCase().includes("сайт")
+      ? dict.common.site
+      : link.label;
   const content = (
     <>
       <span
@@ -96,13 +132,13 @@ function SocialLinkItem({ link }: { link: ProofLink }) {
         style={{ background: brand.iconBackground }}
       >
         <SocialIcon label={link.label} />
-      </span>
+        </span>
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-black leading-tight" style={{ color: brand.text }}>
-          {link.label}
+          <BidiText locale={locale}>{visibleLabel}</BidiText>
         </span>
         <span className="mt-0.5 block text-xs font-medium" style={{ color: brand.subtext }}>
-          {link.href ? "Открыть" : "Ссылка скоро"}
+          <BidiText locale={locale}>{link.href ? dict.common.open : dict.common.comingSoon}</BidiText>
         </span>
       </span>
       <ExternalLink className="h-4 w-4 shrink-0" style={{ color: brand.subtext }} />
@@ -110,7 +146,7 @@ function SocialLinkItem({ link }: { link: ProofLink }) {
   );
 
   const className =
-    "flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left transition";
+    "flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-start transition";
   const style = {
     background: brand.cardBackground,
     borderColor: brand.border,
@@ -213,7 +249,15 @@ function YouTubeGlyph() {
   );
 }
 
-function ProofImageCard({ item }: { item: ProofLinkImage }) {
+function ProofImageCard({
+  item,
+  locale,
+  type,
+}: {
+  item: ProofLinkImage;
+  locale: Locale;
+  type: "gallery" | "review" | "media";
+}) {
   const activeLinks = item.links?.filter((link) => link.href) ?? [];
   const activeHotspots = item.hotspots?.filter((hotspot) => hotspot.href) ?? [];
 
@@ -223,7 +267,7 @@ function ProofImageCard({ item }: { item: ProofLinkImage }) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={item.src}
-          alt={item.alt}
+          alt={localizeProofImageAlt(locale, type, item.alt)}
           loading="lazy"
           className="h-full w-full object-cover"
         />
@@ -233,8 +277,8 @@ function ProofImageCard({ item }: { item: ProofLinkImage }) {
             href={hotspot.href}
             target="_blank"
             rel="noreferrer"
-            aria-label={hotspot.label}
-            title={hotspot.label}
+            aria-label={localizeProofLinkLabel(locale, hotspot.label)}
+            title={localizeProofLinkLabel(locale, hotspot.label)}
             className="absolute rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-boy)]"
             style={{
               left: `${hotspot.rect.left}%`,
@@ -255,7 +299,7 @@ function ProofImageCard({ item }: { item: ProofLinkImage }) {
               rel="noreferrer"
               className="rounded-full bg-[var(--color-ink)] px-3 py-1.5 text-xs font-bold text-white"
             >
-              {link.label}
+              <BidiText locale={locale}>{localizeProofLinkLabel(locale, link.label)}</BidiText>
             </a>
           ))}
         </figcaption>

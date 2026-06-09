@@ -3,46 +3,27 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
+import { BidiText } from "@/components/BidiText";
+import { getDictionary } from "@/lib/dictionaries";
+import type { Locale } from "@/lib/i18n";
 
-const ITEMS = [
-  {
-    q: "Почему именно эти программы?",
-    a: "Мы подобрали программы, которые лучше всего подходят для этого возраста и пола — учли интересы и формат. Полный каталог можно посмотреть в общем разделе или спросить менеджера в WhatsApp.",
-  },
-  {
-    q: "Окончательная ли это цена?",
-    a: "Да, цена программы фиксированная и указана в карточке. «От» оставляем только у циркового шоу, потому что там состав артистов и формат могут отличаться. Дополнительные опции считаются отдельно, если вы захотите их добавить.",
-  },
-  {
-    q: "Можно ли выбрать другого героя?",
-    a: "В каждой программе можно выбрать героя из списка под программой. Если не нашли нужного — напишите менеджеру, у нас более 80 персонажей и мы подберём любого.",
-  },
-  {
-    q: "На каком языке проводится программа?",
-    a: "У нас русскоговорящие, иврит-говорящие и двуязычные ведущие. Язык программы зависит от выбора — указан в каждой карточке. Программа «Мишаня», «ТехноШоу» и «Барби» проводятся только на русском, остальные — на оба языка.",
-  },
-  {
-    q: "Можно ли изменить детали программы?",
-    a: "Конечно. Любую программу можно адаптировать под ваш праздник — увеличить длительность, добавить персонажа, поменять активности. Обсудите с менеджером в WhatsApp.",
-  },
-];
-
-const faqJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: ITEMS.map((item) => ({
-    "@type": "Question",
-    name: item.q,
-    acceptedAnswer: {
-      "@type": "Answer",
-      text: item.a,
-    },
-  })),
-};
-
-export function Faq() {
+export function Faq({ locale = "ru" }: { locale?: Locale }) {
   const [open, setOpen] = useState<number | null>(null);
   const reduce = useReducedMotion();
+  const dict = getDictionary(locale);
+  const items = dict.catalog.faq.items;
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.a,
+      },
+    })),
+  };
 
   return (
     <section className="mx-auto max-w-3xl px-5 py-10 sm:px-6 sm:py-14">
@@ -51,14 +32,14 @@ export function Faq() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
       <p className="text-sm font-black uppercase tracking-wide text-[#ff9f0a]">
-        Вопросы
+        {dict.catalog.faq.eyebrow}
       </p>
       <h2 className="mt-2 font-[family-name:var(--font-nunito)] text-2xl font-black tracking-tight sm:text-3xl">
-        Частые вопросы
+        {dict.catalog.faq.title}
       </h2>
 
       <div className="mt-6 space-y-3">
-        {ITEMS.map((item, i) => {
+        {items.map((item, i) => {
           const isOpen = open === i;
           return (
             <motion.div
@@ -71,11 +52,11 @@ export function Faq() {
             >
               <button
                 onClick={() => setOpen(isOpen ? null : i)}
-                className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left sm:px-6 sm:py-5"
+                className="flex w-full items-center justify-between gap-4 px-5 py-4 text-start sm:px-6 sm:py-5"
                 aria-expanded={isOpen}
               >
                 <span className="font-[family-name:var(--font-nunito)] text-[15px] font-black sm:text-base">
-                  {item.q}
+                  <BidiText locale={locale}>{item.q}</BidiText>
                 </span>
                 <ChevronDown
                   className={`h-5 w-5 shrink-0 text-[var(--color-ink-soft)] transition-transform duration-300 ${
@@ -92,7 +73,7 @@ export function Faq() {
                 aria-hidden={!isOpen}
               >
                 <p className="-mt-1 px-5 pb-5 text-sm leading-relaxed text-[var(--color-ink-soft)] sm:px-6 sm:pb-6">
-                  {item.a}
+                  <BidiText locale={locale}>{item.a}</BidiText>
                 </p>
               </motion.div>
             </motion.div>

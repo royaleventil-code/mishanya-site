@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { getDictionary } from "@/lib/dictionaries";
+import { LOCALE_CONFIG, localePath, switchLocalePath, type Locale } from "@/lib/i18n";
 import type { Gender } from "@/lib/types";
 
 export const SITE_NAME = "Мишаня в Стране Чудес";
@@ -22,15 +24,23 @@ export function siteUrl(path = "/"): string {
   return new URL(path, SITE_URL).toString();
 }
 
-export function childAgeLabel(age: number): string {
+export function siteName(locale: Locale = "ru"): string {
+  return getDictionary(locale).brand.name;
+}
+
+export function childAgeLabel(age: number, locale: Locale = "ru"): string {
+  if (locale === "he") return `גיל ${age}`;
   if (age === 1) return "1 год";
   if (age >= 2 && age <= 4) return `${age} года`;
   return `${age} лет`;
 }
 
-export function childLabel(gender: Gender, age: number): string {
+export function childLabel(gender: Gender, age: number, locale: Locale = "ru"): string {
+  if (locale === "he") {
+    return `${gender === "boy" ? "בן" : "בת"} ${age}`;
+  }
   const child = gender === "boy" ? "мальчика" : "девочки";
-  return `${child} ${childAgeLabel(age)}`;
+  return `${child} ${childAgeLabel(age, locale)}`;
 }
 
 export function audiencePreviewImage(gender: Gender, age: number): string {
@@ -45,6 +55,17 @@ export function ruProgramPath(path: string): string {
   return `/ru${path}`;
 }
 
+export function localizedProgramPath(locale: Locale, path: string): string {
+  return localePath(locale, path);
+}
+
+function alternateLanguages(canonicalPath: string) {
+  return {
+    ru: switchLocalePath(canonicalPath, "ru"),
+    he: switchLocalePath(canonicalPath, "he"),
+  };
+}
+
 export function createPageMetadata({
   title,
   description,
@@ -54,6 +75,7 @@ export function createPageMetadata({
   imageWidth = 1200,
   imageHeight = 630,
   noIndex = false,
+  locale = "ru",
 }: {
   title: string;
   description: string;
@@ -63,20 +85,21 @@ export function createPageMetadata({
   imageWidth?: number;
   imageHeight?: number;
   noIndex?: boolean;
+  locale?: Locale;
 }): Metadata {
+  const dict = getDictionary(locale);
+
   return {
     title,
     description,
     alternates: {
       canonical: canonicalPath,
-      languages: {
-        ru: canonicalPath,
-      },
+      languages: alternateLanguages(canonicalPath),
     },
     openGraph: {
       type: "website",
-      locale: "ru_RU",
-      siteName: SITE_NAME,
+      locale: LOCALE_CONFIG[locale].ogLocale,
+      siteName: dict.brand.name,
       title,
       description,
       url: path,
@@ -102,14 +125,22 @@ export function createPageMetadata({
   };
 }
 
-export function createAllProgramsMetadata(path = "/ru/all"): Metadata {
+export function createAllProgramsMetadata(path = "/ru/all", locale: Locale = "ru"): Metadata {
+  const name = siteName(locale);
+
   return createPageMetadata({
-    title: `Все программы детских праздников | ${SITE_NAME}`,
+    title:
+      locale === "he"
+        ? `כל תוכניות ימי ההולדת | ${name}`
+        : `Все программы детских праздников | ${name}`,
     description:
-      "Все программы Мишани с ценами: герои, шоу, длительность и подбор под возраст ребенка. Детские праздники в Израиле на русском и иврите.",
+      locale === "he"
+        ? "כל התוכניות של מישניה עם מחירים, דמויות, מופעים, משך האירוע והתאמה לגיל הילד. ימי הולדת לילדים בישראל בעברית וברוסית."
+        : "Все программы Мишани с ценами: герои, шоу, длительность и подбор под возраст ребенка. Детские праздники в Израиле на русском и иврите.",
     path,
-    canonicalPath: "/ru/all",
+    canonicalPath: localePath(locale, "/all"),
     image: DEFAULT_IMAGE,
+    locale,
   });
 }
 
@@ -117,30 +148,41 @@ export function createAgeProgramsMetadata({
   gender,
   age,
   path,
+  locale = "ru",
 }: {
   gender: Gender;
   age: number;
   path: string;
+  locale?: Locale;
 }): Metadata {
-  const audience = childLabel(gender, age);
+  const name = siteName(locale);
+  const audience = childLabel(gender, age, locale);
   const capitalizedAudience = audience[0].toUpperCase() + audience.slice(1);
   const hasAgeWhatsappPreview =
-    AGE_WHATSAPP_PREVIEW_AGES.has(age) && path === `/ru/${gender}/${age}`;
-  const ageLabel = childAgeLabel(age);
+    AGE_WHATSAPP_PREVIEW_AGES.has(age) && path === localePath(locale, `/${gender}/${age}`);
+  const ageLabel = childAgeLabel(age, locale);
   const child = gender === "boy" ? "мальчика" : "девочки";
+  const heChild = gender === "boy" ? "לבן" : "לבת";
 
   return createPageMetadata({
-    title: hasAgeWhatsappPreview
-      ? `Программа для ${child} ${ageLabel} | ${SITE_NAME}`
-      : `Программы для ${audience} | ${SITE_NAME}`,
-    description: hasAgeWhatsappPreview
-      ? `Программа праздника для ${child} ${ageLabel}: герои, шоу, цены, фото, видео и быстрый выбор.`
-      : `${capitalizedAudience}: готовые программы с ценами, героями и шоу. Подберем праздник под возраст, формат и место проведения в Израиле.`,
+    title:
+      locale === "he"
+        ? `תוכניות יום הולדת ${heChild} ${age} | ${name}`
+        : hasAgeWhatsappPreview
+          ? `Программа для ${child} ${ageLabel} | ${name}`
+          : `Программы для ${audience} | ${name}`,
+    description:
+      locale === "he"
+        ? `תוכניות יום הולדת ${heChild} ${age}: דמויות, מופעים, מחירים, תמונות, סרטונים ובחירה מהירה ב־WhatsApp.`
+        : hasAgeWhatsappPreview
+          ? `Программа праздника для ${child} ${ageLabel}: герои, шоу, цены, фото, видео и быстрый выбор.`
+          : `${capitalizedAudience}: готовые программы с ценами, героями и шоу. Подберем праздник под возраст, формат и место проведения в Израиле.`,
     path,
-    canonicalPath: ruProgramPath(`/${gender}/${age}`),
+    canonicalPath: localizedProgramPath(locale, `/${gender}/${age}`),
     image: hasAgeWhatsappPreview
       ? `/og/${gender}-${age}-whatsapp-preview.png`
       : audiencePreviewImage(gender, age),
     imageHeight: hasAgeWhatsappPreview ? 1200 : undefined,
+    locale,
   });
 }

@@ -6,19 +6,25 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, MessageCircle, X } from "lucide-react";
-import { WA_MESSAGES, whatsappLink } from "@/lib/whatsapp";
+import { BidiText } from "@/components/BidiText";
+import { getDictionary } from "@/lib/dictionaries";
+import { localePath, type Locale } from "@/lib/i18n";
+import { getWhatsAppMessages, whatsappLink } from "@/lib/whatsapp";
 
 const BOY_AGES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const GIRL_AGES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 type DevPriceMenuProps = {
+  locale?: Locale;
   theme?: "light" | "dark";
   trigger?: (props: { open: boolean; onClick: () => void }) => ReactNode;
 };
 
-export function DevPriceMenu({ theme = "light", trigger }: DevPriceMenuProps) {
+export function DevPriceMenu({ locale = "ru", theme = "light", trigger }: DevPriceMenuProps) {
   const [open, setOpen] = useState(false);
   const isDark = theme === "dark";
+  const dict = getDictionary(locale);
+  const waMessages = getWhatsAppMessages(locale);
   const summaryClass = isDark
     ? "border-white/25 bg-white/10 text-white hover:bg-white/16"
     : "border-[var(--color-line)] bg-white text-[var(--color-ink)] shadow-sm hover:bg-zinc-50";
@@ -47,21 +53,25 @@ export function DevPriceMenu({ theme = "light", trigger }: DevPriceMenuProps) {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Программы и цены"
+        aria-label={dict.common.pricesDialogTitle}
         className="mx-auto max-h-[calc(100dvh-116px)] w-full max-w-[340px] overflow-hidden rounded-2xl border border-black/5 bg-white shadow-[0_24px_70px_rgba(15,15,20,0.24)]"
       >
         <div className="flex items-start justify-between gap-3 px-4 pb-2 pt-4">
           <div>
-            <div className="text-[11px] font-black uppercase tracking-wide text-[#0a84ff]">Программы и цены</div>
-            <div className="mt-1 text-base font-black leading-tight">Выберите возраст ребёнка</div>
+            <div className="text-[11px] font-black uppercase tracking-wide text-[#0a84ff]">
+              {dict.common.pricesDialogTitle}
+            </div>
+            <div className="mt-1 text-base font-black leading-tight">
+              {dict.common.chooseChildAge}
+            </div>
             <p className="mt-1.5 text-xs leading-5 text-[var(--color-ink-soft)]">
-              Так сайт покажет программы, которые подходят именно вашему ребёнку.
+              <BidiText locale={locale}>{dict.common.chooseChildAgeDescription}</BidiText>
             </p>
           </div>
           <button
             type="button"
             onClick={closeMenu}
-            aria-label="Закрыть цены"
+            aria-label={dict.common.closePrices}
             className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-ink)] text-white shadow-sm transition active:scale-95"
           >
             <X className="h-5 w-5" strokeWidth={2.6} />
@@ -71,16 +81,16 @@ export function DevPriceMenu({ theme = "light", trigger }: DevPriceMenuProps) {
           <div className="rounded-xl bg-[#f4f8ff] p-3">
             <div className="mb-2 flex items-end justify-between gap-2">
               <div>
-                <div className="text-sm font-black">Для мальчиков</div>
-                <div className="text-xs font-bold text-[var(--color-ink-soft)]">1-10 лет</div>
+                <div className="text-sm font-black">{dict.common.boys}</div>
+                <div className="text-xs font-bold text-[var(--color-ink-soft)]"><BidiText locale={locale}>{dict.common.ageRange}</BidiText></div>
               </div>
               <span className="rounded-full bg-white px-2 py-1 text-[10px] font-black text-[#0a84ff] min-[370px]:px-2.5 min-[370px]:text-[11px]">
-                выбрать возраст
+                <BidiText locale={locale}>{dict.common.chooseAge}</BidiText>
               </span>
             </div>
             <div className="grid grid-cols-5 gap-1.5">
               {BOY_AGES.map((age) => (
-                <DevPriceLink key={age} href={`/ru/boy/${age}`} label={`${age}`} compact onSelect={closeMenu} />
+                <DevPriceLink key={age} href={localePath(locale, `/boy/${age}`)} label={`${age}`} compact onSelect={closeMenu} />
               ))}
             </div>
           </div>
@@ -88,28 +98,28 @@ export function DevPriceMenu({ theme = "light", trigger }: DevPriceMenuProps) {
           <div className="rounded-xl bg-[#fff4f8] p-3">
             <div className="mb-2 flex items-end justify-between gap-2">
               <div>
-                <div className="text-sm font-black">Для девочек</div>
-                <div className="text-xs font-bold text-[var(--color-ink-soft)]">1-10 лет</div>
+                <div className="text-sm font-black">{dict.common.girls}</div>
+                <div className="text-xs font-bold text-[var(--color-ink-soft)]"><BidiText locale={locale}>{dict.common.ageRange}</BidiText></div>
               </div>
               <span className="rounded-full bg-white px-2 py-1 text-[10px] font-black text-[#e34f7d] min-[370px]:px-2.5 min-[370px]:text-[11px]">
-                выбрать возраст
+                <BidiText locale={locale}>{dict.common.chooseAge}</BidiText>
               </span>
             </div>
             <div className="grid grid-cols-5 gap-1.5">
               {GIRL_AGES.map((age) => (
-                <DevPriceLink key={age} href={`/ru/girl/${age}`} label={`${age}`} compact onSelect={closeMenu} />
+                <DevPriceLink key={age} href={localePath(locale, `/girl/${age}`)} label={`${age}`} compact onSelect={closeMenu} />
               ))}
             </div>
           </div>
 
           <a
-            href={whatsappLink(WA_MESSAGES.default)}
+            href={whatsappLink(waMessages.default)}
             target="_blank"
             rel="noreferrer"
             className="flex items-center justify-center gap-2 rounded-lg bg-[var(--color-whatsapp)] px-3 py-3 text-center text-sm font-black text-white transition active:scale-95"
           >
             <MessageCircle className="h-4 w-4" strokeWidth={2.6} />
-            Помощь в подборе программы
+            <BidiText locale={locale}>{dict.common.helpChooseProgram}</BidiText>
           </a>
         </div>
       </div>
@@ -127,7 +137,7 @@ export function DevPriceMenu({ theme = "light", trigger }: DevPriceMenuProps) {
           aria-expanded={open}
           className={`flex h-10 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-black transition active:scale-95 ${summaryClass}`}
         >
-          Цены
+          {dict.common.prices}
           <ChevronDown className={`h-3.5 w-3.5 transition ${open ? "rotate-180" : ""}`} strokeWidth={2.6} />
         </button>
       )}

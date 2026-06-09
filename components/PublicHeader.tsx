@@ -3,21 +3,32 @@
 import Image from "next/image";
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
+import { BidiText } from "@/components/BidiText";
 import { DevPriceMenu } from "@/components/DevPriceMenu";
+import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { useAutoHideHeader } from "@/components/useAutoHideHeader";
-import { WA_MESSAGES, whatsappLink } from "@/lib/whatsapp";
+import { getDictionary } from "@/lib/dictionaries";
+import { localePath, type Locale } from "@/lib/i18n";
+import { getWhatsAppMessages, whatsappLink } from "@/lib/whatsapp";
 
-const NAV = [
-  { href: "/about", label: "О нас" },
-  { href: "/formats", label: "Форматы" },
-  { href: "/ru/all", label: "Программы" },
-  { href: "/gallery", label: "Фото" },
-  { href: "/contacts", label: "Контакты" },
-];
-
-export function PublicHeader({ theme = "light" }: { theme?: "light" | "dark" }) {
+export function PublicHeader({
+  locale = "ru",
+  theme = "light",
+}: {
+  locale?: Locale;
+  theme?: "light" | "dark";
+}) {
   const isDark = theme === "dark";
   const { isVisible, showHeader } = useAutoHideHeader();
+  const dict = getDictionary(locale);
+  const waMessages = getWhatsAppMessages(locale);
+  const nav = [
+    { href: localePath(locale, "/about"), label: dict.common.about },
+    { href: localePath(locale, "/formats"), label: dict.common.formats },
+    { href: localePath(locale, "/all"), label: dict.common.programs },
+    { href: localePath(locale, "/gallery"), label: dict.common.galleryShort },
+    { href: localePath(locale, "/contacts"), label: dict.common.contacts },
+  ];
 
   return (
     <header
@@ -32,10 +43,10 @@ export function PublicHeader({ theme = "light" }: { theme?: "light" | "dark" }) 
     >
       <div className="mx-auto flex h-24 max-w-6xl items-center justify-between px-5 sm:px-6">
         <div className="flex items-center gap-2">
-          <Link href="/" aria-label="Мишаня в Стране Чудес" className="flex items-center">
+          <Link href={localePath(locale)} aria-label={dict.brand.logoAlt} className="flex items-center">
             <Image
-              src="/logo-ru.png"
-              alt="Мишаня в Стране Чудес"
+              src={dict.brand.logo}
+              alt={dict.brand.logoAlt}
               width={180}
               height={92}
               className="h-20 w-auto"
@@ -44,7 +55,7 @@ export function PublicHeader({ theme = "light" }: { theme?: "light" | "dark" }) 
         </div>
 
         <nav className="hidden items-center gap-5 text-sm font-bold md:flex">
-          {NAV.map((item) => (
+          {nav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -57,6 +68,7 @@ export function PublicHeader({ theme = "light" }: { theme?: "light" | "dark" }) 
 
         <div className="flex items-center gap-2">
           <DevPriceMenu
+            locale={locale}
             theme={theme}
             trigger={({ open, onClick }) => (
               <button
@@ -70,19 +82,20 @@ export function PublicHeader({ theme = "light" }: { theme?: "light" | "dark" }) 
                     : "border-[var(--color-line)] bg-white text-[var(--color-ink)] shadow-sm hover:bg-zinc-50"
                 }`}
               >
-                Программы
+                {dict.common.programs}
               </button>
             )}
           />
+          <LanguageSwitch locale={locale} theme={theme} compact />
           <a
-            href={whatsappLink(WA_MESSAGES.default)}
+            href={whatsappLink(waMessages.default)}
             target="_blank"
             rel="noreferrer"
-            aria-label="Написать в WhatsApp"
+            aria-label={dict.common.writeWhatsapp}
             className="inline-flex h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--color-whatsapp)] text-sm font-bold text-white shadow-lg transition active:scale-95 sm:w-auto sm:px-4 sm:py-2.5"
           >
             <MessageCircle className="h-4 w-4" strokeWidth={2.4} />
-            <span className="hidden sm:inline">WhatsApp</span>
+            <span className="hidden sm:inline"><BidiText locale={locale}>{dict.common.whatsapp}</BidiText></span>
           </a>
         </div>
       </div>

@@ -4,15 +4,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, animate, motion, useMotionValue } from "framer-motion";
 import { Baby, Banknote, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, MapPin, MessageCircle, Users, X } from "lucide-react";
-import type { AudienceContext, Gender, Hero, Program, SegmentId } from "@/lib/types";
+import { BidiText } from "@/components/BidiText";
+import type { Addon, AudienceContext, Hero, Program, SegmentId } from "@/lib/types";
 import { filterHeroes, filterPrograms } from "@/lib/filtering";
 import { sortHeroes } from "@/lib/heroOrder";
-import { whatsappLink, WA_MESSAGES } from "@/lib/whatsapp";
+import { getDictionary } from "@/lib/dictionaries";
+import type { Locale } from "@/lib/i18n";
+import { getLocalizedAddons } from "@/lib/localized-data";
+import { getWhatsAppMessages, whatsappLink } from "@/lib/whatsapp";
 import { formatProgramPriceLabel, formatShekelPrice, hasStartingPrice } from "@/lib/prices";
-import { ADDONS } from "@/data/addons";
 import { getHeroEmoji, getHeroImage } from "@/data/heroes";
 
 type Props = {
+  locale?: Locale;
   segment: SegmentId;
   accent: string;
   programs: Program[];
@@ -20,14 +24,13 @@ type Props = {
   audience?: AudienceContext;
 };
 
-type AddonItem = (typeof ADDONS)[number];
+type AddonItem = Addon;
 type HeroChoice = {
   label: string;
   hero: Hero;
 };
 
 type ProgramMoodConfig = {
-  label: string;
   tint: string;
   glow: string;
   accent: string;
@@ -36,49 +39,42 @@ type ProgramMoodConfig = {
 
 const PROGRAM_MOODS: Record<string, ProgramMoodConfig> = {
   chemistry: {
-    label: "лабораторное шоу",
     tint: "rgba(20, 184, 166, 0.24)",
     glow: "rgba(16, 185, 129, 0.34)",
     accent: "#14b8a6",
     marks: ["●", "○", "✦"],
   },
   neon: {
-    label: "световое шоу",
     tint: "rgba(168, 85, 247, 0.28)",
     glow: "rgba(34, 211, 238, 0.32)",
     accent: "#a855f7",
     marks: ["—", "✦", "—"],
   },
   "harry-potter": {
-    label: "магический квест",
     tint: "rgba(245, 158, 11, 0.24)",
     glow: "rgba(124, 58, 237, 0.24)",
     accent: "#f59e0b",
     marks: ["✦", "✧", "✦"],
   },
   "super-heroes": {
-    label: "геройская миссия",
     tint: "rgba(37, 99, 235, 0.24)",
     glow: "rgba(239, 68, 68, 0.28)",
     accent: "#2563eb",
     marks: ["▰", "▱", "▰"],
   },
   kpop: {
-    label: "танцевальная сцена",
     tint: "rgba(236, 72, 153, 0.24)",
     glow: "rgba(99, 102, 241, 0.28)",
     accent: "#ec4899",
     marks: ["♪", "✦", "♪"],
   },
   tiktok: {
-    label: "челлендж-вечеринка",
     tint: "rgba(6, 182, 212, 0.24)",
     glow: "rgba(244, 63, 94, 0.28)",
     accent: "#06b6d4",
     marks: ["♪", "↗", "♪"],
   },
   foam: {
-    label: "пенная вечеринка",
     tint: "rgba(125, 211, 252, 0.26)",
     glow: "rgba(45, 212, 191, 0.28)",
     accent: "#0ea5e9",
@@ -228,21 +224,38 @@ const GIRL_MASCOT_HERO_IDS = {
   ],
 } as const;
 
-function formatPrice(price: number): string {
-  return formatShekelPrice(price);
+function formatPrice(price: number, locale: Locale): string {
+  return formatShekelPrice(price, locale);
 }
 
-function programPriceLabel(program: Program, amount = program.priceFrom): string {
-  return formatProgramPriceLabel(program.id, amount);
+function programPriceLabel(program: Program, locale: Locale, amount = program.priceFrom): string {
+  return formatProgramPriceLabel(program.id, amount, locale);
 }
 
-function programPriceCtaLabel(program: Program, amount: number): string {
-  return hasStartingPrice(program.id)
-    ? `от ${formatPrice(amount)}`
-    : `за ${formatPrice(amount)}`;
+function programPriceDisplayParts(programId: string, amount: number, locale: Locale): { prefix: string; price: string } {
+  const price = formatPrice(amount, locale);
+  return {
+    prefix: hasStartingPrice(programId) ? (locale === "he" ? "החל מ־" : "от ") : "",
+    price,
+  };
 }
 
-function ageLabel(age: number): string {
+function programPriceCtaParts(program: Program, amount: number, locale: Locale): { prefix: string; price: string } {
+  const price = formatPrice(amount, locale);
+  if (locale === "he") {
+    return {
+      prefix: hasStartingPrice(program.id) ? "החל מ־" : "ב־",
+      price,
+    };
+  }
+  return {
+    prefix: hasStartingPrice(program.id) ? "от " : "за ",
+    price,
+  };
+}
+
+function ageLabel(age: number, locale: Locale): string {
+  if (locale === "he") return String(age);
   if (age === 1) return "1 год";
   if (age >= 2 && age <= 4) return `${age} года`;
   return `${age} лет`;
@@ -253,108 +266,20 @@ type AudienceIntro = {
   body: string;
 };
 
-const AGE_INTROS: Record<Gender, Record<number, AudienceIntro>> = {
-  boy: {
-    1: {
-      lead: "В 1 год праздник должен быть мягким и спокойным.",
-      body: "Лучше заходят короткие игры, музыка, мыльные пузыри и добрые герои рядом с родителями, без шума и перегруза.",
-    },
-    2: {
-      lead: "В 2 года мальчикам уже хочется двигаться и всё трогать.",
-      body: "Подойдут простые задания, танцы, пузыри, машинки и герои с понятными действиями: побежать, поймать, повторить, победить.",
-    },
-    3: {
-      lead: "В 3 года мальчики любят быть героями маленького приключения.",
-      body: "Ниже собраны программы с динамичными персонажами, простыми миссиями, танцами и активными играми без сложных правил.",
-    },
-    4: {
-      lead: "В 4 года уже отлично работают сюжет, команда и герой.",
-      body: "Супергерои, спасательные миссии, гонки, весёлые испытания и яркий реквизит помогают детям быстро включиться в праздник.",
-    },
-    5: {
-      lead: "В 5 лет хочется больше драйва и настоящих побед.",
-      body: "Подойдут программы с эстафетами, командными заданиями, супергероями, ростовыми куклами и понятным финалом, где именинник в центре.",
-    },
-    6: {
-      lead: "В 6 лет мальчику уже хочется праздника с драйвом, сюжетом и настоящим участием.",
-      body: "Мы подбираем программы, где есть движение, командные задания, яркие герои и моменты, в которых именинник чувствует себя главным.",
-    },
-    7: {
-      lead: "В 7 лет праздник должен быть быстрым, смешным и азартным.",
-      body: "Хорошо заходят квесты, супергерои, Minecraft-стиль, челленджи, танцевальные задания и игры, где можно проявить характер.",
-    },
-    8: {
-      lead: "В 8 лет дети ценят не только героя, но и саму игру.",
-      body: "Нужны задания посложнее, больше юмора, командная динамика, современные темы и шоу-эффекты, чтобы праздник ощущался взрослее.",
-    },
-    9: {
-      lead: "В 9 лет мальчикам важны энергия, стиль и ощущение вызова.",
-      body: "Подойдут активные программы, баттлы, командные испытания, современные персонажи и форматы, где дети не просто смотрят, а участвуют.",
-    },
-    10: {
-      lead: "В 10 лет лучше работают взрослый темп и сильная идея.",
-      body: "Выбираем программы с сильной подачей: больше шоу, челленджей, юмора, командной борьбы и современных тем для их возраста.",
-    },
-  },
-  girl: {
-    1: {
-      lead: "В 1 год важны нежность, спокойный ритм и красивые эмоции.",
-      body: "Подойдут короткие музыкальные игры, пузыри, мягкие персонажи и сказочная атмосфера, чтобы малышке было комфортно рядом с родителями.",
-    },
-    2: {
-      lead: "В 2 года девочкам чаще всего заходят музыка, движение и мягкое волшебство.",
-      body: "Лучше выбирать программы с понятными играми, танцами, пузырями, добрыми героями и красивыми моментами без длинного сюжета.",
-    },
-    3: {
-      lead: "В 3 года особенно работают сказка, музыка и понятный сюжет.",
-      body: "Ниже собраны яркие программы с любимыми героинями, танцами, простыми заданиями и красивым финалом для именинницы.",
-    },
-    4: {
-      lead: "В 4 года девочки уже легко входят в роль и верят в историю.",
-      body: "Принцессы, единорожки, феи, Леди Баг, танцы и волшебные задания помогают сделать праздник живым, нежным и активным.",
-    },
-    5: {
-      lead: "В 5 лет хочется сказки, движения и внимания к имениннице.",
-      body: "Хорошо заходят программы с героиней на выбор, танцами, красивыми заданиями, ростовой куклой и моментами для фото.",
-    },
-    6: {
-      lead: "В 6 лет девочкам уже важны образ, музыка и чувство праздника.",
-      body: "Подойдут программы с яркими героинями, танцевальными блоками, шоу-элементами, конкурсами и красивым поздравлением в финале.",
-    },
-    7: {
-      lead: "В 7 лет праздник становится более стильным и самостоятельным.",
-      body: "Можно добавлять TikTok-настроение, K-pop, Wednesday, танцы, челленджи и программы, где девочки чувствуют себя частью команды.",
-    },
-    8: {
-      lead: "В 8 лет девочкам важны стиль, музыка и необычный формат.",
-      body: "Хорошо работают современные героини, танцевальные задания, K-pop, неон, шоу-эффекты и игры, где есть выбор и самовыражение.",
-    },
-    9: {
-      lead: "В 9 лет хочется уже не малышовый праздник, а яркое событие.",
-      body: "Подойдут K-pop, TikTok, Wednesday, неоновые форматы, челленджи, танцы и шоу, где дети выглядят взрослее и увереннее.",
-    },
-    10: {
-      lead: "В 10 лет лучше выбирать формат с характером и современным настроением.",
-      body: "Нужны танцы, челленджи, K-pop, неон и эффектные шоу — больше стиля, общения и ярких кадров.",
-    },
-  },
-};
-
-function audienceMessageValue(audience?: AudienceContext): string | undefined {
+function audienceMessageValue(locale: Locale, audience?: AudienceContext): string | undefined {
   if (!audience?.age || !audience.gender) return undefined;
-  return `${audience.gender === "boy" ? "мальчик" : "девочка"} ${ageLabel(audience.age)}`;
+  const labels = getDictionary(locale).catalog.labels;
+  return `${audience.gender === "boy" ? labels.boyAudience : labels.girlAudience} ${ageLabel(audience.age, locale)}`;
 }
 
-function audienceIntroText(audience?: AudienceContext): AudienceIntro {
+function audienceIntroText(locale: Locale, audience?: AudienceContext): AudienceIntro {
+  const catalog = getDictionary(locale).catalog;
   if (audience?.age && audience.gender) {
-    const copy = AGE_INTROS[audience.gender][audience.age];
+    const copy = catalog.ageIntros[audience.gender][audience.age];
     if (copy) return copy;
   }
 
-  return {
-    lead: "Поможем выбрать без лишней путаницы.",
-    body: "Ниже собраны программы, с которых проще всего начать выбор. Детали подстроим под ребёнка, площадку и настроение праздника.",
-  };
+  return catalog.fallbackIntro;
 }
 
 function getProgramIdFromUrl(): string | null {
@@ -383,10 +308,16 @@ function syncProgramIdToUrl(programId: string | null, mode: "push" | "replace") 
   }
 }
 
-function heroChoiceLabel(label: string): string {
+function heroChoiceLabel(label: string, locale: Locale): string {
+  const labels = getDictionary(locale).catalog.labels;
   const normalized = label.toLowerCase();
-  if (normalized.includes("ростовая")) return "Ростовая кукла";
-  if (normalized.includes("ведущ") || normalized.includes("герой")) return "Образ для ведущего";
+  if (locale === "he") {
+    if (normalized.includes("בובת")) return labels.mascotChoice;
+    if (normalized.includes("דמות")) return labels.costumeChoice;
+    return label;
+  }
+  if (normalized.includes("ростовая")) return labels.mascotChoice;
+  if (normalized.includes("ведущ") || normalized.includes("герой")) return labels.costumeChoice;
   return label;
 }
 
@@ -435,11 +366,14 @@ function getProgramCover(
   );
 }
 
-export function ProgramsSection({ segment, accent, programs, heroes, audience }: Props) {
+export function ProgramsSection({ locale = "ru", segment, accent, programs, heroes, audience }: Props) {
+  const dict = getDictionary(locale);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [slideDirection, setSlideDirection] = useState<-1 | 1>(1);
-  const [modalRoot, setModalRoot] = useState<HTMLElement | null>(null);
-  const audienceIntro = audienceIntroText(audience);
+  const [modalRoot] = useState<HTMLElement | null>(() =>
+    typeof document === "undefined" ? null : document.body,
+  );
+  const audienceIntro = audienceIntroText(locale, audience);
 
   const visiblePrograms = useMemo(
     () => filterPrograms(programs, segment, { kidsCount: null, location: null, language: null }, audience),
@@ -455,10 +389,6 @@ export function ProgramsSection({ segment, accent, programs, heroes, audience }:
   const selectedPosition = selectedIndex >= 0 ? selectedIndex + 1 : undefined;
   const canGoPrevious = selectedIndex > 0;
   const canGoNext = selectedIndex >= 0 && selectedIndex < visiblePrograms.length - 1;
-
-  useEffect(() => {
-    setModalRoot(document.body);
-  }, []);
 
   useEffect(() => {
     const syncSelectedProgramFromUrl = () => setSelectedId(getProgramIdFromUrl());
@@ -499,8 +429,8 @@ export function ProgramsSection({ segment, accent, programs, heroes, audience }:
     if (!selectedProgram) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setSelectedId(null);
-      if (e.key === "ArrowLeft") navigateProgram(-1);
-      if (e.key === "ArrowRight") navigateProgram(1);
+      if (e.key === "ArrowLeft") navigateProgram(locale === "he" ? 1 : -1);
+      if (e.key === "ArrowRight") navigateProgram(locale === "he" ? -1 : 1);
     };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -508,14 +438,14 @@ export function ProgramsSection({ segment, accent, programs, heroes, audience }:
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-  }, [navigateProgram, selectedProgram]);
+  }, [locale, navigateProgram, selectedProgram]);
 
   return (
     <section className="mx-auto max-w-3xl px-5 sm:px-6 pb-10">
       {audience?.age && audience.gender && (
         <div className="mt-5 rounded-3xl bg-white px-5 py-4 text-center text-[15px] leading-7 shadow-[var(--shadow-card)] ring-1 ring-black/[0.04] sm:text-base">
-          <span className="block font-black">{audienceIntro.lead}</span>
-          <span className="mt-1 block text-[var(--color-ink-soft)]">{audienceIntro.body}</span>
+          <span className="block font-black"><BidiText locale={locale}>{audienceIntro.lead}</BidiText></span>
+          <span className="mt-1 block text-[var(--color-ink-soft)]"><BidiText locale={locale}>{audienceIntro.body}</BidiText></span>
         </div>
       )}
 
@@ -525,6 +455,7 @@ export function ProgramsSection({ segment, accent, programs, heroes, audience }:
           <ProgramCard
             key={p.id}
             program={p}
+            locale={locale}
             accent={accent}
             segment={segment}
             audience={audience}
@@ -533,7 +464,7 @@ export function ProgramsSection({ segment, accent, programs, heroes, audience }:
         ))}
         {visiblePrograms.length === 0 && (
           <div className="sm:col-span-2 text-center py-12 text-[var(--color-ink-soft)] text-sm">
-            Для этой подборки пока нет программ.
+            {dict.catalog.labels.noPrograms}
           </div>
         )}
       </div>
@@ -545,6 +476,7 @@ export function ProgramsSection({ segment, accent, programs, heroes, audience }:
               <ProgramModal
                 key="program-modal"
                 program={selectedProgram}
+                locale={locale}
                 accent={accent}
                 segment={segment}
                 heroes={heroes}
@@ -569,24 +501,28 @@ export function ProgramsSection({ segment, accent, programs, heroes, audience }:
 
 function ProgramCard({
   program,
+  locale,
   accent,
   segment,
   audience,
   onOpen,
 }: {
   program: Program;
+  locale: Locale;
   accent: string;
   segment: SegmentId;
   audience?: AudienceContext;
   onOpen: () => void;
 }) {
+  const dict = getDictionary(locale);
   const indoorOnly = program.locations.length === 1 && program.locations[0] === "indoor";
   const cover = getProgramCover(program, segment, audience);
+  const priceParts = programPriceDisplayParts(program.id, program.priceFrom, locale);
 
   return (
     <button
       onClick={onOpen}
-      className="group text-left rounded-[28px] bg-white overflow-hidden shadow-[0_16px_40px_rgba(15,15,20,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(15,15,20,0.12)] focus:outline-none focus:ring-2"
+      className="group text-start rounded-[28px] bg-white overflow-hidden shadow-[0_16px_40px_rgba(15,15,20,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(15,15,20,0.12)] focus:outline-none focus:ring-2"
       style={{ ['--tw-ring-color' as never]: accent }}
     >
       {/* Cover */}
@@ -629,17 +565,17 @@ function ProgramCard({
 
         {program.ruOnly && (
           <span className="absolute top-3 right-3 rounded-full bg-white/85 backdrop-blur px-2.5 py-1 text-[10px] font-medium text-[var(--color-ink-soft)] shadow-sm">
-            На русском
+            {dict.catalog.labels.ruOnlyBadge}
           </span>
         )}
       </div>
 
       {/* Body */}
       <div className="p-5 text-center">
-        <h3 className="text-xl font-bold tracking-tight">{program.title}</h3>
+        <h3 className="text-xl font-bold tracking-tight"><BidiText locale={locale}>{program.title}</BidiText></h3>
         {program.tagline && (
           <p className="mt-0.5 text-xs text-[var(--color-ink-soft)] line-clamp-2">
-            {program.tagline}
+            <BidiText locale={locale}>{program.tagline}</BidiText>
           </p>
         )}
 
@@ -649,32 +585,43 @@ function ProgramCard({
             style={{ background: `${accent}14`, color: "var(--color-ink)" }}
           >
             <MapPin className="h-3.5 w-3.5" strokeWidth={2.4} />
-            Только в помещении
+            {dict.catalog.labels.indoorOnly}
           </div>
         )}
 
         <div className="mt-2 flex items-center justify-center flex-wrap gap-x-2 gap-y-1.5">
           {/* Price pill */}
-          <div className="apple-glass inline-flex items-baseline gap-1 rounded-full px-3 py-1.5 text-sm font-bold text-[var(--color-ink)]">
-            {programPriceLabel(program)}
+          <div className="apple-glass inline-flex items-baseline rounded-full px-3 py-1.5 text-sm font-bold text-[var(--color-ink)]" dir={locale === "he" ? undefined : "ltr"}>
+            {locale === "he" ? (
+              <>
+                {priceParts.prefix && <span>{priceParts.prefix}</span>}
+                <bdi dir="ltr" className="whitespace-nowrap">
+                  {priceParts.price}
+                </bdi>
+              </>
+            ) : (
+              programPriceLabel(program, locale)
+            )}
           </div>
 
           <span className="inline-flex items-center gap-1 text-xs text-[var(--color-ink-soft)]">
             <Clock className="w-3.5 h-3.5" strokeWidth={2.2} />
-            {program.durationLabel}
+            <BidiText locale={locale}>{program.durationLabel}</BidiText>
           </span>
 
           <span className="inline-flex items-center gap-1 text-xs text-[var(--color-ink-soft)]">
             <Users className="w-3.5 h-3.5" strokeWidth={2.2} />
-            {program.maxKids === null ? "Без ограничений" : `до ${program.maxKids}`}
+            <BidiText locale={locale}>{program.maxKids === null ? dict.catalog.labels.unlimitedKids : dict.catalog.labels.upToKids(program.maxKids)}</BidiText>
           </span>
         </div>
 
         <div
           className="apple-glass-strong mt-4 inline-flex w-full items-center justify-center gap-1 rounded-full py-2.5 text-sm font-semibold text-[var(--color-ink)] transition group-hover:bg-white"
         >
-          Подробнее
-          <span className="transition group-hover:translate-x-0.5">→</span>
+          {dict.catalog.labels.details}
+          <span className={`transition ${locale === "he" ? "group-hover:-translate-x-0.5" : "group-hover:translate-x-0.5"}`}>
+            {dict.catalog.labels.detailsArrow}
+          </span>
         </div>
       </div>
     </button>
@@ -685,6 +632,7 @@ function ProgramCard({
 
 function ProgramModal({
   program,
+  locale,
   accent,
   segment,
   heroes,
@@ -698,6 +646,7 @@ function ProgramModal({
   onClose,
 }: {
   program: Program;
+  locale: Locale;
   accent: string;
   segment: SegmentId;
   heroes: Hero[];
@@ -710,6 +659,9 @@ function ProgramModal({
   onNavigate: (direction: -1 | 1) => void;
   onClose: () => void;
 }) {
+  const dict = getDictionary(locale);
+  const waMessages = getWhatsAppMessages(locale);
+  const addons = getLocalizedAddons(locale);
   const APPLE_EASE = [0.32, 0.72, 0, 1] as const;
   const swipeStartRef = useRef<{ x: number; y: number; canClose: boolean } | null>(null);
   const closeTrackingCleanupRef = useRef<(() => void) | null>(null);
@@ -719,7 +671,7 @@ function ProgramModal({
   const [selectedAddonIdsByProgram, setSelectedAddonIdsByProgram] = useState<Record<string, string[]>>({});
   const recommendedAddons =
     program.recommendedAddonIds
-      ?.map((id) => ADDONS.find((addon) => addon.id === id))
+      ?.map((id) => addons.find((addon) => addon.id === id))
       .filter((addon): addon is AddonItem => Boolean(addon)) ?? [];
   const cover = getProgramCover(program, segment, audience);
   const selectedHeroBySlot = selectedHeroByProgram[program.id] ?? {};
@@ -727,7 +679,7 @@ function ProgramModal({
   const selectedHeroChoices = program.heroSlots
     .map((slot, slotIdx) => {
       const hero = selectedHeroBySlot[slotIdx];
-      return hero ? { label: heroChoiceLabel(slot.label), hero } : null;
+      return hero ? { label: heroChoiceLabel(slot.label, locale), hero } : null;
     })
     .filter((choice): choice is HeroChoice => Boolean(choice));
   const selectedAddons = recommendedAddons.filter((addon) => selectedAddonIds.includes(addon.id));
@@ -735,7 +687,7 @@ function ProgramModal({
     program.priceFrom + selectedAddons.reduce((sum, addon) => sum + addon.priceFrom, 0);
   const hasCustomChoice = selectedHeroChoices.length > 0 || selectedAddons.length > 0;
   const indoorOnly = program.locations.length === 1 && program.locations[0] === "indoor";
-  const orderMessage = WA_MESSAGES.programOrder({
+  const orderMessage = waMessages.programOrder({
     programId: program.id,
     programName: program.title,
     durationLabel: program.durationLabel,
@@ -745,9 +697,15 @@ function ProgramModal({
     })),
     addons: selectedAddons.map((addon) => addon.name),
     totalPriceFrom,
-    audienceLabel: audienceMessageValue(audience),
+    audienceLabel: audienceMessageValue(locale, audience),
   });
-  const ctaLabel = `Написать про ${program.title} ${programPriceCtaLabel(program, totalPriceFrom)}`;
+  const ctaPriceParts = programPriceCtaParts(program, totalPriceFrom, locale);
+  const ctaPriceLabel = `${ctaPriceParts.prefix}${ctaPriceParts.price}`;
+  const ctaLabel = dict.catalog.labels.writeAboutProgram(program.title, ctaPriceLabel);
+  const ctaTextPrefix =
+    locale === "he" && ctaLabel.endsWith(ctaPriceLabel)
+      ? `${ctaLabel.slice(0, -ctaPriceLabel.length)}${ctaPriceParts.prefix}`
+      : null;
   const mood = PROGRAM_MOODS[program.id];
 
   useEffect(() => {
@@ -906,7 +864,7 @@ function ProgramModal({
       <motion.div
         role="dialog"
         aria-modal="true"
-        aria-label={`Программа ${program.title}`}
+        aria-label={dict.catalog.labels.modalAria(program.title)}
         className="relative w-full sm:max-w-2xl bg-white sm:rounded-3xl shadow-2xl h-[100dvh] sm:h-auto sm:max-h-[95vh] overflow-y-auto overflow-x-hidden overscroll-y-contain"
         onClick={(e) => e.stopPropagation()}
         onPointerDown={rememberSwipeStart}
@@ -951,8 +909,13 @@ function ProgramModal({
               const swiped =
                 Math.abs(offset) > 80 || Math.abs(velocity) > 500;
               if (!swiped) return;
-              if (offset < 0 && canGoNext) onNavigate(1);
-              else if (offset > 0 && canGoPrevious) onNavigate(-1);
+              if (locale === "he") {
+                if (offset < 0 && canGoPrevious) onNavigate(-1);
+                else if (offset > 0 && canGoNext) onNavigate(1);
+              } else {
+                if (offset < 0 && canGoNext) onNavigate(1);
+                else if (offset > 0 && canGoPrevious) onNavigate(-1);
+              }
             }}
             style={{ touchAction: "pan-y" }}
           >
@@ -978,16 +941,16 @@ function ProgramModal({
               {program.emoji}
             </span>
           )}
-          <ProgramMoodLayer mood={mood} />
+          <ProgramMoodLayer mood={mood} label={dict.catalog.moods[program.id]} />
         </div>
 
         <div className="p-5 pb-28 sm:p-7 sm:pb-7">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center">
-            {program.title}
+            <BidiText locale={locale}>{program.title}</BidiText>
           </h2>
           {program.tagline && (
             <p className="mt-1 text-sm text-[var(--color-ink-soft)] text-center">
-              {program.tagline}
+              <BidiText locale={locale}>{program.tagline}</BidiText>
             </p>
           )}
           {total > 1 && position !== undefined && (
@@ -997,19 +960,20 @@ function ProgramModal({
           )}
           {(program.ruOnly || indoorOnly) && (
             <div className="mt-2 space-y-1 text-center text-xs font-semibold text-amber-600">
-              {program.ruOnly && <p>Программа проводится только на русском языке</p>}
-              {indoorOnly && <p>Программа проводится только в помещении</p>}
+              {program.ruOnly && <p>{dict.catalog.labels.ruOnlyNotice}</p>}
+              {indoorOnly && <p>{dict.catalog.labels.indoorNotice}</p>}
             </div>
           )}
 
           {/* Stat tiles */}
           <div className="mt-5 grid grid-cols-3 gap-2">
-            <Stat icon={<Clock className="w-4 h-4" />} value={program.durationLabel} label="длительность" />
-            <Stat icon={<Users className="w-4 h-4" />} value={program.animatorsLabel ?? `${program.animators}`} label="команда" />
+            <Stat locale={locale} icon={<Clock className="w-4 h-4" />} value={program.durationLabel} label={dict.catalog.labels.duration} />
+            <Stat locale={locale} icon={<Users className="w-4 h-4" />} value={program.animatorsLabel ?? `${program.animators}`} label={dict.catalog.labels.team} />
             <Stat
+              locale={locale}
               icon={<Baby className="w-4 h-4" />}
-              value={program.maxKids === null ? "Без ограничений" : `до ${program.maxKids}`}
-              label={program.maxKids === null ? "" : "детей"}
+              value={program.maxKids === null ? dict.catalog.labels.unlimitedKids : dict.catalog.labels.upToKids(program.maxKids)}
+              label={program.maxKids === null ? "" : dict.catalog.labels.kids}
             />
           </div>
 
@@ -1018,8 +982,8 @@ function ProgramModal({
               className="mt-3 rounded-2xl p-4 text-sm"
               style={{ background: `${accent}14`, color: "var(--color-ink)" }}
             >
-              <span className="font-medium">Важно: </span>
-              {program.note}
+              <span className="font-medium">{dict.catalog.labels.important}</span>
+              <BidiText locale={locale}>{program.note}</BidiText>
             </div>
           )}
 
@@ -1040,9 +1004,9 @@ function ProgramModal({
             />
             <div className="relative text-[var(--color-ink)]">
               <div className="text-xs uppercase tracking-wider opacity-90 font-medium">
-                {hasStartingPrice(program.id) ? "Стоимость от" : "Стоимость"}
+                {hasStartingPrice(program.id) ? dict.catalog.labels.priceFrom : dict.catalog.labels.price}
               </div>
-              <div className="mt-1 flex min-h-[40px] items-center justify-center text-3xl font-bold tracking-tight tabular-nums sm:min-h-[48px] sm:text-4xl">
+              <div className="mt-1 flex min-h-[40px] items-center justify-center text-3xl font-bold tracking-tight tabular-nums sm:min-h-[48px] sm:text-4xl" dir="ltr">
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.span
                     key={totalPriceFrom}
@@ -1051,7 +1015,7 @@ function ProgramModal({
                     exit={{ opacity: 0, y: -6 }}
                     transition={{ duration: 0.16, ease: APPLE_EASE }}
                   >
-                    {formatPrice(totalPriceFrom)}
+                    {formatPrice(totalPriceFrom, locale)}
                   </motion.span>
                 </AnimatePresence>
               </div>
@@ -1061,7 +1025,7 @@ function ProgramModal({
 
           {/* Includes — iOS list style */}
           <div className="mt-7">
-            <h3 className="text-base font-semibold mb-3 px-1">Что входит</h3>
+            <h3 className="text-base font-semibold mb-3 px-1">{dict.catalog.labels.includes}</h3>
             {program.includesHighlight && (
               <div
                 className="apple-glass mb-3 rounded-2xl px-4 py-3 text-[15px] font-semibold"
@@ -1069,7 +1033,7 @@ function ProgramModal({
                   color: "var(--color-ink)",
                 }}
               >
-                {program.includesHighlight}
+                <BidiText locale={locale}>{program.includesHighlight}</BidiText>
               </div>
             )}
             <ul
@@ -1095,7 +1059,7 @@ function ProgramModal({
                     strokeWidth={2.5}
                     style={{ color: accent }}
                   />
-                  <span className="leading-snug">{item}</span>
+                  <span className="leading-snug"><BidiText locale={locale}>{item}</BidiText></span>
                 </li>
               ))}
             </ul>
@@ -1107,8 +1071,8 @@ function ProgramModal({
               className="mt-5 rounded-2xl p-4 text-sm"
               style={{ background: `${accent}14`, color: "var(--color-ink)" }}
             >
-              <span className="font-medium">Бонус: </span>
-              {program.bonus}
+              <span className="font-medium">{dict.catalog.labels.bonus}</span>
+              <BidiText locale={locale}>{program.bonus}</BidiText>
             </div>
           )}
 
@@ -1141,6 +1105,7 @@ function ProgramModal({
             return (
               <HeroSlotPanel
                 key={slotIdx}
+                locale={locale}
                 label={slot.label}
                 heroes={slotHeroes}
                 accent={accent}
@@ -1172,7 +1137,7 @@ function ProgramModal({
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-3.5 py-2 text-sm font-medium hover:bg-zinc-200"
                 >
-                  🎥 Смотреть видео {program.videos!.length > 1 ? `№${i + 1}` : ""}
+                  <BidiText locale={locale}>{dict.catalog.labels.video(program.videos!.length > 1 ? i + 1 : undefined)}</BidiText>
                 </a>
               ))}
             </div>
@@ -1180,6 +1145,7 @@ function ProgramModal({
 
           {recommendedAddons.length > 0 && (
             <RecommendedAddonsPanel
+              locale={locale}
               addons={recommendedAddons}
               accent={accent}
               selectedAddonIds={selectedAddonIds}
@@ -1202,6 +1168,7 @@ function ProgramModal({
 
           {hasCustomChoice && (
             <ProgramChoiceSummary
+              locale={locale}
               programId={program.id}
               programName={program.title}
               durationLabel={program.durationLabel}
@@ -1215,10 +1182,20 @@ function ProgramModal({
             href={whatsappLink(orderMessage)}
             target="_blank"
             rel="noopener noreferrer"
+            aria-label={ctaLabel}
             className="mt-7 inline-flex min-h-[56px] w-full items-center justify-center gap-2 rounded-2xl bg-[var(--color-whatsapp)] px-5 py-4 text-center text-base font-semibold leading-tight text-white shadow-lg transition active:scale-[0.98]"
           >
             <MessageCircle className="h-5 w-5 shrink-0" strokeWidth={2.5} />
-            {ctaLabel}
+            {ctaTextPrefix ? (
+              <>
+                <span>{ctaTextPrefix}</span>
+                <bdi dir="ltr" className="whitespace-nowrap">
+                  {ctaPriceParts.price}
+                </bdi>
+              </>
+            ) : (
+              <BidiText locale={locale}>{ctaLabel}</BidiText>
+            )}
           </a>
         </div>
           </motion.div>
@@ -1230,7 +1207,7 @@ function ProgramModal({
         data-close-drag-handle
         role="button"
         tabIndex={0}
-        aria-label="Закрыть"
+        aria-label={dict.catalog.labels.close}
         className="fixed left-1/2 top-2 z-[70] flex h-10 w-28 -translate-x-1/2 cursor-grab items-start justify-center rounded-full pt-2 active:cursor-grabbing"
         style={{ touchAction: "none" }}
         onClick={(event) => {
@@ -1253,8 +1230,8 @@ function ProgramModal({
       {/* Sticky close button */}
       <button
         onClick={onClose}
-        aria-label="Закрыть"
-        className="fixed top-3 right-3 z-[70] w-10 h-10 rounded-full bg-white/95 hover:bg-white flex items-center justify-center shadow-md backdrop-blur transition"
+        aria-label={dict.catalog.labels.close}
+        className="fixed top-3 end-3 z-[70] w-10 h-10 rounded-full bg-white/95 hover:bg-white flex items-center justify-center shadow-md backdrop-blur transition"
       >
         <X className="w-5 h-5" />
       </button>
@@ -1264,29 +1241,37 @@ function ProgramModal({
         <div className="pointer-events-none fixed left-0 right-0 z-[60] flex items-center justify-between px-2 sm:px-5 top-[120px] sm:top-1/2 sm:-translate-y-1/2">
           <button
             type="button"
-            aria-label="Предыдущая программа"
+            aria-label={dict.catalog.labels.previous}
             disabled={!canGoPrevious}
             onClick={(e) => {
               e.stopPropagation();
               onNavigate(-1);
             }}
             className="pointer-events-auto flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-white/95 text-[var(--color-ink)] shadow-[0_10px_30px_rgba(0,0,0,0.25)] backdrop-blur transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Предыдущая программа"
+            title={dict.catalog.labels.previous}
           >
-            <ChevronLeft className="h-7 w-7 sm:h-8 sm:w-8" strokeWidth={2.6} />
+            {locale === "he" ? (
+              <ChevronRight className="h-7 w-7 sm:h-8 sm:w-8" strokeWidth={2.6} />
+            ) : (
+              <ChevronLeft className="h-7 w-7 sm:h-8 sm:w-8" strokeWidth={2.6} />
+            )}
           </button>
           <button
             type="button"
-            aria-label="Следующая программа"
+            aria-label={dict.catalog.labels.next}
             disabled={!canGoNext}
             onClick={(e) => {
               e.stopPropagation();
               onNavigate(1);
             }}
             className="pointer-events-auto flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-white/95 text-[var(--color-ink)] shadow-[0_10px_30px_rgba(0,0,0,0.25)] backdrop-blur transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Следующая программа"
+            title={dict.catalog.labels.next}
           >
-            <ChevronRight className="h-7 w-7 sm:h-8 sm:w-8" strokeWidth={2.6} />
+            {locale === "he" ? (
+              <ChevronLeft className="h-7 w-7 sm:h-8 sm:w-8" strokeWidth={2.6} />
+            ) : (
+              <ChevronRight className="h-7 w-7 sm:h-8 sm:w-8" strokeWidth={2.6} />
+            )}
           </button>
         </div>
       )}
@@ -1294,7 +1279,7 @@ function ProgramModal({
   );
 }
 
-function ProgramMoodLayer({ mood }: { mood?: ProgramMoodConfig }) {
+function ProgramMoodLayer({ mood, label }: { mood?: ProgramMoodConfig; label?: string }) {
   if (!mood) return null;
 
   return (
@@ -1319,23 +1304,27 @@ function ProgramMoodLayer({ mood }: { mood?: ProgramMoodConfig }) {
             {mark}
           </span>
         ))}
-        <span>{mood.label}</span>
+        {label && <span>{label}</span>}
       </div>
     </div>
   );
 }
 
 function RecommendedAddonsPanel({
+  locale,
   addons,
   accent,
   selectedAddonIds,
   onToggleAddon,
 }: {
+  locale: Locale;
   addons: AddonItem[];
   accent: string;
   selectedAddonIds: string[];
   onToggleAddon: (addonId: string) => void;
 }) {
+  const dict = getDictionary(locale);
+
   return (
     <div className="apple-glass mt-6 rounded-3xl p-4">
       <div className="flex items-start gap-3">
@@ -1343,9 +1332,9 @@ function RecommendedAddonsPanel({
           +
         </div>
         <div className="min-w-0">
-          <h3 className="text-base font-bold leading-tight">Можно добавить к празднику</h3>
+          <h3 className="text-base font-bold leading-tight">{dict.catalog.labels.addonsTitle}</h3>
           <p className="mt-1 text-xs leading-snug text-[var(--color-ink-soft)]">
-            Опции, которые хорошо подходят к этой программе
+            {dict.catalog.labels.addonsDescription}
           </p>
         </div>
       </div>
@@ -1371,7 +1360,7 @@ function RecommendedAddonsPanel({
             <AnimatePresence>
               {selected && (
                 <motion.span
-                  className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full text-white"
+                  className="absolute end-2 top-2 flex h-6 w-6 items-center justify-center rounded-full text-white"
                   style={{ backgroundColor: accent }}
                   initial={{ opacity: 0, scale: 0.82 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -1395,10 +1384,10 @@ function RecommendedAddonsPanel({
               )}
             </div>
             <div className="mt-2 min-h-[34px] text-[13px] font-bold leading-tight text-[var(--color-ink)]">
-              {addon.name}
+              <BidiText locale={locale}>{addon.name}</BidiText>
             </div>
             <div className="mt-1 text-xs font-medium text-[var(--color-ink-soft)]">
-              от {formatPrice(addon.priceFrom)}
+              {dict.catalog.labels.addonPricePrefix} <span dir="ltr">{formatPrice(addon.priceFrom, locale)}</span>
             </div>
           </button>
           );
@@ -1409,6 +1398,7 @@ function RecommendedAddonsPanel({
 }
 
 function ProgramChoiceSummary({
+  locale,
   programId,
   programName,
   durationLabel,
@@ -1416,6 +1406,7 @@ function ProgramChoiceSummary({
   addons,
   totalPriceFrom,
 }: {
+  locale: Locale;
   programId: string;
   programName: string;
   durationLabel: string;
@@ -1423,6 +1414,9 @@ function ProgramChoiceSummary({
   addons: AddonItem[];
   totalPriceFrom: number;
 }) {
+  const dict = getDictionary(locale);
+  const priceParts = programPriceDisplayParts(programId, totalPriceFrom, locale);
+
   return (
     <motion.div
       className="apple-glass mt-6 rounded-3xl p-4"
@@ -1432,38 +1426,49 @@ function ProgramChoiceSummary({
       aria-live="polite"
     >
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-base font-bold">Мой праздник</h3>
+        <h3 className="text-base font-bold">{dict.catalog.labels.summaryTitle}</h3>
         <span className="apple-glass-strong rounded-full px-3 py-1 text-[11px] font-semibold text-[var(--color-ink)]">
-          Выбрано
+          {dict.catalog.labels.selected}
         </span>
       </div>
 
       <div className="mt-4 space-y-2.5 text-sm">
-        <SummaryRow label="Программа" value={`${programName}, ${durationLabel}`} />
+        <SummaryRow locale={locale} label={dict.catalog.labels.program} value={`${programName}, ${durationLabel}`} />
         <AnimatePresence initial={false}>
           {heroChoices.map((choice) => (
-            <SummaryRow key={choice.hero.id} label={choice.label} value={choice.hero.name} />
+            <SummaryRow key={choice.hero.id} locale={locale} label={choice.label} value={choice.hero.name} />
           ))}
           {addons.length > 0 && (
             <SummaryRow
               key="addons"
-              label={addons.length === 1 ? "Дополнительная опция" : "Дополнительные опции"}
+              locale={locale}
+              label={addons.length === 1 ? dict.catalog.labels.addon : dict.catalog.labels.addons}
               value={addons.map((addon) => addon.name).join(", ")}
             />
           )}
         </AnimatePresence>
         <div className="apple-glass-strong flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-[var(--color-ink)]">
-          <span className="text-xs font-medium opacity-70">Итого</span>
+          <span className="text-xs font-medium opacity-70">{dict.catalog.labels.total}</span>
           <AnimatePresence mode="wait" initial={false}>
             <motion.span
               key={totalPriceFrom}
               className="text-base font-bold tabular-nums"
+              dir={locale === "he" ? undefined : "ltr"}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.14, ease: [0.32, 0.72, 0, 1] }}
             >
-              {formatProgramPriceLabel(programId, totalPriceFrom)}
+              {locale === "he" ? (
+                <>
+                  {priceParts.prefix && <span>{priceParts.prefix}</span>}
+                  <bdi dir="ltr" className="whitespace-nowrap">
+                    {priceParts.price}
+                  </bdi>
+                </>
+              ) : (
+                formatProgramPriceLabel(programId, totalPriceFrom, locale)
+              )}
             </motion.span>
           </AnimatePresence>
         </div>
@@ -1472,7 +1477,7 @@ function ProgramChoiceSummary({
   );
 }
 
-function SummaryRow({ label, value }: { label: string; value: string }) {
+function SummaryRow({ locale, label, value }: { locale: Locale; label: string; value: string }) {
   return (
     <motion.div
       className="flex items-start justify-between gap-3 rounded-2xl bg-white/75 px-3 py-2.5 shadow-sm"
@@ -1482,26 +1487,27 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
       transition={{ duration: 0.14, ease: [0.32, 0.72, 0, 1] }}
     >
       <span className="text-xs font-medium leading-snug text-[var(--color-ink-soft)]">
-        {label}
+        <BidiText locale={locale}>{label}</BidiText>
       </span>
-      <span className="max-w-[58%] text-right text-sm font-bold leading-snug text-[var(--color-ink)]">
-        {value}
+      <span className="max-w-[58%] text-end text-sm font-bold leading-snug text-[var(--color-ink)]">
+        <BidiText locale={locale}>{value}</BidiText>
       </span>
     </motion.div>
   );
 }
 
-function Stat({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
+function Stat({ locale, icon, value, label }: { locale: Locale; icon: React.ReactNode; value: string; label: string }) {
   return (
     <div className="apple-glass rounded-2xl p-3 text-center">
       <div className="flex justify-center text-[var(--color-ink-soft)]">{icon}</div>
-      <div className="mt-1.5 text-sm font-semibold leading-tight">{value}</div>
-      {label && <div className="mt-0.5 text-[11px] text-[var(--color-ink-soft)]">{label}</div>}
+      <div className="mt-1.5 text-sm font-semibold leading-tight"><BidiText locale={locale}>{value}</BidiText></div>
+      {label && <div className="mt-0.5 text-[11px] text-[var(--color-ink-soft)]"><BidiText locale={locale}>{label}</BidiText></div>}
     </div>
   );
 }
 
 function HeroSlotPanel({
+  locale,
   label,
   heroes,
   accent,
@@ -1509,6 +1515,7 @@ function HeroSlotPanel({
   selectedHeroId,
   onSelectHero,
 }: {
+  locale: Locale;
   label: string;
   heroes: Hero[];
   accent: string;
@@ -1517,6 +1524,7 @@ function HeroSlotPanel({
   onSelectHero: (hero: Hero) => void;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const dict = getDictionary(locale);
   const selectedHero = heroes.find((hero) => hero.id === selectedHeroId);
   return (
     <div className="mt-6 border border-[var(--color-line)] rounded-2xl overflow-hidden">
@@ -1524,15 +1532,15 @@ function HeroSlotPanel({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="w-full flex items-center justify-between px-4 py-3.5 text-left bg-white hover:bg-zinc-50"
+        className="w-full flex items-center justify-between px-4 py-3.5 text-start bg-white hover:bg-zinc-50"
       >
-        <span className="text-[15px] font-semibold">{label}</span>
+        <span className="text-[15px] font-semibold"><BidiText locale={locale}>{label}</BidiText></span>
         <div className="flex items-center gap-2">
           <span
             className="max-w-[150px] truncate text-xs font-bold"
             style={selectedHero ? { color: accent } : undefined}
           >
-            {selectedHero?.name ?? `${heroes.length} вариантов`}
+            <BidiText locale={locale}>{selectedHero?.name ?? dict.catalog.labels.variants(heroes.length)}</BidiText>
           </span>
           <ChevronDown
             className={`w-5 h-5 text-[var(--color-ink-soft)] transition-transform ${
@@ -1597,7 +1605,7 @@ function HeroSlotPanel({
                   )}
                 </div>
                 <div className="mt-0.5 text-[11px] leading-tight font-medium line-clamp-2 min-h-[28px] flex items-center justify-center">
-                  {h.name}
+                  <BidiText locale={locale}>{h.name}</BidiText>
                 </div>
               </button>
               );

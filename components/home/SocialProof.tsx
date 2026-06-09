@@ -3,6 +3,9 @@
 import Image from "next/image";
 import { ChevronRight } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
+import { BidiText } from "@/components/BidiText";
+import { getDictionary } from "@/lib/dictionaries";
+import type { Locale } from "@/lib/i18n";
 
 const PHOTOS = [
   "/proof/girls-4-6/page-11.webp",
@@ -15,19 +18,19 @@ const PHOTOS = [
 const FB = "https://www.facebook.com/royaleventisrael/reviews/?ref=page_internal";
 const YT = "https://www.youtube.com/channel/UCo189jVSku-2H_0Rgrw9JCw";
 
-export function SocialProof() {
+export function SocialProof({ locale = "ru" }: { locale?: Locale }) {
   const reduce = useReducedMotion();
+  const dict = getDictionary(locale);
 
   return (
     <section id="reviews" className="bg-white px-5 py-14 sm:px-6 sm:py-20">
       <div className="mx-auto max-w-6xl text-center">
         <div className="text-2xl text-[#ffb400]">★★★★★</div>
         <h2 className="mt-2 font-[family-name:var(--font-nunito)] text-[32px] font-black leading-tight tracking-tight text-zinc-950 sm:text-5xl">
-          5,0 из 5 · 783 отзыва родителей
+          <BidiText locale={locale}>{dict.home.socialProof.title}</BidiText>
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-base leading-7 text-[var(--color-ink-soft)] sm:text-lg">
-          Семьи возвращаются к нам год за годом и приводят друзей. Лучшее доказательство — реальные
-          фото, видео и отзывы.
+          <BidiText locale={locale}>{dict.home.socialProof.description}</BidiText>
         </p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <a
@@ -36,8 +39,8 @@ export function SocialProof() {
             rel="noreferrer"
             className="inline-flex items-center gap-1.5 rounded-full bg-zinc-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-zinc-800 active:scale-95"
           >
-            Отзывы в Facebook
-            <ChevronRight className="h-4 w-4" strokeWidth={2.6} />
+            <BidiText locale={locale}>{dict.home.socialProof.facebook}</BidiText>
+            <ChevronRight className={`h-4 w-4 ${locale === "he" ? "rotate-180" : ""}`} strokeWidth={2.6} />
           </a>
           <a
             href={YT}
@@ -45,8 +48,8 @@ export function SocialProof() {
             rel="noreferrer"
             className="inline-flex items-center gap-1.5 rounded-full bg-white px-5 py-3 text-sm font-bold text-zinc-900 ring-1 ring-black/10 transition hover:bg-zinc-50 active:scale-95"
           >
-            Видео с праздников
-            <ChevronRight className="h-4 w-4" strokeWidth={2.6} />
+            <BidiText locale={locale}>{dict.home.socialProof.video}</BidiText>
+            <ChevronRight className={`h-4 w-4 ${locale === "he" ? "rotate-180" : ""}`} strokeWidth={2.6} />
           </a>
         </div>
       </div>
@@ -63,7 +66,7 @@ export function SocialProof() {
           >
             <Image
               src={src}
-              alt="Фото с детского праздника Мишани"
+              alt={dict.home.socialProof.photoAlt}
               fill
               sizes="240px"
               className="object-cover"

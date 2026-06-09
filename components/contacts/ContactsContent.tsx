@@ -5,6 +5,7 @@ import {
   BadgeCheck,
   CalendarCheck,
   Camera,
+  ChevronLeft,
   ChevronRight,
   Languages,
   MapPin,
@@ -14,7 +15,11 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
-import { WA_DISPLAY, WA_MESSAGES, whatsappLink } from "@/lib/whatsapp";
+import { BidiText } from "@/components/BidiText";
+import { getDictionary } from "@/lib/dictionaries";
+import { localePath, type Locale } from "@/lib/i18n";
+import { getPageCopy } from "@/lib/page-copy";
+import { WA_DISPLAY, getWhatsAppMessages, whatsappLink } from "@/lib/whatsapp";
 
 const TEL_HREF = `tel:${WA_DISPLAY.replace(/[^+\d]/g, "")}`;
 
@@ -22,38 +27,22 @@ const CONTACT_CARDS = [
   {
     color: "#25d366",
     Icon: MessageCircle,
-    title: "WhatsApp",
-    text: "Самый быстрый способ — ответим в течение нескольких минут.",
-    value: WA_DISPLAY,
-    href: whatsappLink(WA_MESSAGES.default),
-    external: true,
-    cta: "Написать",
+    key: "whatsapp",
   },
   {
     color: "#0a84ff",
     Icon: Phone,
-    title: "Телефон",
-    text: "Позвоните, если удобнее голосом — всё обсудим и подберём программу.",
-    value: WA_DISPLAY,
-    href: TEL_HREF,
-    external: false,
-    cta: "Позвонить",
+    key: "phone",
   },
   {
     color: "#ff9f0a",
     Icon: Camera,
-    title: "Email",
-    text: "Напишите письмо — пришлём идеи, форматы и ответим на все вопросы.",
-    value: "royal.eventil@gmail.com",
-    href: "mailto:royal.eventil@gmail.com",
-    external: false,
-    cta: "Написать письмо",
+    key: "email",
   },
   {
     color: "#5e5ce6",
     Icon: Palette,
-    title: "Соцсети",
-    text: "Загляните за фото и видео с праздников — там живые эмоции детей.",
+    key: "social",
     socials: [
       { label: "Instagram", href: "https://www.instagram.com/show.mishanya/" },
       { label: "Facebook", href: "https://www.facebook.com/royaleventisrael/" },
@@ -66,27 +55,52 @@ const ASSURANCE = [
   {
     color: "#ff375f",
     Icon: MapPin,
-    title: "Работаем по всему Израилю",
-    text: "Приезжаем в любой город — дом, зал, садик, школа, парк или ресторан.",
   },
   {
     color: "#0a84ff",
     Icon: Languages,
-    title: "Русский и иврит",
-    text: "Ведущие говорят на языке ваших гостей — комфортно всей семье.",
   },
   {
     color: "#5e5ce6",
     Icon: CalendarCheck,
-    title: "Отвечаем быстро",
-    text: "Обычно на связи в течение нескольких минут — поможем закрепить дату.",
   },
 ] as const;
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-export function ContactsContent() {
+export function ContactsContent({ locale = "ru" }: { locale?: Locale }) {
   const reduce = useReducedMotion();
+  const copy = getPageCopy(locale).contacts;
+  const dict = getDictionary(locale);
+  const waMessages = getWhatsAppMessages(locale);
+  const ArrowIcon = locale === "he" ? ChevronLeft : ChevronRight;
+  const contactCards = [
+    {
+      ...CONTACT_CARDS[0],
+      ...copy.cards.whatsapp,
+      value: WA_DISPLAY,
+      href: whatsappLink(waMessages.default),
+      external: true,
+    },
+    {
+      ...CONTACT_CARDS[1],
+      ...copy.cards.phone,
+      value: WA_DISPLAY,
+      href: TEL_HREF,
+      external: false,
+    },
+    {
+      ...CONTACT_CARDS[2],
+      ...copy.cards.email,
+      value: "royal.eventil@gmail.com",
+      href: "mailto:royal.eventil@gmail.com",
+      external: false,
+    },
+    {
+      ...CONTACT_CARDS[3],
+      ...copy.cards.social,
+    },
+  ] as const;
 
   return (
     <>
@@ -103,32 +117,31 @@ export function ContactsContent() {
           className="relative mx-auto max-w-6xl"
         >
           <p className="text-sm font-black uppercase tracking-wide text-[#25d366]">
-            Контакты
+            {copy.hero.eyebrow}
           </p>
           <h1 className="mt-2 max-w-3xl font-[family-name:var(--font-nunito)] text-[34px] font-black leading-tight tracking-tight text-zinc-950 sm:text-6xl">
-            Свяжитесь с нами
+            {copy.hero.title}
           </h1>
           <p className="mt-4 max-w-xl text-base leading-7 text-[var(--color-ink-soft)] sm:text-lg">
-            Напишите в WhatsApp — подберём идеальную программу под вашего ребёнка
-            и закрепим дату. Отвечаем быстро и с радостью.
+            <BidiText locale={locale}>{copy.hero.description}</BidiText>
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <a
-              href={whatsappLink(WA_MESSAGES.default)}
+              href={whatsappLink(waMessages.default)}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-whatsapp)] px-8 py-4 text-base font-black text-white shadow-lg transition active:scale-95"
             >
               <MessageCircle className="h-5 w-5" strokeWidth={2.4} />
-              Написать в WhatsApp
+              <BidiText locale={locale}>{dict.common.writeWhatsapp}</BidiText>
             </a>
             <a
               href={TEL_HREF}
               className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-base font-bold text-zinc-950 ring-1 ring-black/5 transition active:scale-95"
             >
               <Phone className="h-5 w-5" strokeWidth={2.4} />
-              {WA_DISPLAY}
+              <bdi dir="ltr">{WA_DISPLAY}</bdi>
             </a>
           </div>
         </motion.div>
@@ -139,15 +152,15 @@ export function ContactsContent() {
         <div className="mx-auto max-w-6xl">
           <div className="max-w-2xl">
             <p className="text-sm font-black uppercase tracking-wide text-[#25d366]">
-              Как с нами связаться
+              {copy.sections.contactEyebrow}
             </p>
             <h2 className="mt-2 font-[family-name:var(--font-nunito)] text-[32px] font-black leading-tight tracking-tight text-zinc-950 sm:text-5xl">
-              Выберите удобный способ
+              {copy.sections.contactTitle}
             </h2>
           </div>
 
           <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5">
-            {CONTACT_CARDS.map((card, i) => (
+            {contactCards.map((card, i) => (
               <motion.article
                 key={card.title}
                 initial={reduce ? false : { opacity: 0, y: 24 }}
@@ -167,10 +180,10 @@ export function ContactsContent() {
                   />
                 </span>
                 <h3 className="mt-4 font-[family-name:var(--font-nunito)] text-lg font-black leading-tight text-zinc-950">
-                  {card.title}
+                  <BidiText locale={locale}>{card.title}</BidiText>
                 </h3>
                 <p className="mt-1.5 text-sm leading-6 text-[var(--color-ink-soft)]">
-                  {card.text}
+                  <BidiText locale={locale}>{card.text}</BidiText>
                 </p>
 
                 {"socials" in card ? (
@@ -183,8 +196,8 @@ export function ContactsContent() {
                         rel="noreferrer"
                         className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-[#fffaf4] px-4 py-2.5 text-sm font-bold text-zinc-950 ring-1 ring-black/[0.06] transition active:scale-95"
                       >
-                        {s.label}
-                        <ChevronRight className="h-4 w-4 text-[var(--color-ink-soft)]" strokeWidth={2.4} />
+                        <BidiText locale={locale}>{s.label}</BidiText>
+                        <ArrowIcon className="h-4 w-4 text-[var(--color-ink-soft)]" strokeWidth={2.4} />
                       </a>
                     ))}
                   </div>
@@ -195,9 +208,11 @@ export function ContactsContent() {
                     className="mt-4 inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-black text-white transition active:scale-95"
                     style={{ background: card.color }}
                   >
-                    {card.cta}
-                    <span className="font-bold opacity-90">· {card.value}</span>
-                    <ChevronRight className="h-4 w-4" strokeWidth={2.4} />
+                    <BidiText locale={locale}>{card.cta}</BidiText>
+                    <span className="font-bold opacity-90">
+                      · <bdi dir="ltr">{card.value}</bdi>
+                    </span>
+                    <ArrowIcon className="h-4 w-4" strokeWidth={2.4} />
                   </a>
                 )}
               </motion.article>
@@ -211,17 +226,19 @@ export function ContactsContent() {
         <div className="mx-auto max-w-6xl">
           <div className="max-w-2xl">
             <p className="text-sm font-black uppercase tracking-wide text-[#25d366]">
-              Что важно знать
+              {copy.sections.assuranceEyebrow}
             </p>
             <h2 className="mt-2 font-[family-name:var(--font-nunito)] text-[32px] font-black leading-tight tracking-tight text-zinc-950 sm:text-5xl">
-              Рядом, на вашем языке и всегда на связи
+              {copy.sections.assuranceTitle}
             </h2>
           </div>
 
           <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-5">
-            {ASSURANCE.map((item, i) => (
+            {ASSURANCE.map((item, i) => {
+              const text = copy.assurance[i];
+              return (
               <motion.article
-                key={item.title}
+                key={text.title}
                 initial={reduce ? false : { opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.3 }}
@@ -239,13 +256,14 @@ export function ContactsContent() {
                   />
                 </span>
                 <h3 className="mt-4 font-[family-name:var(--font-nunito)] text-lg font-black leading-tight text-zinc-950">
-                  {item.title}
+                  <BidiText locale={locale}>{text.title}</BidiText>
                 </h3>
                 <p className="mt-1.5 text-sm leading-6 text-[var(--color-ink-soft)]">
-                  {item.text}
+                  <BidiText locale={locale}>{text.text}</BidiText>
                 </p>
               </motion.article>
-            ))}
+              );
+            })}
           </div>
 
           {/* Reassurance CTA strip */}
@@ -265,34 +283,34 @@ export function ContactsContent() {
               </span>
               <div>
                 <h3 className="font-[family-name:var(--font-nunito)] text-xl font-black leading-tight text-zinc-950 sm:text-2xl">
-                  Ответим быстро и поможем с выбором
+                  <BidiText locale={locale}>{copy.ctaStrip.title}</BidiText>
                 </h3>
                 <p className="mt-1.5 max-w-xl text-sm leading-6 text-[var(--color-ink-soft)]">
-                  Напишите пару слов о ребёнке и дате — остальное решим вместе.
+                  <BidiText locale={locale}>{copy.ctaStrip.text}</BidiText>
                 </p>
               </div>
             </div>
             <a
-              href={whatsappLink(WA_MESSAGES.default)}
+              href={whatsappLink(waMessages.default)}
               target="_blank"
               rel="noreferrer"
               className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--color-whatsapp)] px-8 py-4 text-base font-black text-white shadow-lg transition active:scale-95"
             >
               <MessageCircle className="h-5 w-5" strokeWidth={2.4} />
-              Написать в WhatsApp
+              <BidiText locale={locale}>{dict.common.writeWhatsapp}</BidiText>
             </a>
           </motion.div>
 
           {/* Subtle trust line */}
           <div className="mt-6 flex items-center gap-2 text-sm font-bold text-[var(--color-ink-soft)]">
             <ShieldCheck className="h-5 w-5 text-[#5e5ce6]" strokeWidth={2.4} />
-            11 лет и 10 000+ праздников по всему Израилю
+            <BidiText locale={locale}>{copy.trustLine}</BidiText>
           </div>
 
           <p className="mt-6 text-sm text-[var(--color-ink-soft)]">
-            Хотите сперва посмотреть программы?{" "}
-            <Link href="/ru/all" className="font-black text-[#0a84ff]">
-              Открыть каталог
+            <BidiText locale={locale}>{copy.catalogLead}</BidiText>{" "}
+            <Link href={localePath(locale, "/all")} className="font-black text-[#0a84ff]">
+              <BidiText locale={locale}>{copy.catalogLink}</BidiText>
             </Link>
           </p>
         </div>

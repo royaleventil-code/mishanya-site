@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { BidiText } from "@/components/BidiText";
+import type { Locale } from "@/lib/i18n";
 
 type Props = {
   emoji?: string;
+  locale?: Locale;
   title: string;
   accent: string;
 };
 
-export function Hero({ title }: Props) {
+export function Hero({ locale = "ru", title }: Props) {
   const match = title.match(/^(.*?)\s*(\d+)\s*(лет|года|год)\s*$/i);
   const [rotation, setRotation] = useState(0);
 
@@ -54,7 +57,7 @@ export function Hero({ title }: Props) {
       <section className="relative overflow-hidden mx-auto max-w-3xl px-5 sm:px-6 pt-1 pb-6 sm:pt-2 sm:pb-8">
         {Decorations}
         <h1 className="relative text-[34px] sm:text-5xl font-bold tracking-tight leading-[1.05]">
-          {title}
+          <BidiText locale={locale}>{title}</BidiText>
         </h1>
       </section>
     );
@@ -78,6 +81,7 @@ export function Hero({ title }: Props) {
         <div className="shrink-0 text-center">
           <div
             className="age-cartoon"
+            dir="ltr"
             style={{
               fontFamily: "var(--font-display)",
               transform: `rotate(${rotation}deg)`,

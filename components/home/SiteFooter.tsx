@@ -1,34 +1,39 @@
 import Image from "next/image";
 import Link from "next/link";
-import { WA_DISPLAY, WA_MESSAGES, whatsappLink } from "@/lib/whatsapp";
+import { BidiText } from "@/components/BidiText";
+import { getDictionary } from "@/lib/dictionaries";
+import { localePath, type Locale } from "@/lib/i18n";
+import { WA_DISPLAY, getWhatsAppMessages, whatsappLink } from "@/lib/whatsapp";
 
-export function SiteFooter() {
+export function SiteFooter({ locale = "ru" }: { locale?: Locale }) {
+  const dict = getDictionary(locale);
+  const waMessages = getWhatsAppMessages(locale);
+
   return (
     <footer className="bg-[#0f0f14] px-5 pb-28 pt-12 text-white sm:px-6 md:pb-12">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
         <div className="max-w-xs">
           <Image
-            src="/logo-ru.png"
-            alt="Мишаня в Стране Чудес"
+            src={dict.brand.logo}
+            alt={dict.brand.logoAlt}
             width={200}
             height={100}
             className="h-16 w-auto"
           />
           <p className="mt-3 text-sm leading-6 text-white/60">
-            Детские праздники и шоу по всему Израилю. Нас также ищут как Михаил в Стране Чудес
-            или просто Страна Чудес.
+            <BidiText locale={locale}>{dict.brand.siteDescription}</BidiText>
           </p>
         </div>
 
         <div className="flex flex-col gap-2 text-sm">
-          <div className="font-black text-white/90">Контакты</div>
+          <div className="font-black text-white/90">{dict.common.contacts}</div>
           <a
-            href={whatsappLink(WA_MESSAGES.default)}
+            href={whatsappLink(waMessages.default)}
             target="_blank"
             rel="noreferrer"
             className="text-white/70 transition hover:text-white"
           >
-            WhatsApp {WA_DISPLAY}
+            <BidiText locale={locale}>{dict.common.whatsapp}</BidiText> <span dir="ltr">{WA_DISPLAY}</span>
           </a>
           <a href="mailto:royal.eventil@gmail.com" className="text-white/70 transition hover:text-white">
             royal.eventil@gmail.com
@@ -36,7 +41,7 @@ export function SiteFooter() {
         </div>
 
         <div className="flex flex-col gap-2 text-sm">
-          <div className="font-black text-white/90">Соцсети</div>
+          <div className="font-black text-white/90">{dict.common.social}</div>
           <a
             href="https://www.instagram.com/show.mishanya/"
             target="_blank"
@@ -64,21 +69,21 @@ export function SiteFooter() {
         </div>
 
         <div className="flex flex-col gap-2 text-sm">
-          <div className="font-black text-white/90">Сайт</div>
-          <Link href="/ru/all" className="text-white/70 transition hover:text-white">
-            Программы
+          <div className="font-black text-white/90">{dict.common.site}</div>
+          <Link href={localePath(locale, "/all")} className="text-white/70 transition hover:text-white">
+            {dict.common.programs}
           </Link>
-          <Link href="/gallery" className="text-white/70 transition hover:text-white">
-            Фото и видео
+          <Link href={localePath(locale, "/gallery")} className="text-white/70 transition hover:text-white">
+            {dict.common.gallery}
           </Link>
-          <Link href="/about" className="text-white/70 transition hover:text-white">
-            О нас
+          <Link href={localePath(locale, "/about")} className="text-white/70 transition hover:text-white">
+            {dict.common.about}
           </Link>
         </div>
       </div>
 
       <div className="mx-auto mt-8 max-w-6xl border-t border-white/10 pt-6 text-xs text-white/40">
-        © 2026 Мишаня в Стране Чудес · Royal Event Israel
+        <BidiText locale={locale}>{`© 2026 ${dict.brand.name} · Royal Event Israel`}</BidiText>
       </div>
     </footer>
   );
