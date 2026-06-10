@@ -70,7 +70,11 @@ export const PROGRAMS: Program[] = [
     maxKids: 15,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
-    segments: ["baby", "boy-4-6", "girl-4-6", "all"],
+    segments: ["boy", "girl", "all"],
+    hiddenFor: [
+      { gender: "boy", minAge: 6 },
+      { gender: "girl", minAge: 7 },
+    ],
     heroSlots: [{ label: "Герой на выбор", kind: "costume", ...MAIN_PROGRAM_HERO_SLOT_SETTINGS }],
     includes: [
       "Ведущий в выбранном образе",
@@ -110,7 +114,7 @@ export const PROGRAMS: Program[] = [
     maxKids: 15,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
-    segments: ["baby", "boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
+    segments: ["boy", "girl", "all"],
     heroSlots: [{ label: "Герой на выбор", kind: "costume", ...MAIN_PROGRAM_HERO_SLOT_SETTINGS }],
     includes: [
       "Герой на выбор",
@@ -149,7 +153,7 @@ export const PROGRAMS: Program[] = [
     maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
-    segments: ["baby", "boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
+    segments: ["boy", "girl", "all"],
     heroSlots: [
       { label: "Образ ведущего", kind: "costume", ...MAIN_PROGRAM_HERO_SLOT_SETTINGS },
       { label: "Ростовая кукла на выбор", kind: "mascot" },
@@ -192,8 +196,8 @@ export const PROGRAMS: Program[] = [
     maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
-    segments: ["baby"],
-    showFor: [{ segment: "baby", gender: "girl", minAge: 1, maxAge: 3 }],
+    segments: ["girl"],
+    showFor: [{ gender: "girl", minAge: 1, maxAge: 3 }],
     heroSlots: [
       { label: "Образ ведущей", kind: "costume", onlyHeroIds: ["unicorn"] },
       { label: "Ростовая кукла", kind: "mascot", onlyHeroIds: ["unicorn-mascot"] },
@@ -229,8 +233,8 @@ export const PROGRAMS: Program[] = [
     maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
-    segments: ["baby"],
-    showFor: [{ segment: "baby", gender: "girl", minAge: 1, maxAge: 5 }],
+    segments: ["girl"],
+    showFor: [{ gender: "girl", minAge: 1, maxAge: 5 }],
     heroSlots: [
       { label: "Образ ведущей", kind: "costume", onlyHeroIds: ["sky"] },
       { label: "Ростовая кукла", kind: "mascot", onlyHeroIds: ["marshall-mascot"] },
@@ -267,8 +271,8 @@ export const PROGRAMS: Program[] = [
     maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
-    segments: ["baby"],
-    showFor: [{ segment: "baby", gender: "boy", minAge: 1, maxAge: 5 }],
+    segments: ["boy"],
+    showFor: [{ gender: "boy", minAge: 1, maxAge: 5 }],
     heroSlots: [
       { label: "Образ ведущего", kind: "costume", onlyHeroIds: ["racer"] },
       { label: "Ростовая кукла", kind: "mascot", onlyHeroIds: ["marshall-mascot"] },
@@ -305,7 +309,8 @@ export const PROGRAMS: Program[] = [
     maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
-    segments: ["girl-4-6", "girl-6plus", "all"],
+    segments: ["girl", "all"],
+    hiddenFor: [{ gender: "girl", maxAge: 3 }],
     heroSlots: [
       { label: "Образ ведущей", kind: "costume", onlyHeroIds: ["kpop-rumi", "kpop-zoey", "kpop-mira"] },
     ],
@@ -340,7 +345,7 @@ export const PROGRAMS: Program[] = [
     maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
-    segments: ["baby", "girl-4-6", "girl-6plus"],
+    segments: ["girl"],
     showFor: [{ gender: "girl" }],
     heroSlots: [
       { label: "Образ ведущей", kind: "costume", onlyHeroIds: ["elsa", "anna"] },
@@ -377,7 +382,7 @@ export const PROGRAMS: Program[] = [
     maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
-    segments: ["baby", "girl-4-6", "girl-6plus"],
+    segments: ["girl"],
     showFor: [{ gender: "girl" }],
     heroSlots: [
       { label: "Образ ведущей", kind: "costume", onlyHeroIds: ["stitch"] },
@@ -415,7 +420,7 @@ export const PROGRAMS: Program[] = [
     maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
-    segments: ["boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
+    segments: ["boy", "girl", "all"],
     hiddenFor: [{ maxAge: 5 }],
     heroSlots: [],
     includes: [
@@ -454,7 +459,7 @@ export const PROGRAMS: Program[] = [
     maxKids: 35,
     languages: ["ru"],
     locations: ["indoor", "outdoor"],
-    segments: ["baby", "boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
+    segments: ["boy", "girl", "all"],
     ruOnly: true,
     heroSlots: [{ label: "Ростовая кукла на выбор", kind: "mascot" }],
     includes: [
@@ -495,7 +500,7 @@ export const PROGRAMS: Program[] = [
     maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
-    segments: ["boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
+    segments: ["boy", "girl", "all"],
     hiddenFor: [{ maxAge: 5 }],
     heroSlots: [],
     includes: [
@@ -535,7 +540,7 @@ export const PROGRAMS: Program[] = [
     maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
-    segments: ["baby", "boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
+    segments: ["boy", "girl", "all"],
     heroSlots: [],
     includes: [
       "Цирковые артисты",
@@ -570,7 +575,8 @@ export const PROGRAMS: Program[] = [
     maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
-    segments: ["boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
+    segments: ["boy", "girl", "all"],
+    hiddenFor: [{ maxAge: 3 }],
     heroSlots: [
       { label: "Ростовая кукла на выбор", kind: "mascot" },
     ],
@@ -609,7 +615,7 @@ export const PROGRAMS: Program[] = [
     maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor"],
-    segments: ["boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
+    segments: ["boy", "girl", "all"],
     hiddenFor: [{ maxAge: 5 }],
     heroSlots: [],
     includes: [
@@ -645,7 +651,7 @@ export const PROGRAMS: Program[] = [
     maxKids: 35,
     languages: ["ru"],
     locations: ["indoor", "outdoor"],
-    segments: ["boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
+    segments: ["boy", "girl", "all"],
     hiddenFor: [{ maxAge: 4 }],
     ruOnly: true,
     heroSlots: [],
@@ -681,7 +687,7 @@ export const PROGRAMS: Program[] = [
     maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
-    segments: ["boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
+    segments: ["boy", "girl", "all"],
     hiddenFor: [{ maxAge: 4 }],
     heroSlots: [],
     includes: [
@@ -716,7 +722,7 @@ export const PROGRAMS: Program[] = [
     maxKids: 35,
     languages: ["ru", "he"],
     locations: ["outdoor"],
-    segments: ["baby", "boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
+    segments: ["boy", "girl", "all"],
     heroSlots: [],
     includes: [
       "Пенная пушка",
@@ -747,7 +753,7 @@ export const PROGRAMS: Program[] = [
     maxKids: 50,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
-    segments: ["baby", "boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
+    segments: ["boy", "girl", "all"],
     heroSlots: [
       { label: "Образ ведущего", kind: "costume", ...MAIN_PROGRAM_HERO_SLOT_SETTINGS },
       { label: "Ростовая кукла на выбор", kind: "mascot" },
@@ -792,7 +798,7 @@ export const PROGRAMS: Program[] = [
     maxKids: null,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
-    segments: ["baby", "boy-4-6", "girl-4-6", "boy-6plus", "girl-6plus", "all"],
+    segments: ["boy", "girl", "all"],
     heroSlots: [
       { label: "Образ ведущего", kind: "costume", ...MAIN_PROGRAM_HERO_SLOT_SETTINGS },
       { label: "Ростовая кукла на выбор", kind: "mascot" },
@@ -839,7 +845,8 @@ export const PROGRAMS: Program[] = [
     maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
-    segments: ["girl-4-6", "girl-6plus", "all"],
+    segments: ["girl", "all"],
+    hiddenFor: [{ gender: "girl", maxAge: 3 }],
     heroSlots: [{ label: "Ростовая кукла на выбор", kind: "mascot" }],
     includes: [
       "Ведущая в образе Уэнсдей",
@@ -872,11 +879,10 @@ export const PROGRAMS: Program[] = [
     maxKids: 35,
     languages: ["ru"],
     locations: ["indoor", "outdoor"],
-    segments: ["baby", "girl-4-6", "girl-6plus", "all"],
+    segments: ["girl", "all"],
     ruOnly: true,
     heroSlots: [{ label: "Ростовая кукла на выбор", kind: "mascot" }],
     hiddenFor: [
-      { segment: "baby", gender: "boy" },
       { gender: "girl", maxAge: 3 },
     ],
     includes: [
@@ -909,7 +915,11 @@ export const PROGRAMS: Program[] = [
     maxKids: 35,
     languages: ["ru", "he"],
     locations: ["indoor"],
-    segments: ["boy-6plus", "girl-6plus", "all"],
+    segments: ["boy", "girl", "all"],
+    hiddenFor: [
+      { gender: "boy", maxAge: 5 },
+      { gender: "girl", maxAge: 6 },
+    ],
     heroSlots: [],
     includes: [
       "Ведущий в образе профессора",
@@ -943,7 +953,11 @@ export const PROGRAMS: Program[] = [
     maxKids: 35,
     languages: ["ru"],
     locations: ["indoor"],
-    segments: ["boy-6plus", "girl-6plus", "all"],
+    segments: ["boy", "girl", "all"],
+    hiddenFor: [
+      { gender: "boy", maxAge: 5 },
+      { gender: "girl", maxAge: 6 },
+    ],
     ruOnly: true,
     heroSlots: [],
     includes: [

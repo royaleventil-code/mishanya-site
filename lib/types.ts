@@ -1,12 +1,6 @@
 export type Language = "ru" | "he" | "en";
 export type Location = "indoor" | "outdoor";
-export type SegmentId =
-  | "baby"
-  | "boy-4-6"
-  | "girl-4-6"
-  | "boy-6plus"
-  | "girl-6plus"
-  | "all";
+export type SegmentId = "boy" | "girl" | "all";
 export type HeroKind = "costume" | "mascot";
 export type Gender = "boy" | "girl";
 

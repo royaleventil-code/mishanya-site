@@ -2,10 +2,7 @@ import type { Gender, SegmentId } from "./types";
 import type { Locale } from "@/lib/i18n";
 
 export function segmentFromAge(age: number, gender: Gender): SegmentId {
-  if (age <= 3) return "baby";
-  if (gender === "boy") return age <= 5 ? "boy-4-6" : "boy-6plus";
-  if (age <= 6) return "girl-4-6";
-  return "girl-6plus";
+  return gender;
 }
 
 export type SegmentConfig = {
@@ -16,31 +13,13 @@ export type SegmentConfig = {
 };
 
 export const SEGMENTS: Record<SegmentId, SegmentConfig> = {
-  baby: {
-    accent: "#ff9f0a",
-    accentDim: "rgba(255,159,10,0.12)",
-    label: "малышей",
-    emoji: "🍼",
-  },
-  "boy-4-6": {
+  boy: {
     accent: "#0a84ff",
     accentDim: "rgba(10,132,255,0.12)",
     label: "мальчика",
     emoji: "🚀",
   },
-  "boy-6plus": {
-    accent: "#0a84ff",
-    accentDim: "rgba(10,132,255,0.12)",
-    label: "мальчика",
-    emoji: "🚀",
-  },
-  "girl-4-6": {
-    accent: "#ff375f",
-    accentDim: "rgba(255,55,95,0.12)",
-    label: "девочки",
-    emoji: "💕",
-  },
-  "girl-6plus": {
+  girl: {
     accent: "#ff375f",
     accentDim: "rgba(255,55,95,0.12)",
     label: "девочки",
@@ -68,24 +47,13 @@ export function heroTitle(
   locale: Locale = "ru",
 ): string {
   if (locale === "he") {
-    if (segment === "baby") {
-      if (age && gender) return `תוכניות יום הולדת ${gender === "boy" ? "לבן" : "לבת"} ${age}`;
-      return "תוכניות לקטנטנים";
-    }
     if (segment === "all") return "כל התוכניות";
-    const ageNum = age ?? (segment.endsWith("4-6") ? 5 : 8);
-    return `תוכניות יום הולדת ${segment.startsWith("boy") ? "לבן" : "לבת"} ${ageLabel(ageNum, locale)}`;
+    const ageNum = age ?? 5;
+    return `תוכניות יום הולדת ${segment === "boy" ? "לבן" : "לבת"} ${ageLabel(ageNum, locale)}`;
   }
 
-  if (segment === "baby") {
-    if (age && gender) {
-      const child = gender === "boy" ? "мальчика" : "девочки";
-      return `Программы для ${child} ${ageLabel(age, locale)}`;
-    }
-    return "Программы для малышей";
-  }
   if (segment === "all") return "Все программы";
-  const ageNum = age ?? (segment.endsWith("4-6") ? 5 : 8);
-  const child = segment.startsWith("boy") ? "мальчика" : "девочки";
+  const ageNum = age ?? 5;
+  const child = segment === "boy" ? "мальчика" : "девочки";
   return `Программы для ${child} ${ageLabel(ageNum, locale)}`;
 }

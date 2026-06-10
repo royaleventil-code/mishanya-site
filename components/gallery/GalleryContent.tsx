@@ -167,7 +167,7 @@ export default function GalleryContent({ locale = "ru" }: { locale?: Locale }) {
       {/* Gallery of real event photos */}
       <section className="px-5 py-14 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-6xl">
-          <p className="text-sm font-bold uppercase tracking-wide text-[var(--color-baby)]">
+          <p className="text-sm font-bold uppercase tracking-wide text-[var(--color-young)]">
             {copy.photos.eyebrow}
           </p>
           <h2 className="mt-2 font-[family-name:var(--font-nunito)] text-[28px] font-black leading-tight tracking-tight sm:text-4xl">

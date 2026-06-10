@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, animate, motion, useMotionValue } from "framer-motion";
-import { Baby, Banknote, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, MapPin, MessageCircle, Users, X } from "lucide-react";
+import { Banknote, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, MapPin, MessageCircle, Users, X } from "lucide-react";
 import { BidiText } from "@/components/BidiText";
 import type { Addon, AudienceContext, Hero, Program, SegmentId } from "@/lib/types";
 import { filterHeroes, filterPrograms } from "@/lib/filtering";
@@ -83,7 +83,7 @@ const PROGRAM_MOODS: Record<string, ProgramMoodConfig> = {
 };
 
 const GIRL_COSTUME_HERO_IDS = {
-  baby: [
+  young: [
     "elsa",
     "sky",
     "unicorn",
@@ -170,7 +170,7 @@ const GIRL_COSTUME_HERO_IDS = {
 } as const;
 
 const GIRL_MASCOT_HERO_IDS = {
-  baby: [
+  young: [
     "unicorn-mascot",
     "bunny",
     "olaf",
@@ -323,7 +323,7 @@ function heroChoiceLabel(label: string, locale: Locale): string {
 
 function girlAgeGroup(audience?: AudienceContext): keyof typeof GIRL_COSTUME_HERO_IDS | null {
   if (audience?.gender !== "girl" || typeof audience.age !== "number") return null;
-  if (audience.age >= 1 && audience.age <= 3) return "baby";
+  if (audience.age >= 1 && audience.age <= 3) return "young";
   if (audience.age >= 4 && audience.age <= 6) return "middle";
   if (audience.age >= 7 && audience.age <= 10) return "older";
   return null;
@@ -971,7 +971,7 @@ function ProgramModal({
             <Stat locale={locale} icon={<Users className="w-4 h-4" />} value={program.animatorsLabel ?? `${program.animators}`} label={dict.catalog.labels.team} />
             <Stat
               locale={locale}
-              icon={<Baby className="w-4 h-4" />}
+              icon={<Users className="w-4 h-4" />}
               value={program.maxKids === null ? dict.catalog.labels.unlimitedKids : dict.catalog.labels.upToKids(program.maxKids)}
               label={program.maxKids === null ? "" : dict.catalog.labels.kids}
             />

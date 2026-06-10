@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import {
-  Baby,
   BadgeCheck,
   Building2,
   CalendarCheck,
@@ -33,7 +32,7 @@ const FORMATS = [
     color: "#ff375f",
   },
   {
-    Icon: Baby,
+    Icon: Users,
     color: "#ff9f0a",
   },
   {

@@ -30,11 +30,8 @@ const BOYS_ORDER = [
 ];
 
 export const HERO_ORDER: Partial<Record<SegmentId, string[]>> = {
-  baby: MASCOT_ORDER,
-  "boy-4-6": [...MASCOT_ORDER, ...BOYS_ORDER],
-  "boy-6plus": [...MASCOT_ORDER, ...BOYS_ORDER],
-  "girl-4-6": MASCOT_ORDER,
-  "girl-6plus": MASCOT_ORDER,
+  boy: [...MASCOT_ORDER, ...BOYS_ORDER],
+  girl: MASCOT_ORDER,
   all: MASCOT_ORDER,
 };
 

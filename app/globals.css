@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --color-baby: #ff9f0a;
+  --color-young: #ff9f0a;
   --color-boy: #0a84ff;
   --color-girl: #ff375f;
   --color-all-seg: #5e5ce6;
