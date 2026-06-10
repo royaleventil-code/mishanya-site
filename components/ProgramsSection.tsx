@@ -1080,6 +1080,7 @@ function ProgramModal({
 
           {/* Hero slots */}
           {program.heroSlots.map((slot, slotIdx) => {
+            const defaultOpen = slot.kind === "mascot" || slotIdx === 0;
             const useUniversalHeroPool =
               segment === "all" && !audience?.gender && !slot.onlyHeroIds?.length;
             const girlHeroIds = useUniversalHeroPool ? null : girlHeroIdsForSlot(audience, slot.kind);
@@ -1106,12 +1107,12 @@ function ProgramModal({
             if (slotHeroes.length === 0) return null;
             return (
               <HeroSlotPanel
-                key={slotIdx}
+                key={`${program.id}-${slotIdx}`}
                 locale={locale}
                 label={slot.label}
                 heroes={slotHeroes}
                 accent={accent}
-                defaultOpen={slotIdx === 0}
+                defaultOpen={defaultOpen}
                 selectedHeroId={selectedHeroBySlot[slotIdx]?.id ?? null}
                 onSelectHero={(hero) => {
                   setSelectedHeroByProgram((current) => {

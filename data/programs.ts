@@ -2,9 +2,10 @@ import type { Program } from "@/lib/types";
 
 const BUBBLE_MACHINE_BONUS =
   "Машинка мыльных пузырей (только в помещении)";
-const BASIC_PARTY_ADDONS = ["bubbles-show", "confetti", "pinata"];
-const CONFETTI_ONLY_ADDONS = ["confetti"];
-const SHOW_PARTY_ADDONS = ["bubbles-show", "confetti"];
+const STANDARD_PARTY_ADDONS = ["bubbles-show", "confetti", "pinata", "mascot-addon"];
+const BASIC_PARTY_ADDONS = STANDARD_PARTY_ADDONS;
+const CONFETTI_ONLY_ADDONS = STANDARD_PARTY_ADDONS;
+const SHOW_PARTY_ADDONS = STANDARD_PARTY_ADDONS;
 const MAIN_PROGRAM_EXCLUDED_HERO_IDS = [
   "barbie",
   "anna",
@@ -182,6 +183,47 @@ export const PROGRAMS: Program[] = [
       boy: "/programs/super-heroes.png",
       girl: "/programs/super-heroes-girls-1-3.png",
     }),
+  },
+{
+    id: "mishanya",
+    emoji: "🤹",
+    title: "Мишаня",
+    tagline: "Авторская программа с ведущим Мишаней",
+    durationLabel: "2 часа",
+    animators: 2,
+    animatorsLabel: "2 аниматора",
+    priceFrom: 2200,
+    currency: "₪",
+    maxKids: 35,
+    languages: ["ru"],
+    locations: ["indoor", "outdoor"],
+    segments: ["boy", "girl", "all"],
+    ruOnly: true,
+    heroSlots: [{ label: "Ростовая кукла на выбор", kind: "mascot" }],
+    includes: [
+      "Встреча гостей",
+      "Авторское ведение Мишани",
+      "Шоу фокусов",
+      "Интерактив с «говорящей картиной»",
+      "Жонглирование",
+      "Акробатические элементы",
+      "Юмор для детей и родителей",
+      "Игры для всех гостей",
+      "Конкурсы с вовлечением зала",
+      "Дополнительный персонаж на выбор",
+      "Большая красивая фотозона",
+      "Торжественный вынос торта",
+      "Подарок каждому ребёнку",
+    ],
+    bonus: BUBBLE_MACHINE_BONUS,
+    recommendedAddonIds: SHOW_PARTY_ADDONS,
+    videos: [
+      "https://youtu.be/p0sH-U2WNKw",
+      "https://youtu.be/EMeUFC8GhYA",
+    ],
+    gradientFrom: "from-amber-200",
+    gradientTo: "to-yellow-50",
+    cover: "/programs/mishanya.png",
   },
 {
     id: "unicorn-toddler-girls",
@@ -445,47 +487,6 @@ export const PROGRAMS: Program[] = [
     gradientFrom: "from-emerald-300",
     gradientTo: "to-teal-100",
     cover: "/programs/chemistry.png",
-  },
-{
-    id: "mishanya",
-    emoji: "🤹",
-    title: "Мишаня",
-    tagline: "Авторская программа с ведущим Мишаней",
-    durationLabel: "2 часа",
-    animators: 2,
-    animatorsLabel: "2 аниматора",
-    priceFrom: 2200,
-    currency: "₪",
-    maxKids: 35,
-    languages: ["ru"],
-    locations: ["indoor", "outdoor"],
-    segments: ["boy", "girl", "all"],
-    ruOnly: true,
-    heroSlots: [{ label: "Ростовая кукла на выбор", kind: "mascot" }],
-    includes: [
-      "Встреча гостей",
-      "Авторское ведение Мишани",
-      "Шоу фокусов",
-      "Интерактив с «говорящей картиной»",
-      "Жонглирование",
-      "Акробатические элементы",
-      "Юмор для детей и родителей",
-      "Игры для всех гостей",
-      "Конкурсы с вовлечением зала",
-      "Дополнительный персонаж на выбор",
-      "Большая красивая фотозона",
-      "Торжественный вынос торта",
-      "Подарок каждому ребёнку",
-    ],
-    bonus: BUBBLE_MACHINE_BONUS,
-    recommendedAddonIds: SHOW_PARTY_ADDONS,
-    videos: [
-      "https://youtu.be/p0sH-U2WNKw",
-      "https://youtu.be/EMeUFC8GhYA",
-    ],
-    gradientFrom: "from-amber-200",
-    gradientTo: "to-yellow-50",
-    cover: "/programs/mishanya.png",
   },
 {
     id: "tiktok",
