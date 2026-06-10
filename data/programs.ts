@@ -230,7 +230,7 @@ export const PROGRAMS: Program[] = [
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
     segments: ["baby"],
-    showFor: [{ segment: "baby", gender: "girl", minAge: 1, maxAge: 3 }],
+    showFor: [{ segment: "baby", gender: "girl", minAge: 1, maxAge: 5 }],
     heroSlots: [
       { label: "Образ ведущей", kind: "costume", onlyHeroIds: ["sky"] },
       { label: "Ростовая кукла", kind: "mascot", onlyHeroIds: ["marshall-mascot"] },
@@ -268,7 +268,7 @@ export const PROGRAMS: Program[] = [
     languages: ["ru", "he"],
     locations: ["indoor", "outdoor"],
     segments: ["baby"],
-    showFor: [{ segment: "baby", gender: "boy", minAge: 1, maxAge: 3 }],
+    showFor: [{ segment: "baby", gender: "boy", minAge: 1, maxAge: 5 }],
     heroSlots: [
       { label: "Образ ведущего", kind: "costume", onlyHeroIds: ["racer"] },
       { label: "Ростовая кукла", kind: "mascot", onlyHeroIds: ["marshall-mascot"] },
