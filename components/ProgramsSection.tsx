@@ -518,11 +518,12 @@ function ProgramCard({
   const indoorOnly = program.locations.length === 1 && program.locations[0] === "indoor";
   const cover = getProgramCover(program, segment, audience);
   const priceParts = programPriceDisplayParts(program.id, program.priceFrom, locale);
+  const isVipProgram = program.id === "mishanya";
 
   return (
     <button
       onClick={onOpen}
-      className="group text-start rounded-[28px] bg-white overflow-hidden shadow-[0_16px_40px_rgba(15,15,20,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(15,15,20,0.12)] focus:outline-none focus:ring-2"
+      className={`group text-start rounded-[28px] bg-white overflow-hidden shadow-[0_16px_40px_rgba(15,15,20,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(15,15,20,0.12)] focus:outline-none focus:ring-2 ${isVipProgram ? "vip-program-card" : ""}`}
       style={{ ['--tw-ring-color' as never]: accent }}
     >
       {/* Cover */}
@@ -707,6 +708,7 @@ function ProgramModal({
       ? `${ctaLabel.slice(0, -ctaPriceLabel.length)}${ctaPriceParts.prefix}`
       : null;
   const mood = PROGRAM_MOODS[program.id];
+  const isVipProgram = program.id === "mishanya";
 
   useEffect(() => {
     return () => {
@@ -865,7 +867,7 @@ function ProgramModal({
         role="dialog"
         aria-modal="true"
         aria-label={dict.catalog.labels.modalAria(program.title)}
-        className="relative w-full sm:max-w-2xl bg-white sm:rounded-3xl shadow-2xl h-[100dvh] sm:h-auto sm:max-h-[95vh] overflow-y-auto overflow-x-hidden overscroll-y-contain"
+        className={`relative w-full sm:max-w-2xl bg-white sm:rounded-3xl shadow-2xl h-[100dvh] sm:h-auto sm:max-h-[95vh] overflow-y-auto overflow-x-hidden overscroll-y-contain ${isVipProgram ? "vip-program-card vip-program-modal" : ""}`}
         onClick={(e) => e.stopPropagation()}
         onPointerDown={rememberSwipeStart}
         onPointerMove={handleSwipeMove}

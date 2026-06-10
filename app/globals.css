@@ -26,6 +26,12 @@
   --glass-shadow: 0 10px 24px rgba(15, 15, 20, 0.08);
 }
 
+@property --vip-border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
 html,
 body {
   background: var(--color-canvas);
@@ -105,6 +111,94 @@ html {
       0 14px 34px rgba(15, 15, 20, 0.1);
   }
 
+  .vip-program-card {
+    --vip-border-size: 6px;
+    position: relative;
+    isolation: isolate;
+    border: 1px solid rgba(245, 158, 11, 0.34);
+    box-shadow:
+      0 16px 40px rgba(15, 15, 20, 0.06),
+      0 0 0 1px rgba(255, 255, 255, 0.88),
+      0 0 34px rgba(245, 158, 11, 0.16);
+  }
+
+  .vip-program-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    padding: var(--vip-border-size);
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      conic-gradient(
+        from var(--vip-border-angle),
+        transparent 0deg,
+        rgba(245, 158, 11, 0.16) 38deg,
+        rgba(255, 255, 255, 0.95) 58deg,
+        rgba(94, 92, 230, 0.6) 78deg,
+        transparent 118deg,
+        transparent 210deg,
+        rgba(255, 214, 102, 0.92) 238deg,
+        rgba(255, 255, 255, 0.72) 256deg,
+        transparent 294deg,
+        transparent 360deg
+      );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    animation: vip-border-spin 5.5s linear infinite;
+  }
+
+  .vip-program-card::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    z-index: 29;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.74),
+      inset 0 0 26px rgba(255, 214, 102, 0.12);
+  }
+
+  .vip-program-modal::before {
+    position: fixed;
+    inset: 8px;
+    z-index: 60;
+    padding: 4px;
+    border-radius: 24px;
+  }
+
+  .vip-program-modal::after {
+    position: fixed;
+    inset: 10px;
+    z-index: 59;
+    border-radius: 22px;
+  }
+
+  @media (min-width: 640px) {
+    .vip-program-modal::before {
+      inset: calc((100dvh - min(95dvh, 100dvh)) / 2 + 24px) calc((100vw - min(42rem, calc(100vw - 48px))) / 2 + 24px);
+      padding: 5px;
+      border-radius: 24px;
+    }
+
+    .vip-program-modal::after {
+      inset: calc((100dvh - min(95dvh, 100dvh)) / 2 + 26px) calc((100vw - min(42rem, calc(100vw - 48px))) / 2 + 26px);
+      border-radius: 22px;
+    }
+  }
+
+  @keyframes vip-border-spin {
+    to { --vip-border-angle: 360deg; }
+  }
+
   /* Floating decorations in hero */
   .float-dot {
     position: absolute;
@@ -140,7 +234,7 @@ html {
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .float-dot, .float-star { animation: none !important; }
+    .float-dot, .float-star, .vip-program-card::before { animation: none !important; }
   }
 
   /* Cartoon 3D yellow digit (like the reference): yellow fill + white inner ring + thick black outline */
