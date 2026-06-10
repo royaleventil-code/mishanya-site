@@ -1081,28 +1081,32 @@ function ProgramModal({
           {/* Hero slots */}
           {program.heroSlots.map((slot, slotIdx) => {
             const defaultOpen = slot.kind === "mascot" || slotIdx === 0;
+            const explicitHeroIds = new Set([
+              ...(slot.includedHeroIds ?? []),
+              ...(slot.onlyHeroIds ?? []),
+            ]);
+            const hasSlotOnlyHeroIds = Boolean(slot.onlyHeroIds?.length);
             const useUniversalHeroPool =
               segment === "all" && !audience?.gender && !slot.onlyHeroIds?.length;
             const girlHeroIds = useUniversalHeroPool ? null : girlHeroIdsForSlot(audience, slot.kind);
-            const onlyHeroIds = girlHeroIds
-              ? slot.onlyHeroIds?.length
-                ? girlHeroIds.filter((id) => slot.onlyHeroIds?.includes(id))
-                : girlHeroIds
-              : slot.onlyHeroIds;
+            const onlyHeroIds = hasSlotOnlyHeroIds ? slot.onlyHeroIds : girlHeroIds ?? slot.onlyHeroIds;
+            const orderedHeroIds = hasSlotOnlyHeroIds
+              ? [...(slot.orderedHeroIds ?? []), ...(girlHeroIds ?? [])]
+              : [...(girlHeroIds ?? []), ...(slot.orderedHeroIds ?? [])];
             const excludedHeroIds = new Set(
               girlHeroIds || useUniversalHeroPool ? [] : slot.excludedHeroIds ?? [],
             );
             const slotHeroes = sortHeroes(
               filterHeroes(
-                heroes.filter((h) => h.kind === slot.kind && !excludedHeroIds.has(h.id)),
+                heroes.filter((h) => (h.kind === slot.kind || explicitHeroIds.has(h.id)) && !excludedHeroIds.has(h.id)),
                 segment,
                 null,
-                girlHeroIds || useUniversalHeroPool ? [] : slot.includedHeroIds,
+                slot.includedHeroIds,
                 audience,
                 onlyHeroIds,
               ),
               segment,
-              girlHeroIds ?? slot.orderedHeroIds,
+              orderedHeroIds,
             );
             if (slotHeroes.length === 0) return null;
             return (

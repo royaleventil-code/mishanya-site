@@ -61,14 +61,15 @@ export function filterHeroes(
   const included = new Set(includedHeroIds);
   const only = new Set(onlyHeroIds);
   return heroes.filter((h) => {
-    if (only.size > 0 && !only.has(h.id)) return false;
+    const explicitlyAllowed = included.has(h.id) || only.has(h.id);
+    if (only.size > 0 && !only.has(h.id) && !included.has(h.id)) return false;
     if (h.segments.length === 0 || h.languages.length === 0) return false;
-    if (h.hiddenFor?.some((rule) => matchesVisibilityRule(rule, segment, audience))) {
+    if (!explicitlyAllowed && h.hiddenFor?.some((rule) => matchesVisibilityRule(rule, segment, audience))) {
       return false;
     }
-    if (!h.segments.includes(segment) && !included.has(h.id)) return false;
+    if (!explicitlyAllowed && !h.segments.includes(segment)) return false;
     if (language === "ru" || language === "he") {
-      if (!h.languages.includes(language)) return false;
+      if (!explicitlyAllowed && !h.languages.includes(language)) return false;
     }
     return true;
   });
