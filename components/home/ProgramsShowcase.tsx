@@ -11,14 +11,18 @@ import { getLocalizedPrograms } from "@/lib/localized-data";
 import { formatProgramPriceLabel } from "@/lib/prices";
 import type { Program } from "@/lib/types";
 
-const FEATURED_IDS = ["super-heroes", "frozen-toddler-girls", "chemistry", "paw-patrol-toddler-boys", "tiktok", "mishanya"];
+const FEATURED_IDS = ["standart", "super-heroes", "frozen-toddler-girls", "chemistry", "paw-patrol-toddler-boys", "mishanya"];
 const FEATURED_TARGETS: Record<string, (locale: Locale) => string> = {
+  "super-heroes": (locale) => `${localePath(locale, "/all")}?program=super-heroes`,
   "frozen-toddler-girls": (locale) => `${localePath(locale, "/girl/3")}?program=frozen-toddler-girls`,
   "paw-patrol-toddler-boys": (locale) => `${localePath(locale, "/boy/3")}?program=paw-patrol-toddler-boys`,
 };
+const FEATURED_COVERS: Record<string, string> = {
+  "super-heroes": "/programs/super-heroes-universal.png",
+};
 
 function coverOf(p: Program): string {
-  return p.cover ?? "/generated/program-party.webp";
+  return FEATURED_COVERS[p.id] ?? p.cover ?? "/generated/program-party.webp";
 }
 
 export function ProgramsShowcase({ locale = "ru" }: { locale?: Locale }) {
@@ -39,9 +43,6 @@ export function ProgramsShowcase({ locale = "ru" }: { locale?: Locale }) {
           </h2>
           <p className="mt-3 text-base leading-7 text-[var(--color-ink-soft)] sm:text-lg">
             {dict.home.programs.description}
-          </p>
-          <p className="mt-2 text-sm font-bold text-zinc-700">
-            <BidiText locale={locale}>{dict.home.programs.priceNote}</BidiText>
           </p>
         </div>
 
