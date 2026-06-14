@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Lilita_One, Noto_Sans_Hebrew, Nunito } from "next/font/google";
+import { Suspense } from "react";
+import { MarketingEvents } from "@/components/MarketingEvents";
+import { MarketingPixels } from "@/components/MarketingPixels";
 import type { Locale } from "@/lib/i18n";
 import { LOCALE_CONFIG } from "@/lib/i18n";
 import { getDictionary } from "@/lib/dictionaries";
@@ -41,6 +44,7 @@ const nunito = Nunito({
 export function createRootMetadata(locale: Locale): Metadata {
   const dict = getDictionary(locale);
   const localeConfig = LOCALE_CONFIG[locale];
+  const googleSiteVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim();
 
   return {
     metadataBase: new URL(SITE_URL),
@@ -68,6 +72,11 @@ export function createRootMetadata(locale: Locale): Metadata {
       description: dict.brand.siteDescription,
       images: [HOME_WHATSAPP_PREVIEW_IMAGE],
     },
+    verification: googleSiteVerification
+      ? {
+          google: googleSiteVerification,
+        }
+      : undefined,
   };
 }
 
@@ -153,6 +162,10 @@ export function RootDocument({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(rootJsonLd(locale)) }}
         />
+        <MarketingPixels />
+        <Suspense fallback={null}>
+          <MarketingEvents />
+        </Suspense>
         {children}
       </body>
     </html>
