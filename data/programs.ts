@@ -4,7 +4,8 @@ const BUBBLE_MACHINE_BONUS =
   "Машинка мыльных пузырей (только в помещении)";
 const STANDARD_PARTY_ADDONS = ["bubbles-show", "confetti", "pinata", "mascot-addon"];
 const BASIC_PARTY_ADDONS = STANDARD_PARTY_ADDONS;
-const CONFETTI_ONLY_ADDONS = STANDARD_PARTY_ADDONS;
+const MAGICIAN_HERO_ADDONS = ["confetti", "pinata", "mascot-addon"];
+const CHEMISTRY_ADDONS = ["confetti", "pinata", "kryo-icecream-masterclass"];
 const SHOW_PARTY_ADDONS = STANDARD_PARTY_ADDONS;
 const MAGICIAN_EXTRA_HERO_IDS = [
   "pj-gekko",
@@ -581,6 +582,7 @@ export const PROGRAMS: Program[] = [
       "Подарок каждому ребёнку",
     ],
     bonus: BUBBLE_MACHINE_BONUS,
+    recommendedAddonIds: CHEMISTRY_ADDONS,
     videos: ["https://youtu.be/j0cogSHA3mQ"],
     gradientFrom: "from-emerald-300",
     gradientTo: "to-teal-100",
@@ -700,7 +702,7 @@ export const PROGRAMS: Program[] = [
       "Подарок каждому ребёнку",
     ],
     bonus: BUBBLE_MACHINE_BONUS,
-    recommendedAddonIds: CONFETTI_ONLY_ADDONS,
+    recommendedAddonIds: MAGICIAN_HERO_ADDONS,
     videos: ["https://youtu.be/Uoh9AsnJPuU"],
     gradientFrom: "from-purple-300",
     gradientTo: "to-fuchsia-100",

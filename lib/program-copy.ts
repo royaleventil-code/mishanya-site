@@ -619,6 +619,7 @@ export const ADDON_COPY = {
     confetti: "מופע קונפטי",
     pinata: "פיניאטה",
     "kryo-icecream": "גלידת קריו",
+    "kryo-icecream-masterclass": "סדנת הכנת גלידת קריו",
     "mascot-addon": "בובת ענק נוספת",
     dj: "DJ עם עמדה",
     "bubbles-master": "סדנת בועות",
