@@ -181,11 +181,10 @@ const GIRL_MASCOT_HERO_IDS = {
     "minnie-mouse-mascot",
     "stitch-mascot",
     "sonic-mascot",
-    "jerry",
+    "tom-and-jerry",
     "minion",
     "masha-bear-inflatable",
-    "nu-pogodi-hare",
-    "tom",
+    "nu-pogodi-wolf-hare",
   ],
   middle: [
     "unicorn-mascot",
@@ -198,7 +197,7 @@ const GIRL_MASCOT_HERO_IDS = {
     "kissy-missy",
     "labubu",
     "minnie-mouse-mascot",
-    "jerry",
+    "tom-and-jerry",
     "minion",
     "sonic-mascot",
     "dj-marshmello",
@@ -1021,6 +1020,9 @@ function ProgramModal({
                   </motion.span>
                 </AnimatePresence>
               </div>
+              <p className="mx-auto mt-2 max-w-[320px] text-xs font-medium leading-snug text-[var(--color-muted)]">
+                {dict.catalog.labels.priceCityNote}
+              </p>
               <Banknote className="w-5 h-5 mx-auto mt-1 opacity-90" strokeWidth={2.2} />
             </div>
           </div>

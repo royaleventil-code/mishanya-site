@@ -47,6 +47,7 @@ export function MarketingPixels() {
                 s.parentNode.insertBefore(t,s)}(window, document,'script',
                 'https://connect.facebook.net/en_US/fbevents.js');
                 fbq('init', ${serializedMetaPixelId});
+                fbq('track', 'PageView');
               `,
             }}
           />

@@ -118,6 +118,7 @@ export type Dictionary = {
       important: string;
       priceFrom: string;
       price: string;
+      priceCityNote: string;
       includes: string;
       bonus: string;
       video: (index?: number) => string;
@@ -463,6 +464,7 @@ export const DICTIONARIES = {
         important: "Важно: ",
         priceFrom: "Стоимость от",
         price: "Стоимость",
+        priceCityNote: "Цена зависит от города",
         includes: "Что входит",
         bonus: "Бонус: ",
         video: (index) => `🎥 Смотреть видео ${index ? `№${index}` : ""}`,
@@ -836,6 +838,7 @@ export const DICTIONARIES = {
         important: "חשוב: ",
         priceFrom: "מחיר החל מ־",
         price: "מחיר",
+        priceCityNote: "המחיר עשוי להשתנות בהתאם לעיר שבה מתקיים האירוע",
         includes: "מה כלול",
         bonus: "בונוס: ",
         video: (index) => `🎥 צפייה בסרטון ${index ? `מס' ${index}` : ""}`,

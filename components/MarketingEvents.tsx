@@ -29,6 +29,7 @@ export function MarketingEvents() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const lastTrackedPage = useRef("");
+  const skipInitialMetaPageViewRef = useRef(true);
 
   useEffect(() => {
     const query = searchParams.toString();
@@ -43,6 +44,12 @@ export function MarketingEvents() {
       page_location: pageLocation,
       page_path: pagePath,
     });
+
+    if (skipInitialMetaPageViewRef.current) {
+      skipInitialMetaPageViewRef.current = false;
+      return;
+    }
+
     window.fbq?.("track", "PageView");
   }, [pathname, searchParams]);
 

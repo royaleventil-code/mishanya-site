@@ -3,7 +3,7 @@ import type { Addon } from "@/lib/types";
 export const ADDONS: Addon[] = [
   { id: "bubbles-show", emoji: "🫧", name: "Шоу мыльных пузырей", priceFrom: 300, icon: "/addons/bubbles-show.png" },
   { id: "confetti", emoji: "🎊", name: "Конфетти шоу", priceFrom: 200, icon: "/addons/confetti.png" },
-  { id: "pinata", emoji: "🪅", name: "Пиньята", priceFrom: 400 },
+  { id: "pinata", emoji: "🪅", name: "Пиньята", priceFrom: 500 },
   { id: "kryo-icecream", emoji: "🍦", name: "Крио-мороженое", priceFrom: 500, icon: "/addons/kryo-icecream.png" },
   { id: "kryo-icecream-masterclass", emoji: "🍦", name: "Мастер-класс по созданию крио-мороженого", priceFrom: 500, icon: "/addons/kryo-icecream.png" },
   { id: "mascot-addon", emoji: "🐻", name: "Дополнительная ростовая кукла", priceFrom: 600, icon: "/addons/mascot-addon.png" },
