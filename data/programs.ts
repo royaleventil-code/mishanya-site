@@ -274,7 +274,8 @@ export const PROGRAMS: Program[] = [
     audienceCovers: [
       { segment: "all", cover: "/programs/all-heroes.png" },
       { minAge: 1, maxAge: 3, cover: "/programs/all-heroes-toddlers-0-3.png" },
-      { gender: "boy", minAge: 4, maxAge: 7, cover: "/programs/all-heroes-boys-4-7.png" },
+      { gender: "boy", minAge: 4, maxAge: 6, cover: "/programs/all-heroes-boys-4-7.png" },
+      { gender: "boy", minAge: 7, maxAge: 10, cover: "/programs/all-heroes-boys-7-10.png" },
       { gender: "girl", minAge: 4, maxAge: 7, cover: "/programs/all-heroes-girls-4-7.png" },
       { gender: "girl", minAge: 8, maxAge: 10, cover: "/programs/super-heroes-girls-7-10-2026.png" },
       { gender: "boy", minAge: 1, maxAge: 99, cover: "/programs/super-heroes.png" },

@@ -123,6 +123,7 @@ test("core program covers match the new audience-specific artwork", () => {
       "/programs/all-heroes.png",
       "/programs/all-heroes-toddlers-0-3.png",
       "/programs/all-heroes-boys-4-7.png",
+      "/programs/all-heroes-boys-7-10.png",
       "/programs/all-heroes-girls-4-7.png",
       "/programs/super-heroes-girls-7-10-2026.png",
     ],
@@ -157,7 +158,8 @@ test("core program covers match the new audience-specific artwork", () => {
 
   const superHeroesBlock = programBlock("super-heroes");
   assert.match(superHeroesBlock, /\{\s*minAge:\s*1,\s*maxAge:\s*3,\s*cover:\s*"\/programs\/all-heroes-toddlers-0-3\.png"\s*\}/);
-  assert.match(superHeroesBlock, /\{\s*gender:\s*"boy",\s*minAge:\s*4,\s*maxAge:\s*7,\s*cover:\s*"\/programs\/all-heroes-boys-4-7\.png"\s*\}/);
+  assert.match(superHeroesBlock, /\{\s*gender:\s*"boy",\s*minAge:\s*4,\s*maxAge:\s*6,\s*cover:\s*"\/programs\/all-heroes-boys-4-7\.png"\s*\}/);
+  assert.match(superHeroesBlock, /\{\s*gender:\s*"boy",\s*minAge:\s*7,\s*maxAge:\s*10,\s*cover:\s*"\/programs\/all-heroes-boys-7-10\.png"\s*\}/);
   assert.match(superHeroesBlock, /\{\s*gender:\s*"girl",\s*minAge:\s*4,\s*maxAge:\s*7,\s*cover:\s*"\/programs\/all-heroes-girls-4-7\.png"\s*\}/);
   assert.match(superHeroesBlock, /\{\s*gender:\s*"girl",\s*minAge:\s*8,\s*maxAge:\s*10,\s*cover:\s*"\/programs\/super-heroes-girls-7-10-2026\.png"\s*\}/);
 });
