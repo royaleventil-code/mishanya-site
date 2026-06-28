@@ -1083,18 +1083,20 @@ function ProgramModal({
           {/* Hero slots */}
           {program.heroSlots.map((slot, slotIdx) => {
             const defaultOpen = slot.kind === "mascot" || slotIdx === 0;
-            const explicitHeroIds = new Set([
-              ...(slot.includedHeroIds ?? []),
-              ...(slot.onlyHeroIds ?? []),
-            ]);
             const hasSlotOnlyHeroIds = Boolean(slot.onlyHeroIds?.length);
             const useUniversalHeroPool =
               segment === "all" && !audience?.gender && !slot.onlyHeroIds?.length;
             const girlHeroIds = useUniversalHeroPool ? null : girlHeroIdsForSlot(audience, slot.kind);
+            const priorityHeroIds = slot.priorityHeroIds ?? [];
+            const includedHeroIds = girlHeroIds ? [] : slot.includedHeroIds;
+            const explicitHeroIds = new Set([
+              ...(includedHeroIds ?? []),
+              ...(slot.onlyHeroIds ?? []),
+            ]);
             const onlyHeroIds = hasSlotOnlyHeroIds ? slot.onlyHeroIds : girlHeroIds ?? slot.onlyHeroIds;
             const orderedHeroIds = hasSlotOnlyHeroIds
-              ? [...(slot.orderedHeroIds ?? []), ...(girlHeroIds ?? [])]
-              : [...(girlHeroIds ?? []), ...(slot.orderedHeroIds ?? [])];
+              ? [...priorityHeroIds, ...(slot.orderedHeroIds ?? []), ...(girlHeroIds ?? [])]
+              : [...priorityHeroIds, ...(girlHeroIds ?? []), ...(slot.orderedHeroIds ?? [])];
             const excludedHeroIds = new Set(
               girlHeroIds || useUniversalHeroPool ? [] : slot.excludedHeroIds ?? [],
             );
@@ -1103,7 +1105,7 @@ function ProgramModal({
                 heroes.filter((h) => (h.kind === slot.kind || explicitHeroIds.has(h.id)) && !excludedHeroIds.has(h.id)),
                 segment,
                 null,
-                slot.includedHeroIds,
+                includedHeroIds,
                 audience,
                 onlyHeroIds,
               ),

@@ -12,13 +12,8 @@ import { formatProgramPriceLabel } from "@/lib/prices";
 import type { Program } from "@/lib/types";
 
 const FEATURED_IDS = ["standart", "super-heroes", "frozen-toddler-girls", "chemistry", "paw-patrol-toddler-boys", "mishanya"];
-const FEATURED_TARGETS: Record<string, (locale: Locale) => string> = {
-  "super-heroes": (locale) => `${localePath(locale, "/all")}?program=super-heroes`,
-  "frozen-toddler-girls": (locale) => `${localePath(locale, "/girl/3")}?program=frozen-toddler-girls`,
-  "paw-patrol-toddler-boys": (locale) => `${localePath(locale, "/boy/3")}?program=paw-patrol-toddler-boys`,
-};
 const FEATURED_COVERS: Record<string, string> = {
-  "super-heroes": "/programs/super-heroes-universal.png",
+  "super-heroes": "/programs/all-heroes.png",
 };
 
 function coverOf(p: Program): string {
@@ -56,7 +51,7 @@ export function ProgramsShowcase({ locale = "ru" }: { locale?: Locale }) {
               transition={{ duration: 0.5, delay: (i % 3) * 0.08, ease: [0.22, 1, 0.36, 1] }}
             >
               <Link
-                href={FEATURED_TARGETS[p.id]?.(locale) ?? `${localePath(locale, "/all")}?program=${encodeURIComponent(p.id)}`}
+                href={`${localePath(locale, "/all")}?program=${encodeURIComponent(p.id)}`}
                 className="group block overflow-hidden rounded-[var(--radius-card)] bg-white shadow-[var(--shadow-card)] ring-1 ring-black/[0.04] transition duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-card-hover)]"
               >
                 <div className="relative aspect-[4/3] overflow-hidden bg-[#f3f0ff]">

@@ -10,6 +10,7 @@ export type HeroSlot = {
   includedHeroIds?: string[];
   onlyHeroIds?: string[];
   excludedHeroIds?: string[];
+  priorityHeroIds?: string[];
   orderedHeroIds?: string[];
 };
 
