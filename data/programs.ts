@@ -184,12 +184,12 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-sky-200",
     gradientTo: "to-sky-50",
-    cover: "/programs/start-universal-2026.png",
+    cover: "/programs/start-universal-2026.webp",
     audienceCovers: [
-      { segment: "all", cover: "/programs/start-universal-2026.png" },
-      { minAge: 1, maxAge: 3, cover: "/programs/start-toddlers-1-3-2026.png" },
-      { gender: "girl", minAge: 4, maxAge: 6, cover: "/programs/start-girls-4-6-2026.png" },
-      { gender: "boy", minAge: 4, maxAge: 5, cover: "/programs/start.png" },
+      { segment: "all", cover: "/programs/start-universal-2026.webp" },
+      { minAge: 1, maxAge: 3, cover: "/programs/start-toddlers-1-3-2026.webp" },
+      { gender: "girl", minAge: 4, maxAge: 6, cover: "/programs/start-girls-4-6-2026.webp" },
+      { gender: "boy", minAge: 4, maxAge: 5, cover: "/programs/start.webp" },
     ],
   },
 {
@@ -224,14 +224,14 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-sky-200",
     gradientTo: "to-sky-50",
-    cover: "/programs/standart-universal-2026.png",
+    cover: "/programs/standart-universal-2026.webp",
     audienceCovers: [
-      { segment: "all", cover: "/programs/standart-universal-2026.png" },
-      { minAge: 1, maxAge: 3, cover: "/programs/standart-toddlers-1-3-2026.png" },
-      { gender: "girl", minAge: 4, maxAge: 6, cover: "/programs/standart-girls-4-6-2026.png" },
-      { gender: "girl", minAge: 7, maxAge: 10, cover: "/programs/standart-girls-7-10-2026.png" },
-      { gender: "boy", minAge: 4, maxAge: 6, cover: "/programs/standart-boys-4-6-2026.png" },
-      { gender: "boy", minAge: 7, maxAge: 10, cover: "/programs/standart-boys-7-10-2026.png" },
+      { segment: "all", cover: "/programs/standart-universal-2026.webp" },
+      { minAge: 1, maxAge: 3, cover: "/programs/standart-toddlers-1-3-2026.webp" },
+      { gender: "girl", minAge: 4, maxAge: 6, cover: "/programs/standart-girls-4-6-2026.webp" },
+      { gender: "girl", minAge: 7, maxAge: 10, cover: "/programs/standart-girls-7-10-2026.webp" },
+      { gender: "boy", minAge: 4, maxAge: 6, cover: "/programs/standart-boys-4-6-2026.webp" },
+      { gender: "boy", minAge: 7, maxAge: 10, cover: "/programs/standart-boys-7-10-2026.webp" },
     ],
   },
 {
@@ -270,15 +270,15 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-blue-300",
     gradientTo: "to-indigo-100",
-    cover: "/programs/all-heroes.png",
+    cover: "/programs/all-heroes.webp",
     audienceCovers: [
-      { segment: "all", cover: "/programs/all-heroes.png" },
-      { minAge: 1, maxAge: 3, cover: "/programs/all-heroes-toddlers-0-3.png" },
-      { gender: "boy", minAge: 4, maxAge: 6, cover: "/programs/all-heroes-boys-4-7.png" },
-      { gender: "boy", minAge: 7, maxAge: 10, cover: "/programs/all-heroes-boys-7-10.png" },
-      { gender: "girl", minAge: 4, maxAge: 7, cover: "/programs/all-heroes-girls-4-7.png" },
-      { gender: "girl", minAge: 8, maxAge: 10, cover: "/programs/super-heroes-girls-7-10-2026.png" },
-      { gender: "boy", minAge: 1, maxAge: 99, cover: "/programs/super-heroes.png" },
+      { segment: "all", cover: "/programs/all-heroes.webp" },
+      { minAge: 1, maxAge: 3, cover: "/programs/all-heroes-toddlers-0-3.webp" },
+      { gender: "boy", minAge: 4, maxAge: 6, cover: "/programs/all-heroes-boys-4-7.webp" },
+      { gender: "boy", minAge: 7, maxAge: 10, cover: "/programs/all-heroes-boys-7-10.webp" },
+      { gender: "girl", minAge: 4, maxAge: 7, cover: "/programs/all-heroes-girls-4-7.webp" },
+      { gender: "girl", minAge: 8, maxAge: 10, cover: "/programs/super-heroes-girls-7-10-2026.webp" },
+      { gender: "boy", minAge: 1, maxAge: 99, cover: "/programs/super-heroes.webp" },
     ],
   },
 {
@@ -327,7 +327,7 @@ export const PROGRAMS: Program[] = [
     ],
     gradientFrom: "from-amber-200",
     gradientTo: "to-yellow-50",
-    cover: "/programs/mishanya.png",
+    cover: "/programs/mishanya.webp",
   },
 {
     id: "foam",
@@ -357,7 +357,7 @@ export const PROGRAMS: Program[] = [
     ],
     gradientFrom: "from-cyan-300",
     gradientTo: "to-sky-100",
-    cover: "/programs/foam.png",
+    cover: "/programs/foam.webp",
   },
 {
     id: "chemistry",
@@ -397,7 +397,7 @@ export const PROGRAMS: Program[] = [
     videos: ["https://youtu.be/j0cogSHA3mQ"],
     gradientFrom: "from-emerald-300",
     gradientTo: "to-teal-100",
-    cover: "/programs/chemistry.png",
+    cover: "/programs/chemistry.webp",
   },
 {
     id: "marvel-superheroes",
@@ -448,7 +448,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-blue-300",
     gradientTo: "to-indigo-100",
-    cover: "/programs/super-heroes-boys.png",
+    cover: "/programs/super-heroes-boys.webp",
   },
 {
     id: "unicorn-toddler-girls",
@@ -485,7 +485,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-fuchsia-300",
     gradientTo: "to-sky-100",
-    cover: "/programs/unicorn-toddler-girls.png",
+    cover: "/programs/unicorn-toddler-girls.webp",
   },
 {
     id: "paw-patrol-toddler-girls",
@@ -523,7 +523,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-pink-300",
     gradientTo: "to-sky-100",
-    cover: "/programs/paw-patrol-party.png",
+    cover: "/programs/paw-patrol-party.webp",
   },
 {
     id: "paw-patrol-toddler-boys",
@@ -561,7 +561,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-blue-300",
     gradientTo: "to-red-100",
-    cover: "/programs/paw-patrol-party.png",
+    cover: "/programs/paw-patrol-party.webp",
   },
 {
     id: "masha-bear",
@@ -603,7 +603,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-rose-300",
     gradientTo: "to-amber-100",
-    cover: "/programs/masha-bear.png",
+    cover: "/programs/masha-bear.webp",
   },
 {
     id: "mickey-mouse-party",
@@ -646,7 +646,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-red-300",
     gradientTo: "to-yellow-100",
-    cover: "/programs/mickey-mouse-party.png",
+    cover: "/programs/mickey-mouse-party.webp",
   },
 {
     id: "princesses",
@@ -703,7 +703,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-pink-300",
     gradientTo: "to-purple-100",
-    cover: "/programs/princesses.png",
+    cover: "/programs/princesses.webp",
   },
 {
     id: "fixiki-girls",
@@ -745,7 +745,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-cyan-300",
     gradientTo: "to-yellow-100",
-    cover: "/programs/fixiki-girls.png",
+    cover: "/programs/fixiki-girls.webp",
   },
 {
     id: "ladybug-party",
@@ -787,7 +787,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-red-400",
     gradientTo: "to-sky-100",
-    cover: "/programs/ladybug-party.png",
+    cover: "/programs/ladybug-party.webp",
   },
 {
     id: "trolls-party",
@@ -830,7 +830,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-fuchsia-300",
     gradientTo: "to-lime-100",
-    cover: "/programs/trolls-party.png",
+    cover: "/programs/trolls-party.webp",
   },
 {
     id: "pirates",
@@ -874,7 +874,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-amber-300",
     gradientTo: "to-sky-100",
-    cover: "/programs/pirates.png",
+    cover: "/programs/pirates.webp",
   },
 {
     id: "pikachu-party",
@@ -917,7 +917,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-yellow-300",
     gradientTo: "to-sky-100",
-    cover: "/programs/pikachu-party.png",
+    cover: "/programs/pikachu-party.webp",
   },
 {
     id: "labubu-party",
@@ -960,7 +960,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-lime-300",
     gradientTo: "to-pink-100",
-    cover: "/programs/labubu-party.png",
+    cover: "/programs/labubu-party.webp",
   },
 {
     id: "sonic-party",
@@ -1004,7 +1004,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-blue-300",
     gradientTo: "to-yellow-100",
-    cover: "/programs/sonic-party.png",
+    cover: "/programs/sonic-party.webp",
   },
 {
     id: "pj-masks",
@@ -1046,7 +1046,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-indigo-300",
     gradientTo: "to-teal-100",
-    cover: "/programs/pj-masks.png",
+    cover: "/programs/pj-masks.webp",
   },
 {
     id: "minecraft",
@@ -1087,7 +1087,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-emerald-300",
     gradientTo: "to-lime-100",
-    cover: "/programs/minecraft-sik.png",
+    cover: "/programs/minecraft-sik.webp",
   },
 {
     id: "huggy-wuggy-party",
@@ -1129,7 +1129,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-blue-400",
     gradientTo: "to-cyan-100",
-    cover: "/programs/huggy-wuggy-party.png",
+    cover: "/programs/huggy-wuggy-party.webp",
   },
 {
     id: "leon-dj-marshmello",
@@ -1172,7 +1172,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: ["dj", ...SHOW_PARTY_ADDONS],
     gradientFrom: "from-violet-400",
     gradientTo: "to-cyan-100",
-    cover: "/programs/leon-dj-marshmello.png",
+    cover: "/programs/leon-dj-marshmello.webp",
   },
 {
     id: "kpop",
@@ -1208,7 +1208,7 @@ export const PROGRAMS: Program[] = [
     bonus: BUBBLE_MACHINE_BONUS,
     gradientFrom: "from-fuchsia-300",
     gradientTo: "to-purple-100",
-    cover: "/programs/kpop.png",
+    cover: "/programs/kpop.webp",
   },
 {
     id: "frozen-toddler-girls",
@@ -1245,7 +1245,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-sky-300",
     gradientTo: "to-blue-50",
-    cover: "/programs/frozen-toddler-girls.png",
+    cover: "/programs/frozen-toddler-girls.webp",
   },
 {
     id: "stitch-ohana-party",
@@ -1283,7 +1283,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: SHOW_PARTY_ADDONS,
     gradientFrom: "from-cyan-300",
     gradientTo: "to-pink-100",
-    cover: "/programs/stitch-ohana-party.png",
+    cover: "/programs/stitch-ohana-party.webp",
   },
 {
     id: "tiktok",
@@ -1323,7 +1323,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: BASIC_PARTY_ADDONS,
     gradientFrom: "from-pink-300",
     gradientTo: "to-cyan-100",
-    cover: "/programs/tiktok.png",
+    cover: "/programs/tiktok.webp",
   },
 {
     id: "circus",
@@ -1358,7 +1358,7 @@ export const PROGRAMS: Program[] = [
     videos: ["https://youtu.be/5KKJHI_xvCY"],
     gradientFrom: "from-red-300",
     gradientTo: "to-orange-100",
-    cover: "/programs/circus.png",
+    cover: "/programs/circus.webp",
   },
 {
     id: "magician",
@@ -1403,7 +1403,7 @@ export const PROGRAMS: Program[] = [
     videos: ["https://youtu.be/Uoh9AsnJPuU"],
     gradientFrom: "from-purple-300",
     gradientTo: "to-fuchsia-100",
-    cover: "/programs/magician.png",
+    cover: "/programs/magician.webp",
   },
 {
     id: "neon",
@@ -1439,7 +1439,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: BASIC_PARTY_ADDONS,
     gradientFrom: "from-violet-400",
     gradientTo: "to-fuchsia-100",
-    cover: "/programs/neon.png",
+    cover: "/programs/neon.webp",
   },
 {
     id: "harry-potter",
@@ -1475,7 +1475,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: BASIC_PARTY_ADDONS,
     gradientFrom: "from-red-400",
     gradientTo: "to-yellow-100",
-    cover: "/programs/harry-potter.png",
+    cover: "/programs/harry-potter.webp",
   },
 {
     id: "squid-game",
@@ -1510,7 +1510,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: BASIC_PARTY_ADDONS,
     gradientFrom: "from-pink-400",
     gradientTo: "to-rose-100",
-    cover: "/programs/squid-game.jpg",
+    cover: "/programs/squid-game.webp",
   },
 {
     id: "vip",
@@ -1550,11 +1550,11 @@ export const PROGRAMS: Program[] = [
     bonus: BUBBLE_MACHINE_BONUS,
     gradientFrom: "from-yellow-300",
     gradientTo: "to-amber-50",
-    cover: "/programs/vip.png",
+    cover: "/programs/vip.webp",
     audienceCovers: audienceCovers({
-      all: "/programs/vip.png",
-      boy: "/programs/vip.png",
-      girl: "/programs/vip.png",
+      all: "/programs/vip.webp",
+      boy: "/programs/vip.webp",
+      girl: "/programs/vip.webp",
     }),
   },
 {
@@ -1597,11 +1597,11 @@ export const PROGRAMS: Program[] = [
     bonus: BUBBLE_MACHINE_BONUS,
     gradientFrom: "from-purple-500",
     gradientTo: "to-pink-200",
-    cover: "/programs/super-vip.png",
+    cover: "/programs/super-vip.webp",
     audienceCovers: audienceCovers({
-      all: "/programs/super-vip.png",
-      boy: "/programs/super-vip.png",
-      girl: "/programs/super-vip.png",
+      all: "/programs/super-vip.webp",
+      boy: "/programs/super-vip.webp",
+      girl: "/programs/super-vip.webp",
     }),
   },
 {
@@ -1636,7 +1636,7 @@ export const PROGRAMS: Program[] = [
     bonus: BUBBLE_MACHINE_BONUS,
     gradientFrom: "from-zinc-700",
     gradientTo: "to-purple-200",
-    cover: "/programs/wednesday.png",
+    cover: "/programs/wednesday.webp",
   },
 {
     id: "barbie",
@@ -1672,7 +1672,7 @@ export const PROGRAMS: Program[] = [
     bonus: BUBBLE_MACHINE_BONUS,
     gradientFrom: "from-pink-300",
     gradientTo: "to-rose-100",
-    cover: "/programs/barbie.png",
+    cover: "/programs/barbie.webp",
   },
 {
     id: "tesla",
@@ -1710,7 +1710,7 @@ export const PROGRAMS: Program[] = [
     videos: ["https://www.youtube.com/watch?v=LF7ax1Oeja8"],
     gradientFrom: "from-cyan-300",
     gradientTo: "to-blue-100",
-    cover: "/programs/tesla.png",
+    cover: "/programs/tesla.webp",
   },
 {
     id: "techno",
@@ -1750,7 +1750,7 @@ export const PROGRAMS: Program[] = [
     recommendedAddonIds: BASIC_PARTY_ADDONS,
     gradientFrom: "from-indigo-400",
     gradientTo: "to-blue-100",
-    cover: "/programs/techno.png",
+    cover: "/programs/techno.webp",
   },
 ];
 

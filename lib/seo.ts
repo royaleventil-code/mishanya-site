@@ -45,9 +45,9 @@ export function childLabel(gender: Gender, age: number, locale: Locale = "ru"): 
 
 export function audiencePreviewImage(gender: Gender, age: number): string {
   if (gender === "girl" && age <= 3) return "/programs/start-girls-1-3.webp";
-  if (gender === "girl") return "/programs/standart-girls.png";
-  if (age <= 3) return "/programs/start-universal.png";
-  return "/programs/super-heroes.png";
+  if (gender === "girl") return "/programs/standart-girls.webp";
+  if (age <= 3) return "/programs/start-universal.webp";
+  return "/programs/super-heroes.webp";
 }
 
 export function ruProgramPath(path: string): string {
