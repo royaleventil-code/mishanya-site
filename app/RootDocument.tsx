@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Lilita_One, Noto_Sans_Hebrew, Nunito } from "next/font/google";
 import { Suspense } from "react";
+import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import { MarketingEvents } from "@/components/MarketingEvents";
 import { MarketingPixels } from "@/components/MarketingPixels";
 import type { Locale } from "@/lib/i18n";
@@ -167,6 +168,7 @@ export function RootDocument({
           <MarketingEvents />
         </Suspense>
         {children}
+        <FloatingWhatsApp locale={locale} />
       </body>
     </html>
   );

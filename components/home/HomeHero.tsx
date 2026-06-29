@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ChevronRight, MessageCircle } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { BidiText } from "@/components/BidiText";
-import { DevPriceMenu } from "@/components/DevPriceMenu";
+import { DevPriceMenu, hasSeenHomeProgramsPopup } from "@/components/DevPriceMenu";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { getDictionary } from "@/lib/dictionaries";
 import { localePath, type Locale } from "@/lib/i18n";
@@ -61,6 +61,9 @@ export function HomeHero({ locale = "ru" }: { locale?: Locale }) {
   const reduce = useReducedMotion();
   const dict = getDictionary(locale);
   const waMessages = getWhatsAppMessages(locale);
+  const [showProgramsGuide, setShowProgramsGuide] = useState(false);
+  const [pulseProgramsCta, setPulseProgramsCta] = useState(false);
+  const [programsGuideDismissed, setProgramsGuideDismissed] = useState(false);
   const nav = [
     { href: localePath(locale, "/all"), label: dict.common.programs },
     { href: localePath(locale, "/gallery"), label: dict.common.gallery },
@@ -92,6 +95,35 @@ export function HomeHero({ locale = "ru" }: { locale?: Locale }) {
         ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
       },
     },
+  };
+
+  useEffect(() => {
+    if (reduce === true || programsGuideDismissed || hasSeenHomeProgramsPopup()) return;
+
+    const showTimer = window.setTimeout(() => {
+      if (hasSeenHomeProgramsPopup()) return;
+
+      setPulseProgramsCta(true);
+      setShowProgramsGuide(true);
+    }, 860);
+    const hideTimer = window.setTimeout(() => {
+      setShowProgramsGuide(false);
+    }, 2500);
+    const pulseTimer = window.setTimeout(() => {
+      setPulseProgramsCta(false);
+    }, 2200);
+
+    return () => {
+      window.clearTimeout(showTimer);
+      window.clearTimeout(hideTimer);
+      window.clearTimeout(pulseTimer);
+    };
+  }, [programsGuideDismissed, reduce]);
+
+  const stopProgramsGuide = () => {
+    setProgramsGuideDismissed(true);
+    setShowProgramsGuide(false);
+    setPulseProgramsCta(false);
   };
 
   return (
@@ -169,16 +201,6 @@ export function HomeHero({ locale = "ru" }: { locale?: Locale }) {
             </Link>
           ))}
         </nav>
-        <a
-          href={whatsappLink(waMessages.default)}
-          target="_blank"
-          rel="noreferrer"
-          aria-label={dict.common.writeWhatsapp}
-          className="inline-flex h-14 min-w-14 items-center justify-center gap-2 rounded-full bg-[var(--color-whatsapp)] px-4 text-sm font-bold text-white shadow-lg transition active:scale-95 sm:h-16 sm:min-w-16 sm:px-5 sm:text-base"
-        >
-          <MessageCircle className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.4} />
-          <span className="hidden sm:inline">{dict.common.whatsapp}</span>
-        </a>
         <LanguageSwitch locale={locale} compact />
       </header>
 
@@ -221,18 +243,54 @@ export function HomeHero({ locale = "ru" }: { locale?: Locale }) {
           <motion.div variants={ctaRise} className="mt-7 flex flex-col gap-3 sm:flex-row">
             <DevPriceMenu
               locale={locale}
-              trigger={({ open, onClick }) => (
-                <button
-                  type="button"
-                  onClick={onClick}
-                  aria-expanded={open}
-                  aria-haspopup="dialog"
-                  className="group inline-flex items-center justify-center gap-2 rounded-full bg-[linear-gradient(100deg,#ff375f,#ff5a7a)] px-7 py-4 text-base font-black text-white shadow-[0_14px_30px_rgba(255,55,95,0.4)] transition-[box-shadow,transform,background] duration-300 ease-out hover:shadow-[0_18px_40px_rgba(255,55,95,0.5)] active:scale-[0.98]"
-                >
-                  <BidiText locale={locale}>{hero.programsCta}</BidiText>
-                  <ChevronRight className={`h-5 w-5 transition ${locale === "he" ? "rotate-180 group-hover:-translate-x-0.5" : "group-hover:translate-x-0.5"}`} strokeWidth={2.6} />
-                </button>
-              )}
+              autoOpenDelayMs={6000}
+              trigger={({ open, onClick }) => {
+                const showGuide = showProgramsGuide && !open && !programsGuideDismissed;
+                const runPulse = pulseProgramsCta && !open && !programsGuideDismissed;
+
+                return (
+                  <div className="relative flex sm:inline-flex">
+                    <div className="pointer-events-none absolute inset-x-0 bottom-full z-20 mb-2 flex justify-center">
+                      <motion.div
+                        aria-hidden={!showGuide}
+                        initial={false}
+                        animate={showGuide ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 5, scale: 0.98 }}
+                        transition={{ duration: showGuide ? 0.18 : 0.14, ease: "easeOut" }}
+                        className="relative w-max max-w-[min(280px,calc(100vw-40px))] rounded-full bg-white/95 px-3 py-2 text-center text-xs font-black text-zinc-800 shadow-lg ring-1 ring-black/5 backdrop-blur"
+                      >
+                        <BidiText locale={locale}>{dict.common.chooseChildAge}</BidiText>
+                        <span
+                          aria-hidden
+                          className="absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-white/95 ring-1 ring-black/5"
+                        />
+                      </motion.div>
+                    </div>
+                    <motion.button
+                      type="button"
+                      onClick={() => {
+                        stopProgramsGuide();
+                        onClick();
+                      }}
+                      aria-expanded={open}
+                      aria-haspopup="dialog"
+                      animate={runPulse ? { scale: [1, 1.018, 1, 1.026, 1] } : { scale: 1 }}
+                      transition={
+                        runPulse
+                          ? {
+                              duration: 1.18,
+                              ease: [0.2, 0.9, 0.24, 1],
+                              times: [0, 0.18, 0.36, 0.58, 1],
+                            }
+                          : { duration: 0.14, ease: "easeOut" }
+                      }
+                      className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(100deg,#ff375f,#ff5a7a)] px-7 py-4 text-base font-black text-white shadow-[0_14px_30px_rgba(255,55,95,0.4)] transition-[box-shadow,background] duration-300 ease-out hover:shadow-[0_18px_40px_rgba(255,55,95,0.5)] active:scale-[0.98] sm:w-auto"
+                    >
+                      <BidiText locale={locale}>{hero.programsCta}</BidiText>
+                      <ChevronRight className={`h-5 w-5 transition ${locale === "he" ? "rotate-180 group-hover:-translate-x-0.5" : "group-hover:translate-x-0.5"}`} strokeWidth={2.6} />
+                    </motion.button>
+                  </div>
+                );
+              }}
             />
             <a
               href={whatsappLink(waMessages.default)}

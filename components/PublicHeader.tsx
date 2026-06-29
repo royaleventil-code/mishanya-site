@@ -2,14 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { MessageCircle } from "lucide-react";
-import { BidiText } from "@/components/BidiText";
 import { DevPriceMenu } from "@/components/DevPriceMenu";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { useAutoHideHeader } from "@/components/useAutoHideHeader";
 import { getDictionary } from "@/lib/dictionaries";
 import { localePath, type Locale } from "@/lib/i18n";
-import { getWhatsAppMessages, whatsappLink } from "@/lib/whatsapp";
 
 export function PublicHeader({
   locale = "ru",
@@ -21,7 +18,6 @@ export function PublicHeader({
   const isDark = theme === "dark";
   const { isVisible, showHeader } = useAutoHideHeader();
   const dict = getDictionary(locale);
-  const waMessages = getWhatsAppMessages(locale);
   const nav = [
     { href: localePath(locale, "/about"), label: dict.common.about },
     { href: localePath(locale, "/formats"), label: dict.common.formats },
@@ -87,16 +83,6 @@ export function PublicHeader({
             )}
           />
           <LanguageSwitch locale={locale} theme={theme} compact />
-          <a
-            href={whatsappLink(waMessages.default)}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={dict.common.writeWhatsapp}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--color-whatsapp)] text-sm font-bold text-white shadow-lg transition active:scale-95 sm:w-auto sm:px-4 sm:py-2.5"
-          >
-            <MessageCircle className="h-4 w-4" strokeWidth={2.4} />
-            <span className="hidden sm:inline"><BidiText locale={locale}>{dict.common.whatsapp}</BidiText></span>
-          </a>
         </div>
       </div>
     </header>

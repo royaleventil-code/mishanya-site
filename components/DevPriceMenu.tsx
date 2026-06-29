@@ -18,9 +18,32 @@ type DevPriceMenuProps = {
   locale?: Locale;
   theme?: "light" | "dark";
   trigger?: (props: { open: boolean; onClick: () => void }) => ReactNode;
+  autoOpenDelayMs?: number;
 };
 
-export function DevPriceMenu({ locale = "ru", theme = "light", trigger }: DevPriceMenuProps) {
+const HOME_PROGRAMS_POPUP_KEY = "mishanya-home-programs-popup-seen";
+
+export function hasSeenHomeProgramsPopup() {
+  if (typeof window === "undefined") return true;
+
+  try {
+    return window.sessionStorage.getItem(HOME_PROGRAMS_POPUP_KEY) === "1";
+  } catch {
+    return true;
+  }
+}
+
+export function setHomeProgramsPopupSeen() {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.sessionStorage.setItem(HOME_PROGRAMS_POPUP_KEY, "1");
+  } catch {
+    // Ignore storage failures; the menu still works from the button.
+  }
+}
+
+export function DevPriceMenu({ locale = "ru", theme = "light", trigger, autoOpenDelayMs }: DevPriceMenuProps) {
   const [open, setOpen] = useState(false);
   const isDark = theme === "dark";
   const dict = getDictionary(locale);
@@ -28,9 +51,35 @@ export function DevPriceMenu({ locale = "ru", theme = "light", trigger }: DevPri
   const summaryClass = isDark
     ? "border-white/25 bg-white/10 text-white hover:bg-white/16"
     : "border-[var(--color-line)] bg-white text-[var(--color-ink)] shadow-sm hover:bg-zinc-50";
-  const closeMenu = () => setOpen(false);
-  const toggleMenu = () => setOpen((value) => !value);
+  const markAutoPopupSeen = () => {
+    if (!autoOpenDelayMs) return;
+    setHomeProgramsPopupSeen();
+  };
+  const closeMenu = () => {
+    markAutoPopupSeen();
+    setOpen(false);
+  };
+  const toggleMenu = () => {
+    markAutoPopupSeen();
+    setOpen((value) => !value);
+  };
   const canUsePortal = typeof document !== "undefined";
+
+  useEffect(() => {
+    if (!autoOpenDelayMs) return;
+    if (hasSeenHomeProgramsPopup()) return;
+
+    const timeoutId = window.setTimeout(() => {
+      if (hasSeenHomeProgramsPopup()) return;
+
+      setHomeProgramsPopupSeen();
+      setOpen(true);
+    }, autoOpenDelayMs);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [autoOpenDelayMs]);
 
   useEffect(() => {
     if (!open) return;
