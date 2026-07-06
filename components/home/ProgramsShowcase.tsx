@@ -11,7 +11,7 @@ import { getLocalizedPrograms } from "@/lib/localized-data";
 import { formatProgramPriceLabel } from "@/lib/prices";
 import type { Program } from "@/lib/types";
 
-const FEATURED_IDS = ["standart", "super-heroes", "frozen-toddler-girls", "chemistry", "paw-patrol-toddler-boys", "mishanya"];
+const FEATURED_IDS = ["standart", "super-heroes", "frozen-toddler-girls", "chemistry", "foam", "mishanya"];
 const FEATURED_COVERS: Record<string, string> = {
   "super-heroes": "/programs/all-heroes.webp",
 };
