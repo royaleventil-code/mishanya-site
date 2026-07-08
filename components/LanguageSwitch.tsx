@@ -10,9 +10,11 @@ type Props = {
   locale: Locale;
   theme?: "light" | "dark";
   compact?: boolean;
+  // Куда вести конкретный язык, если зеркальной страницы нет (например, программа без перевода)
+  hrefOverrides?: Partial<Record<Locale, string>>;
 };
 
-export function LanguageSwitch({ locale, theme = "light", compact = false }: Props) {
+export function LanguageSwitch({ locale, theme = "light", compact = false, hrefOverrides }: Props) {
   const pathname = usePathname() || "/";
   const dict = getDictionary(locale);
   const isDark = theme === "dark";
@@ -29,7 +31,8 @@ export function LanguageSwitch({ locale, theme = "light", compact = false }: Pro
       {!compact && <Languages className="mx-1 h-3.5 w-3.5 opacity-70" strokeWidth={2.5} />}
       {LOCALES.map((targetLocale) => {
         const active = targetLocale === locale;
-        const href = switchLocalePath(pathname, targetLocale);
+        const override = hrefOverrides?.[targetLocale];
+        const href = override ?? switchLocalePath(pathname, targetLocale);
 
         return (
           <Link
@@ -39,6 +42,10 @@ export function LanguageSwitch({ locale, theme = "light", compact = false }: Pro
             onClick={(event) => {
               if (typeof window === "undefined") return;
               event.preventDefault();
+              if (override) {
+                window.location.assign(override);
+                return;
+              }
               const current = new URL(window.location.href);
               const nextPath = switchLocalePath(current.pathname, targetLocale);
               const nextUrl = `${nextPath}${current.search}${current.hash}`;

@@ -27,6 +27,12 @@ export function generateStaticParams({ params }: { params: { locale: string } })
   }));
 }
 
+// Уточнения для программ с одинаковым названием (иначе дубли title)
+const TITLE_DISAMBIGUATION: Record<string, Record<Locale, string>> = {
+  "paw-patrol-toddler-boys": { ru: " для мальчиков", he: " לבנים" },
+  "paw-patrol-toddler-girls": { ru: " для девочек", he: " לבנות" },
+};
+
 function programDescription(locale: Locale, title: string, tagline: string | undefined, durationLabel: string, priceLabel: string): string {
   if (locale === "he") {
     return `"${title}" — תוכנית יום הולדת לילדים מבית מישניה בארץ הפלאות. ${tagline ? `${tagline}. ` : ""}${durationLabel}, ${priceLabel}. דמויות, מופעים והזמנה מהירה ב־WhatsApp.`;
@@ -45,8 +51,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const priceLabel = formatProgramPriceLabel(program.id, program.priceFrom, locale);
+  const titleSuffix = TITLE_DISAMBIGUATION[program.id]?.[locale] ?? "";
   const metadata = createPageMetadata({
-    title: `${program.title} — ${locale === "he" ? "תוכנית יום הולדת" : "программа детского праздника"} | ${dict.brand.name}`,
+    title: `${program.title}${titleSuffix} — ${locale === "he" ? "תוכנית יום הולדת" : "программа детского праздника"} | ${dict.brand.name}`,
     description: programDescription(locale, program.title, program.tagline, program.durationLabel, priceLabel),
     path: `/${locale}/programs/${program.id}`,
     canonicalPath: `/${locale}/programs/${program.id}`,
@@ -153,7 +160,11 @@ export default async function LocalizedProgramPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLd }}
       />
-      <PublicHeader locale={locale} />
+      <PublicHeader
+        locale={locale}
+        // у непереведённых программ нет HE-зеркала — переключатель ведёт в HE-каталог
+        langHrefOverrides={hasProgramCopy("he", id) ? undefined : { he: "/he/all" }}
+      />
 
       <div className="mx-auto max-w-3xl px-5 pb-20 pt-6 sm:px-6">
         {/* Breadcrumbs */}

@@ -11,9 +11,11 @@ import { localePath, type Locale } from "@/lib/i18n";
 export function PublicHeader({
   locale = "ru",
   theme = "light",
+  langHrefOverrides,
 }: {
   locale?: Locale;
   theme?: "light" | "dark";
+  langHrefOverrides?: Partial<Record<Locale, string>>;
 }) {
   const isDark = theme === "dark";
   const { isVisible, showHeader } = useAutoHideHeader();
@@ -82,7 +84,7 @@ export function PublicHeader({
               </button>
             )}
           />
-          <LanguageSwitch locale={locale} theme={theme} compact />
+          <LanguageSwitch locale={locale} theme={theme} compact hrefOverrides={langHrefOverrides} />
         </div>
       </div>
     </header>
