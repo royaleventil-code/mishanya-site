@@ -13,6 +13,10 @@ export type Dictionary = {
     programs: string;
     allPrograms: string;
     allProgramsTitle: string;
+    home: string;
+    byAgeTitle: string;
+    openInCatalog: string;
+    programsIndexTitle: string;
     formats: string;
     gallery: string;
     galleryShort: string;
@@ -202,6 +206,10 @@ export const DICTIONARIES = {
       programs: "Программы",
       allPrograms: "Все программы",
       allProgramsTitle: "Все программы Мишани",
+      home: "Главная",
+      byAgeTitle: "Праздник по возрасту",
+      openInCatalog: "Открыть в каталоге с выбором героя",
+      programsIndexTitle: "Страницы программ",
       formats: "Форматы",
       gallery: "Фото и видео",
       galleryShort: "Фото",
@@ -597,6 +605,10 @@ export const DICTIONARIES = {
       programs: "תוכניות",
       allPrograms: "כל התוכניות",
       allProgramsTitle: "כל התוכניות של מישניה",
+      home: "דף הבית",
+      byAgeTitle: "חגיגה לפי גיל",
+      openInCatalog: "לצפייה בקטלוג עם בחירת דמות",
+      programsIndexTitle: "עמודי התוכניות",
       formats: "פורמטים",
       gallery: "תמונות וסרטונים",
       galleryShort: "תמונות",

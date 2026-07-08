@@ -1,5 +1,7 @@
 import type { MetadataRoute } from "next";
+import { PROGRAMS } from "@/data/programs";
 import { LOCALES, localePath, type Locale } from "@/lib/i18n";
+import { hasProgramCopy } from "@/lib/localized-data";
 import { siteUrl } from "@/lib/seo";
 
 export const dynamic = "force-static";
@@ -39,7 +41,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ];
   }).flat();
 
-  return LOCALES.flatMap((locale) =>
+  const baseEntries = LOCALES.flatMap((locale) =>
     [...staticRoutes, ...ageRoutes].map((route) => ({
       url: localizedUrl(locale, route.path),
       lastModified,
@@ -48,4 +50,27 @@ export default function sitemap(): MetadataRoute.Sitemap {
       alternates: alternates(route.path),
     })),
   );
+
+  // Страницы программ: HE-версии только у переведённых программ
+  const programEntries = LOCALES.flatMap((locale) =>
+    PROGRAMS.filter((program) => hasProgramCopy(locale, program.id)).map((program) => {
+      const path = `/programs/${program.id}`;
+      return {
+        url: localizedUrl(locale, path),
+        lastModified,
+        changeFrequency: "weekly" as const,
+        priority: 0.85,
+        alternates: hasProgramCopy("he", program.id)
+          ? alternates(path)
+          : {
+              languages: {
+                ru: localizedUrl("ru", path),
+                "x-default": localizedUrl("ru", path),
+              },
+            },
+      };
+    }),
+  );
+
+  return [...baseEntries, ...programEntries];
 }
