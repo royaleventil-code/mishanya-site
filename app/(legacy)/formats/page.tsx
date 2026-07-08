@@ -6,7 +6,7 @@ export const metadata = createPageMetadata({
   description:
     "Детские праздники дома, в садике, школе, зале, ресторане, парке и на городских событиях. Мишаня подстраивает программу под место, возраст и язык гостей.",
   path: "/formats",
-  canonicalPath: "/formats",
+  canonicalPath: "/ru/formats",
   image: "/generated/program-party.webp",
 });
 

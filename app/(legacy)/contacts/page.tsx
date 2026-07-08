@@ -8,7 +8,7 @@ export const metadata = createPageMetadata({
   description:
     "Свяжитесь с агентством детских праздников «Мишаня в Стране Чудес». WhatsApp, телефон, email и соцсети. Работаем по всему Израилю, на русском и иврите.",
   path: "/contacts",
-  canonicalPath: "/contacts",
+  canonicalPath: "/ru/contacts",
   image: "/generated/program-party.webp",
 });
 
