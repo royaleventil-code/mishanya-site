@@ -16,12 +16,9 @@ export async function generateMetadata({
   return createPageMetadata({
     title:
       locale === "he"
-        ? `${dict.brand.name} — ימי הולדת לילדים בישראל`
-        : `${SITE_NAME} — детские праздники в Израиле`,
-    description:
-      locale === "he"
-        ? "מישניה בארץ הפלאות: ימי הולדת, דמויות, מופעים ותוכניות מוכנות לילדים בכל הארץ."
-        : "Мишаня в Стране Чудес, также Михаил в Стране Чудес и Страна Чудес: детские праздники, герои и шоу в Израиле.",
+        ? `${dict.brand.name} — הפעלות וימי הולדת לילדים בישראל`
+        : `${SITE_NAME} — аниматоры и детские праздники в Израиле`,
+    description: dict.brand.siteDescription,
     path: `/${locale}`,
     canonicalPath: `/${locale}`,
     image: HOME_WHATSAPP_PREVIEW_IMAGE,

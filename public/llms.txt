@@ -2,19 +2,27 @@
 
 Primary domain: https://mishanya-show.com
 
-Мишаня в Стране Чудес делает детские праздники и шоу в Израиле: дни рождения, выездные программы с героями, интерактивные шоу, ведущие, костюмы, реквизит и дополнительные опции.
+Мишаня в Стране Чудес делает детские праздники и шоу в Израиле: дни рождения, аниматоры и выездные программы с героями, интерактивные шоу, ведущие, костюмы, реквизит и дополнительные опции.
 
-Languages: русский, иврит
+Languages: русский, иврит (Hebrew version: https://mishanya-show.com/he)
 
-Contact: WhatsApp +972 54-616-32-60
+Contact: WhatsApp +972 54 616 3260
+
+Key facts:
+- Цены программ: от ₪1500 до ₪3000 (VIP-форматы дороже)
+- 11+ лет опыта, 10 000+ проведённых мероприятий
+- Работаем по всему Израилю: Нетания, Тель-Авив, Хайфа, Ашдод, Иерусалим, Беэр-Шева, Кирьят-Ям и другие города
+- Форматы: дом, зал, детский сад, школа, парк, ресторан, городские события
+- Программы на русском и иврите, 40+ программ и 50+ героев
 
 Main pages:
 - https://mishanya-show.com/ru
 - https://mishanya-show.com/ru/all
-- https://mishanya-show.com/about
-- https://mishanya-show.com/formats
-- https://mishanya-show.com/gallery
-- https://mishanya-show.com/contacts
+- https://mishanya-show.com/ru/about
+- https://mishanya-show.com/ru/formats
+- https://mishanya-show.com/ru/gallery
+- https://mishanya-show.com/ru/contacts
+- https://mishanya-show.com/he
 
 What the site covers:
 - programs for children's parties by age and audience

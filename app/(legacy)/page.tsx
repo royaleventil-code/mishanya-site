@@ -2,9 +2,9 @@ import { HomePage } from "@/components/home/HomePage";
 import { createPageMetadata, HOME_WHATSAPP_PREVIEW_IMAGE, SITE_NAME } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
-  title: `${SITE_NAME} — детские праздники в Израиле`,
+  title: `${SITE_NAME} — аниматоры и детские праздники в Израиле`,
   description:
-    "Мишаня в Стране Чудес, также Михаил в Стране Чудес и Страна Чудес: детские праздники, герои и шоу в Израиле.",
+    "Аниматоры и детские праздники в Израиле: 40+ программ с любимыми героями, шоу и цены сразу на сайте. 11 лет опыта, 10 000+ праздников на русском и иврите.",
   path: "/",
   canonicalPath: "/ru",
   image: HOME_WHATSAPP_PREVIEW_IMAGE,

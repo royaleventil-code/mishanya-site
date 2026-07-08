@@ -52,14 +52,14 @@ export function createRootMetadata(locale: Locale): Metadata {
 
   return {
     metadataBase: new URL(SITE_URL),
-    title: `${dict.brand.name} — ${locale === "he" ? "ימי הולדת לילדים בישראל" : "детские праздники в Израиле"}`,
+    title: `${dict.brand.name} — ${locale === "he" ? "הפעלות וימי הולדת לילדים בישראל" : "аниматоры и детские праздники в Израиле"}`,
     description: dict.brand.siteDescription,
     applicationName: dict.brand.name,
     openGraph: {
       type: "website",
       locale: localeConfig.ogLocale,
       siteName: dict.brand.name,
-      title: `${dict.brand.name} — ${locale === "he" ? "ימי הולדת לילדים בישראל" : "детские праздники в Израиле"}`,
+      title: `${dict.brand.name} — ${locale === "he" ? "הפעלות וימי הולדת לילדים בישראל" : "аниматоры и детские праздники в Израиле"}`,
       description: dict.brand.siteDescription,
       images: [
         {
@@ -121,12 +121,24 @@ function rootJsonLd(locale: Locale) {
       image: siteUrl(HOME_WHATSAPP_PREVIEW_IMAGE),
       telephone: "+972546163260",
       email: "royal.eventil@gmail.com",
-      priceRange: "₪₪",
+      priceRange: "₪1500–₪3000",
       availableLanguage: ["Russian", "Hebrew"],
-      areaServed: {
-        "@type": "Country",
-        name: "Israel",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Kiryat Yam",
+        postalCode: "29082",
+        addressCountry: "IL",
       },
+      areaServed: [
+        { "@type": "City", name: "Netanya" },
+        { "@type": "City", name: "Tel Aviv" },
+        { "@type": "City", name: "Haifa" },
+        { "@type": "City", name: "Ashdod" },
+        { "@type": "City", name: "Jerusalem" },
+        { "@type": "City", name: "Beer Sheva" },
+        { "@type": "City", name: "Kiryat Yam" },
+        { "@type": "Country", name: "Israel" },
+      ],
       aggregateRating: {
         "@type": "AggregateRating",
         ratingValue: "5.0",

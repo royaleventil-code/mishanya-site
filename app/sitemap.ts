@@ -20,14 +20,17 @@ function localizedUrl(locale: Locale, path: string) {
 
 function alternates(path: string) {
   return {
-    languages: Object.fromEntries(
-      LOCALES.map((locale) => [locale, localizedUrl(locale, path)]),
-    ),
+    languages: {
+      ...Object.fromEntries(
+        LOCALES.map((locale) => [locale, localizedUrl(locale, path)]),
+      ),
+      "x-default": localizedUrl("ru", path),
+    },
   };
 }
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const lastModified = new Date("2026-06-03");
+  const lastModified = new Date();
   const ageRoutes = Array.from({ length: 10 }, (_, index) => {
     const age = index + 1;
     return [

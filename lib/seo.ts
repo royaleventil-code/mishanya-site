@@ -17,7 +17,7 @@ export const BRAND_ALIASES = [
 ];
 
 const DEFAULT_IMAGE = "/generated/program-party.webp";
-export const HOME_WHATSAPP_PREVIEW_IMAGE = "/og/home-whatsapp-preview.png";
+export const HOME_WHATSAPP_PREVIEW_IMAGE = "/og/home-whatsapp-preview.jpg";
 const AGE_WHATSAPP_PREVIEW_AGES = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
 export function siteUrl(path = "/"): string {
@@ -63,6 +63,7 @@ function alternateLanguages(canonicalPath: string) {
   return {
     ru: switchLocalePath(canonicalPath, "ru"),
     he: switchLocalePath(canonicalPath, "he"),
+    "x-default": switchLocalePath(canonicalPath, "ru"),
   };
 }
 
@@ -180,7 +181,7 @@ export function createAgeProgramsMetadata({
     path,
     canonicalPath: localizedProgramPath(locale, `/${gender}/${age}`),
     image: hasAgeWhatsappPreview
-      ? `/og/${gender}-${age}-whatsapp-preview.png`
+      ? `/og/${gender}-${age}-whatsapp-preview.jpg`
       : audiencePreviewImage(gender, age),
     imageHeight: hasAgeWhatsappPreview ? 1200 : undefined,
     locale,

@@ -25,7 +25,7 @@ export default async function LocalizedAllPage({
     <SegmentPage
       locale={locale}
       segment="all"
-      title={`${dict.common.allPrograms} ${dict.brand.shortName}`}
+      title={dict.common.allProgramsTitle}
     />
   );
 }

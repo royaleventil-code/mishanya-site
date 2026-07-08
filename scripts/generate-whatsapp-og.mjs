@@ -4,11 +4,13 @@ import sharp from "sharp";
 
 const outDir = join("public", "og");
 const ages = Array.from({ length: 10 }, (_, index) => index + 1);
+// Превью — JPEG: WhatsApp/Telegram не показывают og-картинки тяжелее ~600 КБ,
+// а PNG 1200×1200 выходил 2,4–3,2 МБ. Прозрачность превью не нужна.
 const items = [
-  { source: "home-whatsapp-source.png", preview: "home-whatsapp-preview.png" },
+  { source: "home-whatsapp-source.png", preview: "home-whatsapp-preview.jpg" },
   ...ages.flatMap((age) => [
-    { source: `boy-${age}-whatsapp-source.png`, preview: `boy-${age}-whatsapp-preview.png` },
-    { source: `girl-${age}-whatsapp-source.png`, preview: `girl-${age}-whatsapp-preview.png` },
+    { source: `boy-${age}-whatsapp-source.png`, preview: `boy-${age}-whatsapp-preview.jpg` },
+    { source: `girl-${age}-whatsapp-source.png`, preview: `girl-${age}-whatsapp-preview.jpg` },
   ]),
 ];
 
@@ -27,7 +29,7 @@ for (const item of items) {
       fit: "cover",
       position: "center",
     })
-    .png({ compressionLevel: 9 })
+    .jpeg({ quality: 85, mozjpeg: true })
     .toFile(outPath);
 
   console.log(outPath);
