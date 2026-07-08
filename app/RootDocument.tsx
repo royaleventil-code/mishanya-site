@@ -122,7 +122,9 @@ function rootJsonLd(locale: Locale) {
       telephone: "+972546163260",
       email: "royal.eventil@gmail.com",
       priceRange: "₪1500–₪3000",
+      foundingDate: "2015",
       availableLanguage: ["Russian", "Hebrew"],
+      hasMap: "https://www.google.com/maps/place/?q=place_id:ChIJcVYXCzq3HRURZpNp45P8WLY",
       address: {
         "@type": "PostalAddress",
         addressLocality: "Kiryat Yam",
@@ -156,6 +158,7 @@ function rootJsonLd(locale: Locale) {
         "https://www.instagram.com/show.mishanya/",
         "https://www.facebook.com/royaleventisrael/",
         "https://www.youtube.com/channel/UCo189jVSku-2H_0Rgrw9JCw",
+        "https://www.google.com/maps/place/?q=place_id:ChIJcVYXCzq3HRURZpNp45P8WLY",
       ],
     },
   ];
@@ -183,7 +186,10 @@ export function RootDocument({
       <body className="min-h-screen antialiased">
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(rootJsonLd(locale)) }}
+          dangerouslySetInnerHTML={{
+            // экранируем «<», чтобы текст с "</script>" не мог сломать inline-скрипт
+            __html: JSON.stringify(rootJsonLd(locale)).replace(/</g, "\\u003c"),
+          }}
         />
         <a href="#main" className="skip-link">
           {dict.a11y.skipToContent}

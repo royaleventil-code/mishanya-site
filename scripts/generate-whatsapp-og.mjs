@@ -2,6 +2,8 @@ import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import sharp from "sharp";
 
+// Исходники лежат вне public/, чтобы 40+ МБ PNG не попадали в деплой
+const sourceDir = "og-sources";
 const outDir = join("public", "og");
 const ages = Array.from({ length: 10 }, (_, index) => index + 1);
 // Превью — JPEG: WhatsApp/Telegram не показывают og-картинки тяжелее ~600 КБ,
@@ -17,7 +19,7 @@ const items = [
 mkdirSync(outDir, { recursive: true });
 
 for (const item of items) {
-  const sourcePath = join(outDir, item.source);
+  const sourcePath = join(sourceDir, item.source);
   const outPath = join(outDir, item.preview);
 
   if (!existsSync(sourcePath)) {
