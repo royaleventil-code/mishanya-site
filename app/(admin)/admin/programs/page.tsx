@@ -53,7 +53,7 @@ const READY_COUNT = Object.values(PROGRAM_STATUSES).filter((status) => status ==
 
 export default function AdminProgramsPage() {
   return (
-    <main className="min-h-screen bg-[var(--color-canvas)]">
+    <main id="main" className="min-h-screen bg-[var(--color-canvas)]">
       <div className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-6 sm:py-10">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>

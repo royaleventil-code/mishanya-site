@@ -44,7 +44,7 @@ export default async function ProgramDetailPage({ params }: Props) {
   if (!program) notFound();
 
   return (
-    <main className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
+    <main id="main" className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
       <PublicHeader />
       <RedirectToAll
         target={`/ru/all?program=${encodeURIComponent(program.id)}`}

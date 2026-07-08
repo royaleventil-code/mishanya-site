@@ -12,6 +12,7 @@ export function PublicFooter({ locale = "ru" }: { locale?: Locale }) {
     { href: localePath(locale, "/all"), label: dict.common.programs },
     { href: localePath(locale, "/gallery"), label: dict.catalog.proof.eyebrow },
     { href: localePath(locale, "/contacts"), label: dict.common.contacts },
+    { href: localePath(locale, "/accessibility"), label: dict.a11y.statementLink },
   ];
 
   return (

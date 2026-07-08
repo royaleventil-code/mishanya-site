@@ -27,7 +27,7 @@ export default async function LocalizedContactsPage({ params }: { params: Promis
   const locale: Locale = isLocale(localeParam) ? localeParam : "ru";
 
   return (
-    <main className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
+    <main id="main" className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
       <PublicHeader locale={locale} />
       <ContactsContent locale={locale} />
       <PublicFooter locale={locale} />

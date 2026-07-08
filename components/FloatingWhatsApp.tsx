@@ -22,6 +22,7 @@ export function FloatingWhatsApp({ locale = "ru" }: { locale?: Locale }) {
   }
 
   return (
+    <aside aria-label={dict.common.whatsapp}>
     <a
       href={whatsappLink(waMessages.default)}
       target="_blank"
@@ -33,5 +34,6 @@ export function FloatingWhatsApp({ locale = "ru" }: { locale?: Locale }) {
     >
       <MessageCircle className="h-7 w-7 sm:h-8 sm:w-8" strokeWidth={2.5} />
     </a>
+    </aside>
   );
 }

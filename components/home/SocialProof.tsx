@@ -54,7 +54,12 @@ export function SocialProof({ locale = "ru" }: { locale?: Locale }) {
         </div>
       </div>
 
-      <div className="hide-scrollbar mx-auto mt-10 flex max-w-6xl gap-3 overflow-x-auto pb-2 sm:gap-4">
+      <div
+        role="region"
+        aria-label={dict.home.socialProof.title}
+        tabIndex={0}
+        className="hide-scrollbar mx-auto mt-10 flex max-w-6xl gap-3 overflow-x-auto pb-2 sm:gap-4"
+      >
         {PHOTOS.map((src, i) => (
           <motion.div
             key={src}

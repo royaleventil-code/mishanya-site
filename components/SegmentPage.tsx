@@ -64,7 +64,7 @@ export function SegmentPage({ locale = "ru", segment, title, emojiOverride, audi
   return (
     <>
       <PublicHeader locale={locale} />
-      <main className="relative isolate overflow-hidden pb-24 sm:pb-0">
+      <main id="main" className="relative isolate overflow-hidden pb-24 sm:pb-0">
         <AgeAtmosphere audience={audience} />
         <div className="relative z-10">
           <Hero locale={locale} emoji={emojiOverride ?? cfg.emoji} title={title} accent={cfg.accent} />

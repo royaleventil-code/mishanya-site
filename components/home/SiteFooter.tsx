@@ -79,6 +79,12 @@ export function SiteFooter({ locale = "ru" }: { locale?: Locale }) {
           <Link href={localePath(locale, "/about")} className="text-white/70 transition hover:text-white">
             {dict.common.about}
           </Link>
+          <Link
+            href={localePath(locale, "/accessibility")}
+            className="text-white/70 transition hover:text-white"
+          >
+            {dict.a11y.statementLink}
+          </Link>
         </div>
       </div>
 

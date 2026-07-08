@@ -12,7 +12,7 @@ import type { Locale } from "@/lib/i18n";
 
 export function HomePage({ locale = "ru" }: { locale?: Locale }) {
   return (
-    <main className="min-h-screen bg-[#fffaf4] pb-24 text-[var(--color-ink)] md:pb-0">
+    <main id="main" className="min-h-screen bg-[#fffaf4] pb-24 text-[var(--color-ink)] md:pb-0">
       <HomeHero locale={locale} />
       <ProgramsShowcase locale={locale} />
       <HeroesStrip locale={locale} />

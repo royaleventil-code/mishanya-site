@@ -572,7 +572,7 @@ function ProgramCard({
 
       {/* Body */}
       <div className="p-5 text-center">
-        <h3 className="text-xl font-bold tracking-tight"><BidiText locale={locale}>{program.title}</BidiText></h3>
+        <h2 className="text-xl font-bold tracking-tight"><BidiText locale={locale}>{program.title}</BidiText></h2>
         {program.tagline && (
           <p className="mt-0.5 text-xs text-[var(--color-ink-soft)] line-clamp-2">
             <BidiText locale={locale}>{program.tagline}</BidiText>

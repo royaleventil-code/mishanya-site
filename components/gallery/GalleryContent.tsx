@@ -89,7 +89,7 @@ export default function GalleryContent({ locale = "ru" }: { locale?: Locale }) {
   });
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#fffaf4] text-[var(--color-ink)]">
+    <main id="main" className="min-h-screen overflow-x-hidden bg-[#fffaf4] text-[var(--color-ink)]">
       <PublicHeader locale={locale} />
 
       {/* Hero */}

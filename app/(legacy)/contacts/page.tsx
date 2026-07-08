@@ -14,7 +14,7 @@ export const metadata = createPageMetadata({
 
 export default function ContactsPage() {
   return (
-    <main className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
+    <main id="main" className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
       <PublicHeader />
       <ContactsContent />
       <PublicFooter />

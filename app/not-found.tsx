@@ -4,7 +4,7 @@ import { PublicHeader } from "@/components/PublicHeader";
 
 export default function NotFound() {
   return (
-    <main className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
+    <main id="main" className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
       <PublicHeader />
       <section className="px-5 py-20 sm:px-6 sm:py-28">
         <div className="mx-auto max-w-3xl text-center">

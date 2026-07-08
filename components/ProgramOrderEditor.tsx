@@ -84,7 +84,7 @@ export function ProgramOrderEditor() {
   };
 
   return (
-    <main className="min-h-screen bg-[var(--color-canvas)] px-4 py-5">
+    <main id="main" className="min-h-screen bg-[var(--color-canvas)] px-4 py-5">
       <div className="mx-auto max-w-xl">
         <header className="sticky top-0 z-30 -mx-4 mb-4 border-b border-[var(--color-line)] bg-[var(--color-canvas)]/95 px-4 py-4 backdrop-blur">
           <div className="flex items-start justify-between gap-3">

@@ -84,7 +84,7 @@ export default function FormatsContent({ locale = "ru" }: { locale?: Locale }) {
   const arrowHoverClass = locale === "he" ? "group-hover:-translate-x-0.5" : "group-hover:translate-x-0.5";
 
   return (
-    <main className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
+    <main id="main" className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
       <PublicHeader locale={locale} />
 
       {/* Intro */}

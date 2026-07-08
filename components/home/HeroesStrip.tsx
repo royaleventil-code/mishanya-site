@@ -569,7 +569,7 @@ export function HeroesStrip({ locale = "ru" }: { locale?: Locale }) {
                       <div className={FULL_BLEED_HERO_CARD_TEST ? "absolute inset-0" : "relative h-[330px] w-full sm:h-[430px]"}>
                         <Image
                           src={img}
-                          alt={h.name}
+                          alt=""
                           fill
                           sizes="(max-width: 640px) calc(100vw - 40px), 420px"
                           className={

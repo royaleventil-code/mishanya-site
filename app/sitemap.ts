@@ -11,6 +11,7 @@ const staticRoutes: { path: string; priority: number }[] = [
   { path: "/formats", priority: 0.7 },
   { path: "/gallery", priority: 0.65 },
   { path: "/contacts", priority: 0.65 },
+  { path: "/accessibility", priority: 0.4 },
 ];
 
 function localizedUrl(locale: Locale, path: string) {

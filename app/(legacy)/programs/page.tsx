@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 
 export default function ProgramsPage() {
   return (
-    <main className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
+    <main id="main" className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
       <PublicHeader />
       <RedirectToAll />
       <PublicFooter />

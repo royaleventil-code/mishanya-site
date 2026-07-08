@@ -164,6 +164,25 @@ export type Dictionary = {
       socialDescription: string;
     };
   };
+  a11y: {
+    skipToContent: string;
+    buttonLabel: string;
+    title: string;
+    description: string;
+    fontSize: string;
+    fontLevels: readonly [string, string, string, string];
+    decreaseFont: string;
+    increaseFont: string;
+    contrast: string;
+    grayscale: string;
+    highlightLinks: string;
+    readableFont: string;
+    stopAnimations: string;
+    bigCursor: string;
+    reset: string;
+    statementLink: string;
+    close: string;
+  };
 };
 
 export const DICTIONARIES = {
@@ -541,6 +560,25 @@ export const DICTIONARIES = {
         socialDescription: "Подпишитесь, смотрите видео с праздников и отзывы родителей.",
       },
     },
+    a11y: {
+      skipToContent: "Перейти к содержимому",
+      buttonLabel: "Меню доступности",
+      title: "Доступность",
+      description: "Настройте сайт под себя — настройки сохраняются.",
+      fontSize: "Размер текста",
+      fontLevels: ["Обычный", "Крупный", "Очень крупный", "Максимальный"],
+      decreaseFont: "Уменьшить текст",
+      increaseFont: "Увеличить текст",
+      contrast: "Высокий контраст",
+      grayscale: "Чёрно-белый режим",
+      highlightLinks: "Подсветка ссылок",
+      readableFont: "Читаемый шрифт",
+      stopAnimations: "Остановить анимации",
+      bigCursor: "Крупный курсор",
+      reset: "Сбросить настройки",
+      statementLink: "Заявление о доступности",
+      close: "Закрыть",
+    },
   },
   he: {
     brand: {
@@ -914,6 +952,25 @@ export const DICTIONARIES = {
         social: "הרשתות שלנו",
         socialDescription: "עקבו אחרינו, צפו בסרטונים מאירועים וקראו ביקורות הורים.",
       },
+    },
+    a11y: {
+      skipToContent: "דילוג לתוכן העמוד",
+      buttonLabel: "תפריט נגישות",
+      title: "נגישות",
+      description: "התאימו את האתר לצרכים שלכם — ההגדרות נשמרות.",
+      fontSize: "גודל טקסט",
+      fontLevels: ["רגיל", "גדול", "גדול מאוד", "מקסימלי"],
+      decreaseFont: "הקטנת טקסט",
+      increaseFont: "הגדלת טקסט",
+      contrast: "ניגודיות גבוהה",
+      grayscale: "שחור־לבן",
+      highlightLinks: "הדגשת קישורים",
+      readableFont: "גופן קריא",
+      stopAnimations: "עצירת אנימציות",
+      bigCursor: "סמן עכבר מוגדל",
+      reset: "איפוס הגדרות",
+      statementLink: "הצהרת נגישות",
+      close: "סגירה",
     },
   },
 } as const satisfies Record<Locale, Dictionary>;

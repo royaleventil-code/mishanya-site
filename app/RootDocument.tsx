@@ -1,9 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Lilita_One, Noto_Sans_Hebrew, Nunito } from "next/font/google";
 import { Suspense } from "react";
+import { A11yProvider } from "@/components/A11yProvider";
+import { AccessibilityWidget } from "@/components/AccessibilityWidget";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import { MarketingEvents } from "@/components/MarketingEvents";
 import { MarketingPixels } from "@/components/MarketingPixels";
+import { A11Y_BOOT_SCRIPT } from "@/lib/a11y";
 import type { Locale } from "@/lib/i18n";
 import { LOCALE_CONFIG } from "@/lib/i18n";
 import { getDictionary } from "@/lib/dictionaries";
@@ -151,24 +154,35 @@ export function RootDocument({
   locale,
 }: Readonly<{ children: React.ReactNode; locale: Locale }>) {
   const localeConfig = LOCALE_CONFIG[locale];
+  const dict = getDictionary(locale);
 
   return (
     <html
       lang={localeConfig.htmlLang}
       dir={localeConfig.dir}
+      // Классы режимов доступности добавляются до гидрации boot-скриптом
+      suppressHydrationWarning
       className={`${inter.variable} ${notoHebrew.variable} ${lilita.variable} ${nunito.variable}`}
     >
+      <head>
+        {/* Восстанавливает включённые режимы доступности до первой отрисовки */}
+        <script dangerouslySetInnerHTML={{ __html: A11Y_BOOT_SCRIPT }} />
+      </head>
       <body className="min-h-screen antialiased">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(rootJsonLd(locale)) }}
         />
+        <a href="#main" className="skip-link">
+          {dict.a11y.skipToContent}
+        </a>
         <MarketingPixels />
         <Suspense fallback={null}>
           <MarketingEvents />
         </Suspense>
-        {children}
+        <A11yProvider>{children}</A11yProvider>
         <FloatingWhatsApp locale={locale} />
+        <AccessibilityWidget locale={locale} />
       </body>
     </html>
   );

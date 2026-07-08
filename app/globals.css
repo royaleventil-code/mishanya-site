@@ -49,9 +49,11 @@ h4 {
   font-family: var(--font-nunito), var(--font-hebrew), var(--font-sans);
 }
 
-/* Smooth scroll for in-page anchors */
-html {
-  scroll-behavior: smooth;
+/* Smooth scroll for in-page anchors (только если пользователь не просил меньше движения) */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 /* Hide scrollbar on chip rows but keep functionality */
@@ -286,4 +288,157 @@ html {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ============================================================
+   Доступность (נגישות) — режимы панели AccessibilityWidget.
+   Классы вешаются на <html> из lib/a11y.ts и не влияют на вид
+   сайта по умолчанию — только когда пользователь их включил.
+   ============================================================ */
+
+/* Смещение кнопки доступности вверх на мобильных, где внизу sticky CTA-бар */
+:root {
+  --a11y-offset: 0px;
+}
+@media (max-width: 767px) {
+  body:has(.js-bottom-bar) {
+    --a11y-offset: 84px;
+  }
+}
+/* Браузеры без :has(): поднимаем кнопку на мобильных всегда, чтобы её не накрыл CTA-бар */
+@supports not (selector(:has(*))) {
+  @media (max-width: 767px) {
+    :root {
+      --a11y-offset: 84px;
+    }
+  }
+}
+
+/* Видимый фокус для клавиатуры (не влияет на клики мышью).
+   В @layer base — чтобы точечные focus-стили компонентов (утилиты) побеждали. */
+@layer base {
+  :focus-visible {
+    outline: 3px solid var(--color-boy);
+    outline-offset: 2px;
+  }
+}
+
+/* Skip-link: невидим, появляется по Tab */
+.skip-link {
+  position: fixed;
+  inset-inline-start: 16px;
+  top: 16px;
+  z-index: 200;
+  transform: translateY(-200%);
+  background: var(--color-ink);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 12px 20px;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-card-hover);
+  transition: transform 0.15s ease;
+}
+.skip-link:focus {
+  transform: translateY(0);
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
+/* --- Масштаб шрифта (rem-базированная вёрстка масштабируется целиком) --- */
+html.a11y-font-1 { font-size: 110%; }
+html.a11y-font-2 { font-size: 125%; }
+html.a11y-font-3 { font-size: 140%; }
+
+/* --- Высокий контраст: усиливаем токены, фон белый, текст чёрный --- */
+html.a11y-contrast {
+  --color-canvas: #ffffff;
+  --color-ink: #000000;
+  --color-ink-soft: #1f1f26;
+  --color-line: #8f8f98;
+  --color-young: #8f5a00;
+  --color-boy: #0053b8;
+  --color-girl: #c2003d;
+  --color-all-seg: #3a38c2;
+  --color-whatsapp: #0e7c3d;
+  --glass-bg: rgba(255, 255, 255, 0.97);
+  --glass-bg-strong: #ffffff;
+  --glass-border: rgba(0, 0, 0, 0.45);
+  --glass-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+}
+html.a11y-contrast body {
+  background: #ffffff;
+}
+/* Тёплый фон страниц захардкожен bg-[#fffaf4] — в режиме контраста белим */
+html.a11y-contrast main,
+html.a11y-contrast .bg-\[\#fffaf4\] {
+  background-color: #ffffff !important;
+}
+html.a11y-contrast .bg-\[\#fffaf4\]\/88 {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* --- Чёрно-белый режим: backdrop-filter поверх всего кадра,
+       чтобы не ломать position:fixed (кнопки, шапка) --- */
+html.a11y-grayscale body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+  backdrop-filter: grayscale(1);
+  -webkit-backdrop-filter: grayscale(1);
+}
+/* Фолбэка через filter на body сознательно нет: он ломает position:fixed.
+   В браузерах без backdrop-filter ч/б режим просто не действует. */
+
+/* --- Подсветка ссылок --- */
+html.a11y-links a {
+  text-decoration: underline !important;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  background: rgba(255, 214, 10, 0.32);
+  color: #0f0f14 !important;
+  border-radius: 4px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+html.a11y-links a * {
+  color: #0f0f14 !important;
+}
+
+/* --- Читаемый шрифт: без декоративных гарнитур --- */
+html.a11y-readable body,
+html.a11y-readable h1,
+html.a11y-readable h2,
+html.a11y-readable h3,
+html.a11y-readable h4,
+html.a11y-readable button,
+html.a11y-readable input,
+html.a11y-readable textarea {
+  font-family: Arial, Helvetica, "Segoe UI", sans-serif !important;
+  letter-spacing: 0.01em;
+}
+
+/* --- Стоп анимации: гасим CSS-движение и плавный скролл --- */
+html.a11y-no-motion,
+html.a11y-no-motion * ,
+html.a11y-no-motion *::before,
+html.a11y-no-motion *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
+/* --- Крупный курсор --- */
+html.a11y-cursor,
+html.a11y-cursor * {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24"><path d="M5 2l14 12-6.5 0.8L16 21l-3 1.4-3.4-6.4L5 20z" fill="white" stroke="black" stroke-width="1.6" stroke-linejoin="round"/></svg>') 4 2, auto !important;
+}
+html.a11y-cursor a,
+html.a11y-cursor button,
+html.a11y-cursor [role="button"],
+html.a11y-cursor a *,
+html.a11y-cursor button * {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24"><path d="M8 2v12l2.6-2.2L12.8 17l2.8-1.2-2.2-5.2H17z" fill="white" stroke="black" stroke-width="1.6" stroke-linejoin="round" transform="rotate(-15 12 12)"/></svg>') 4 2, pointer !important;
 }
