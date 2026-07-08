@@ -380,14 +380,18 @@ html.a11y-contrast .bg-\[\#fffaf4\]\/88 {
 
 /* --- Чёрно-белый режим: backdrop-filter поверх всего кадра,
        чтобы не ломать position:fixed (кнопки, шапка) --- */
+:root {
+  --a11y-grayscale-filter: grayscale(1);
+}
 html.a11y-grayscale body::after {
   content: "";
   position: fixed;
   inset: 0;
   z-index: 2147483647;
   pointer-events: none;
-  backdrop-filter: grayscale(1);
-  -webkit-backdrop-filter: grayscale(1);
+  /* через var(): LightningCSS при сборке выбрасывал unprefixed backdrop-filter */
+  -webkit-backdrop-filter: var(--a11y-grayscale-filter);
+  backdrop-filter: var(--a11y-grayscale-filter);
 }
 /* Фолбэка через filter на body сознательно нет: он ломает position:fixed.
    В браузерах без backdrop-filter ч/б режим просто не действует. */
