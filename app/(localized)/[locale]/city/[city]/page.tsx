@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { CITIES, getCityById } from "@/data/cities";
 import { BidiText } from "@/components/BidiText";
+import { ProgramLinkCard } from "@/components/ProgramLinkCard";
 import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { getDictionary } from "@/lib/dictionaries";
 import { isLocale, localePath, type Locale } from "@/lib/i18n";
 import { getLocalizedProgramById } from "@/lib/localized-data";
-import { formatProgramPriceLabel } from "@/lib/prices";
 import { createPageMetadata, siteUrl } from "@/lib/seo";
 import { whatsappLink } from "@/lib/whatsapp";
 
@@ -151,26 +151,7 @@ export default async function CityPage({ params }: Props) {
             <ul className="grid gap-3 sm:grid-cols-2">
               {programs.map((program) => (
                 <li key={program.id}>
-                  <Link
-                    href={localePath(locale, `/programs/${program.id}`)}
-                    className="apple-glass group flex h-full flex-col rounded-2xl px-4 py-3 transition hover:shadow-[0_10px_28px_rgba(15,15,20,0.08)]"
-                  >
-                    <span className="flex items-center justify-between gap-2 font-semibold">
-                      <BidiText locale={locale}>{program.title}</BidiText>
-                      <ArrowRight
-                        className="h-4 w-4 shrink-0 text-[var(--color-ink-soft)] transition group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5"
-                        strokeWidth={2.2}
-                      />
-                    </span>
-                    {program.tagline && (
-                      <span className="mt-0.5 text-sm text-[var(--color-ink-soft)]">
-                        <BidiText locale={locale}>{program.tagline}</BidiText>
-                      </span>
-                    )}
-                    <span className="mt-auto pt-1.5 text-sm font-semibold tabular-nums">
-                      {formatProgramPriceLabel(program.id, program.priceFrom, locale)}
-                    </span>
-                  </Link>
+                  <ProgramLinkCard locale={locale} program={program} />
                 </li>
               ))}
             </ul>

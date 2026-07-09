@@ -4,11 +4,12 @@ import { notFound } from "next/navigation";
 import { Check, Clock, Users } from "lucide-react";
 import { PROGRAMS } from "@/data/programs";
 import { BidiText } from "@/components/BidiText";
+import { ProgramLinkCard } from "@/components/ProgramLinkCard";
 import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { getDictionary } from "@/lib/dictionaries";
 import { isLocale, localePath, type Locale } from "@/lib/i18n";
-import { getLocalizedProgramById, hasProgramCopy } from "@/lib/localized-data";
+import { getLocalizedProgramById, getLocalizedPrograms, hasProgramCopy } from "@/lib/localized-data";
 import { formatShekelPrice, formatProgramPriceLabel, hasStartingPrice } from "@/lib/prices";
 import { SEGMENTS } from "@/lib/segments";
 import { createPageMetadata, siteUrl } from "@/lib/seo";
@@ -73,6 +74,43 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   return metadata;
+}
+
+// Возрастные диапазоны программы по полу из showFor (без правила — полный диапазон 1-10)
+function ageRanges(program: NonNullable<ReturnType<typeof getLocalizedProgramById>>) {
+  const ranges: Record<"boy" | "girl", [number, number] | null> = { boy: null, girl: null };
+  for (const gender of ["boy", "girl"] as const) {
+    if (!program.segments.includes(gender) && !program.segments.includes("all")) continue;
+    const rule = program.showFor?.find((entry) => entry.gender === gender);
+    ranges[gender] = rule ? [rule.minAge ?? 1, rule.maxAge ?? 10] : [1, 10];
+  }
+  return ranges;
+}
+
+// Похожие программы: та же аудитория (пересечение возрастов по полу), ближе по цене — выше
+function relatedPrograms(locale: Locale, current: NonNullable<ReturnType<typeof getLocalizedProgramById>>) {
+  const currentRanges = ageRanges(current);
+  return getLocalizedPrograms(locale)
+    .filter((program) => program.id !== current.id && hasProgramCopy(locale, program.id))
+    .map((program) => {
+      const ranges = ageRanges(program);
+      let overlap = 0;
+      for (const gender of ["boy", "girl"] as const) {
+        const a = currentRanges[gender];
+        const b = ranges[gender];
+        if (!a || !b) continue;
+        overlap += Math.max(0, Math.min(a[1], b[1]) - Math.max(a[0], b[0]) + 1);
+      }
+      return { program, overlap };
+    })
+    .filter((entry) => entry.overlap > 0)
+    .sort(
+      (a, b) =>
+        b.overlap - a.overlap ||
+        Math.abs(a.program.priceFrom - current.priceFrom) - Math.abs(b.program.priceFrom - current.priceFrom),
+    )
+    .slice(0, 4)
+    .map((entry) => entry.program);
 }
 
 function programJsonLd(locale: Locale, program: NonNullable<ReturnType<typeof getLocalizedProgramById>>) {
@@ -151,6 +189,7 @@ export default async function LocalizedProgramPage({ params }: Props) {
   const waHref = whatsappLink(
     waMessages.program(program.title, program.durationLabel, program.priceFrom, program.id),
   );
+  const related = relatedPrograms(locale, program);
   // экранируем «<»: текст программы с "</script>" не должен ломать inline-скрипт
   const jsonLd = JSON.stringify(programJsonLd(locale, program)).replace(/</g, "\\u003c");
 
@@ -339,6 +378,20 @@ export default async function LocalizedProgramPage({ params }: Props) {
                 </Link>
               </div>
             </div>
+
+            {/* Похожие программы */}
+            {related.length > 0 && (
+              <section className="mt-8 border-t border-black/5 pt-6">
+                <h2 className="mb-3 text-base font-semibold">{dict.program.relatedTitle}</h2>
+                <ul className="grid gap-3 sm:grid-cols-2">
+                  {related.map((item) => (
+                    <li key={item.id}>
+                      <ProgramLinkCard locale={locale} program={item} />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </div>
         </article>
       </div>

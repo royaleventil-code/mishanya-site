@@ -41,6 +41,7 @@ export type Dictionary = {
     chooseAge: string;
     helpChooseProgram: string;
     citiesTitle: string;
+    faqShort: string;
   };
   city: {
     programsTitle: string;
@@ -49,6 +50,9 @@ export type Dictionary = {
     otherCitiesTitle: string;
     ctaTitle: string;
     ctaButton: (city: string) => string;
+  };
+  program: {
+    relatedTitle: string;
   };
   home: {
     hero: {
@@ -244,6 +248,7 @@ export const DICTIONARIES = {
       chooseAge: "выбрать возраст",
       helpChooseProgram: "Помощь в подборе программы",
       citiesTitle: "Города",
+      faqShort: "Вопросы и ответы",
     },
     city: {
       programsTitle: "Популярные программы",
@@ -252,6 +257,9 @@ export const DICTIONARIES = {
       otherCitiesTitle: "Мы работаем и в других городах",
       ctaTitle: "Расскажите, где и когда праздник — подберём программу и посчитаем цену",
       ctaButton: (city: string) => `Хочу праздник ${city}`,
+    },
+    program: {
+      relatedTitle: "Похожие программы",
     },
     home: {
       hero: {
@@ -651,6 +659,7 @@ export const DICTIONARIES = {
       chooseAge: "בחרו גיל",
       helpChooseProgram: "עזרה בבחירת תוכנית",
       citiesTitle: "ערים",
+      faqShort: "שאלות ותשובות",
     },
     city: {
       programsTitle: "תוכניות פופולריות",
@@ -659,6 +668,9 @@ export const DICTIONARIES = {
       otherCitiesTitle: "אנחנו פועלים גם בערים נוספות",
       ctaTitle: "ספרו לנו איפה ומתי החגיגה — נתאים תוכנית ונחשב מחיר",
       ctaButton: (city: string) => `אני רוצה חגיגה ${city}`,
+    },
+    program: {
+      relatedTitle: "תוכניות דומות",
     },
     home: {
       hero: {
