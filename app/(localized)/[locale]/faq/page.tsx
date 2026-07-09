@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CITIES } from "@/data/cities";
+import { CITIES, hasCityCopy } from "@/data/cities";
 import { FAQ_PAGE } from "@/data/faq";
 import { BidiText } from "@/components/BidiText";
 import { PublicFooter } from "@/components/PublicFooter";
@@ -139,7 +139,7 @@ export default async function FaqPage({ params }: Props) {
               >
                 {dict.common.allProgramsTitle}
               </Link>
-              {CITIES.map((city) => (
+              {CITIES.filter((city) => hasCityCopy(locale, city.id)).map((city) => (
                 <Link
                   key={city.id}
                   href={localePath(locale, `/city/${city.id}`)}

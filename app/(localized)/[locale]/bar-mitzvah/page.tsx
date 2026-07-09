@@ -81,6 +81,10 @@ export default async function BarMitzvahPage({ params }: Props) {
 
   const dict = getDictionary(locale);
   const waHref = whatsappLink(copy.waMessage);
+  // Фото показываем на HE только когда готовы ивритские alt-тексты (HE-PENDING гейт)
+  const showPhotos =
+    BAR_MITZVAH_MEDIA.photos.length > 0 &&
+    (locale !== "he" || BAR_MITZVAH_MEDIA.photos.every((photo) => photo.altHe));
   // экранируем «<»: текст с "</script>" не должен ломать inline-скрипт
   const jsonLd = JSON.stringify(barMitzvahJsonLd(locale)).replace(/</g, "\\u003c");
 
@@ -122,7 +126,49 @@ export default async function BarMitzvahPage({ params }: Props) {
             ))}
           </div>
 
-          {/* Что мы делаем */}
+          {/* Торжественный вход — фирменная фишка (HE-гейт: блок скрыт, пока нет перевода) */}
+          {copy.entranceTitle && (
+            <section className="mt-8">
+              <h2 className="mb-2 text-base font-semibold">
+                <BidiText locale={locale}>{copy.entranceTitle}</BidiText>
+              </h2>
+              <p className="text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
+                <BidiText locale={locale}>{copy.entranceIntro}</BidiText>
+              </p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {[
+                  { title: copy.entranceGirlTitle, items: copy.entranceGirlItems },
+                  { title: copy.entranceBoyTitle, items: copy.entranceBoyItems },
+                ].map((group) => (
+                  <div
+                    key={group.title}
+                    className="rounded-2xl px-4 py-3"
+                    style={{ background: "rgba(255,255,255,0.55)", border: "1px solid rgba(0,0,0,0.06)" }}
+                  >
+                    <h3 className="text-[15px] font-semibold leading-snug">
+                      <BidiText locale={locale}>{group.title}</BidiText>
+                    </h3>
+                    <ul className="mt-2 space-y-1.5 text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
+                      {group.items.map((item, index) => (
+                        <li key={index} className="flex gap-2">
+                          <span
+                            aria-hidden
+                            className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-ink-soft)]"
+                          />
+                          <BidiText locale={locale}>{item}</BidiText>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-3 text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
+                <BidiText locale={locale}>{copy.entranceExtra}</BidiText>
+              </p>
+            </section>
+          )}
+
+          {/* Что входит */}
           <section className="mt-8">
             <h2 className="mb-3 text-base font-semibold">
               <BidiText locale={locale}>{copy.whatTitle}</BidiText>
@@ -172,24 +218,31 @@ export default async function BarMitzvahPage({ params }: Props) {
             </ol>
           </section>
 
-          {/* Медиа от владельца: фото и видео появятся позже */}
-          {(BAR_MITZVAH_MEDIA.photos.length > 0 || BAR_MITZVAH_MEDIA.videoId) && (
+          {/* Фото событий (HE-гейт: пока altHe пусты, на /he блок скрыт) + видео */}
+          {(showPhotos || BAR_MITZVAH_MEDIA.videoId) && (
             <section className="mt-8">
-              {BAR_MITZVAH_MEDIA.photos.length > 0 && (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {BAR_MITZVAH_MEDIA.photos.map((photo) => (
-                    <Image
-                      key={photo.src}
-                      src={photo.src}
-                      alt={photo.alt}
-                      width={photo.width}
-                      height={photo.height}
-                      sizes="(max-width: 640px) 90vw, 340px"
-                      className="w-full rounded-2xl object-cover"
-                      loading="lazy"
-                    />
-                  ))}
-                </div>
+              {showPhotos && (
+                <>
+                  {copy.photosTitle && (
+                    <h2 className="mb-3 text-base font-semibold">
+                      <BidiText locale={locale}>{copy.photosTitle}</BidiText>
+                    </h2>
+                  )}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {BAR_MITZVAH_MEDIA.photos.map((photo) => (
+                      <Image
+                        key={photo.src}
+                        src={photo.src}
+                        alt={locale === "he" && photo.altHe ? photo.altHe : photo.alt}
+                        width={photo.width}
+                        height={photo.height}
+                        sizes="(max-width: 640px) 90vw, 340px"
+                        className="w-full rounded-2xl object-cover"
+                        loading="lazy"
+                      />
+                    ))}
+                  </div>
+                </>
               )}
               {BAR_MITZVAH_MEDIA.videoId && (
                 <div className="mt-4">

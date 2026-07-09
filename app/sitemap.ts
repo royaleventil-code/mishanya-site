@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { BAR_MITZVAH_COPY } from "@/data/bar-mitzvah";
 import { MUNICIPALITIES_COPY, BUSINESS_COPY } from "@/data/b2b";
 import { CHARITY_PAGE_COPY } from "@/data/charity";
-import { CITIES } from "@/data/cities";
+import { CITIES, hasCityCopy } from "@/data/cities";
 import { HOLIDAYS, hasHolidayCopy } from "@/data/holidays";
 import { PROGRAMS } from "@/data/programs";
 import { SHOWS_PAGE_COPY } from "@/data/shows";
@@ -82,14 +82,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
   );
 
   const cityEntries = LOCALES.flatMap((locale) =>
-    CITIES.map((city) => {
+    CITIES.filter((city) => hasCityCopy(locale, city.id)).map((city) => {
       const path = `/city/${city.id}`;
       return {
         url: localizedUrl(locale, path),
         lastModified,
         changeFrequency: "weekly" as const,
         priority: 0.9,
-        alternates: alternates(path),
+        // города без he-перевода: hreflang только на ru
+        alternates: hasCityCopy("he", city.id)
+          ? alternates(path)
+          : {
+              languages: {
+                ru: localizedUrl("ru", path),
+                "x-default": localizedUrl("ru", path),
+              },
+            },
       };
     }),
   );

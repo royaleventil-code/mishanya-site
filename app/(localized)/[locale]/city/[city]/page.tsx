@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MapPin } from "lucide-react";
 import Image from "next/image";
-import { CITIES, getCityById } from "@/data/cities";
+import { CITIES, getCityById, hasCityCopy } from "@/data/cities";
 import { getCityProof } from "@/data/city-proof";
 import { PROGRAMS } from "@/data/programs";
 import { BidiText } from "@/components/BidiText";
@@ -20,8 +20,16 @@ type Props = {
   params: Promise<{ locale: string; city: string }>;
 };
 
-export function generateStaticParams() {
-  return CITIES.map((city) => ({ city: city.id }));
+/** Генерируем только пары locale×city с заполненной копией: пустой иврит не строится */
+export function generateStaticParams({
+  params: { locale },
+}: {
+  params: { locale: string };
+}) {
+  if (!isLocale(locale)) return [];
+  return CITIES.filter((city) => hasCityCopy(locale, city.id)).map((city) => ({
+    city: city.id,
+  }));
 }
 
 function cityWhatsAppMessage(locale: Locale, inCity: string): string {
@@ -37,7 +45,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const city = getCityById(cityId);
   const dict = getDictionary(locale);
 
-  if (!city) {
+  if (!city || !hasCityCopy(locale, city.id)) {
     return { title: dict.brand.name };
   }
 
@@ -110,14 +118,16 @@ export default async function CityPage({ params }: Props) {
   const { locale: localeParam, city: cityId } = await params;
   const locale: Locale = isLocale(localeParam) ? localeParam : "ru";
   const city = getCityById(cityId);
-  if (!city) notFound();
+  if (!city || !hasCityCopy(locale, city.id)) notFound();
 
   const dict = getDictionary(locale);
   const copy = city.copy[locale];
   const programs = city.programIds
     .map((id) => getLocalizedProgramById(locale, id))
     .filter((program): program is NonNullable<typeof program> => Boolean(program));
-  const otherCities = CITIES.filter((item) => item.id !== city.id);
+  const otherCities = CITIES.filter(
+    (item) => item.id !== city.id && hasCityCopy(locale, item.id),
+  );
   const proof = getCityProof(locale, city.id);
   const waHref = whatsappLink(cityWhatsAppMessage(locale, copy.inCity));
   // экранируем «<»: текст с "</script>" не должен ломать inline-скрипт

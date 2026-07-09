@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     title: locale === "he" ? `יצירת קשר | ${name}` : `Контакты | ${name}`,
     description:
       locale === "he"
-        ? "צרו קשר עם מישניה בארץ הפלאות. WhatsApp, טלפון, אימייל ורשתות. מגיעים לכל הארץ בעברית וברוסית."
+        ? "צרו קשר עם מישניה בארץ הפלאות: WhatsApp, טלפון, אימייל ורשתות. מגיעים לכל רחבי הארץ, מנחים בעברית וברוסית - מענה מהיר לכל שאלה על התוכניות והמחירים."
         : "Свяжитесь с агентством детских праздников «Мишаня в Стране Чудес». WhatsApp, телефон, email и соцсети. Работаем по всему Израилю, на русском и иврите.",
     path: `/${locale}/contacts`,
     canonicalPath: `/${locale}/contacts`,

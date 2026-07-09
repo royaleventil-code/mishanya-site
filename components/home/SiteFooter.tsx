@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { CITIES } from "@/data/cities";
+import { CITIES, hasCityCopy } from "@/data/cities";
 import { HOLIDAYS } from "@/data/holidays";
 import { VENUES } from "@/data/venues";
 import { MUNICIPALITIES_COPY, BUSINESS_COPY } from "@/data/b2b";
@@ -132,7 +132,7 @@ export function SiteFooter({ locale = "ru" }: { locale?: Locale }) {
       <div className="mx-auto mt-6 max-w-6xl border-t border-white/10 pt-6 text-sm">
         <div className="font-black text-white/90">{dict.common.citiesTitle}</div>
         <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-white/60">
-          {CITIES.map((city) => (
+          {CITIES.filter((city) => hasCityCopy(locale, city.id)).map((city) => (
             <Link
               key={city.id}
               href={localePath(locale, `/city/${city.id}`)}

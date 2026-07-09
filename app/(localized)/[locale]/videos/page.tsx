@@ -2,7 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Clapperboard } from "lucide-react";
-import { VIDEOS, VIDEOS_PAGE_COPY, YOUTUBE_CHANNEL_URL } from "@/data/videos";
+import {
+  CARTOONS,
+  CARTOONS_CHANNEL_URL,
+  cartoonWatchUrl,
+  formatCartoonViews,
+  VIDEOS,
+  VIDEOS_PAGE_COPY,
+  YOUTUBE_CHANNEL_URL,
+} from "@/data/videos";
 import { BidiText } from "@/components/BidiText";
 import { LiteYouTube } from "@/components/LiteYouTube";
 import { PublicFooter } from "@/components/PublicFooter";
@@ -47,10 +55,24 @@ function videosJsonLd(locale: Locale) {
         { "@type": "ListItem", position: 2, name: copy.breadcrumb, item: pageUrl },
       ],
     },
+    // Мультики: эмбед запрещён каналом → url на youtube.com/watch, БЕЗ embedUrl
+    ...CARTOONS.map((cartoon) => ({
+      "@context": "https://schema.org",
+      "@type": "VideoObject",
+      name: cartoon.title,
+      description: cartoon.description[locale] || cartoon.description.ru,
+      uploadDate: cartoon.uploadDate,
+      thumbnailUrl: `https://i.ytimg.com/vi/${cartoon.videoId}/hqdefault.jpg`,
+      url: cartoonWatchUrl(cartoon.videoId),
+    })),
     ...VIDEOS.slice(0, 6).map((video) => ({
       "@context": "https://schema.org",
       "@type": "VideoObject",
       name: video.title,
+      description:
+        locale === "he"
+          ? `"${video.title}" - סרטון מערוץ היוטיוב של מישניה בארץ הפלאות`
+          : `«${video.title}» — ролик с YouTube-канала «Мишаня в Стране Чудес»`,
       uploadDate: video.uploadDate,
       thumbnailUrl: `https://i.ytimg.com/vi/${video.videoId}/hqdefault.jpg`,
       embedUrl: `https://www.youtube-nocookie.com/embed/${video.videoId}`,
@@ -99,6 +121,13 @@ export default async function VideosPage({ params }: Props) {
             <BidiText locale={locale}>{copy.h1}</BidiText>
           </h1>
 
+          {/* Главный соц-капитал — цифры канала мультиков; he-пусто → скрыто до перевода */}
+          {copy.heroStats && (
+            <p className="mt-3 text-xl font-black tracking-tight sm:text-2xl">
+              <BidiText locale={locale}>{copy.heroStats}</BidiText>
+            </p>
+          )}
+
           <div className="mt-4 space-y-3 text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
             {copy.intro.map((paragraph, index) => (
               <p key={index}>
@@ -107,7 +136,80 @@ export default async function VideosPage({ params }: Props) {
             ))}
           </div>
 
-          {/* Сетка роликов */}
+          {/* ТОП-20 мультиков: эмбед у канала запрещён (playableInEmbed:false) —
+              вся карточка = внешняя ссылка на youtube.com/watch, БЕЗ iframe */}
+          <section className="mt-8">
+            {copy.cartoonsTitle && (
+              <h2 className="mb-3 text-base font-semibold">
+                <BidiText locale={locale}>{copy.cartoonsTitle}</BidiText>
+              </h2>
+            )}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {CARTOONS.map((cartoon) => (
+                <a
+                  key={cartoon.videoId}
+                  href={cartoonWatchUrl(cartoon.videoId)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group block rounded-2xl p-3 transition hover:-translate-y-0.5"
+                  style={{ background: "rgba(255,255,255,0.55)", border: "1px solid rgba(0,0,0,0.06)" }}
+                >
+                  <span className="relative block aspect-video w-full overflow-hidden rounded-xl bg-black">
+                    {/* Обычный <img>: превью с i.ytimg.com без next/image-обвязки, как в LiteYouTube */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`https://i.ytimg.com/vi/${cartoon.videoId}/hqdefault.jpg`}
+                      alt={cartoon.title}
+                      loading="lazy"
+                      className="h-full w-full object-cover opacity-90 transition duration-300 group-hover:scale-[1.03] group-hover:opacity-100"
+                    />
+                    <span className="absolute inset-0 flex items-center justify-center">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 shadow-[0_8px_24px_rgba(0,0,0,0.35)] transition duration-300 group-hover:scale-110 group-hover:bg-white">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          className="ml-0.5 h-5 w-5 text-[var(--color-ink)]"
+                          aria-hidden
+                        >
+                          <path d="M8 5.14v13.72c0 .8.87 1.3 1.56.89l10.54-6.86c.63-.41.63-1.37 0-1.78L9.56 4.25C8.87 3.84 8 4.34 8 5.14Z" />
+                        </svg>
+                      </span>
+                    </span>
+                    <span className="absolute bottom-1.5 end-1.5 rounded-md bg-black/75 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                      {cartoon.duration}
+                    </span>
+                  </span>
+                  <span className="mt-2 block text-sm font-semibold leading-snug">{cartoon.title}</span>
+                  <span className="mt-0.5 block text-xs text-[var(--color-muted)]">
+                    <BidiText locale={locale}>{formatCartoonViews(cartoon.views, locale)}</BidiText>
+                  </span>
+                  {cartoon.description[locale] && (
+                    <span className="mt-1 block text-xs leading-relaxed text-[var(--color-ink-soft)]">
+                      <BidiText locale={locale}>{cartoon.description[locale]}</BidiText>
+                    </span>
+                  )}
+                </a>
+              ))}
+            </div>
+            {copy.cartoonsCta && (
+              <div className="mt-5 text-center">
+                <a
+                  href={CARTOONS_CHANNEL_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="cta-glow inline-flex items-center gap-2 rounded-full bg-[#e62117] px-7 py-4 text-base font-black text-white transition active:scale-95"
+                  style={{ ["--cta-glow-color" as unknown as string]: "rgba(230,33,23,0.4)" }}
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5" aria-hidden>
+                    <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31.3 31.3 0 0 0 0 12a31.3 31.3 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31.3 31.3 0 0 0 24 12a31.3 31.3 0 0 0-.5-5.8ZM9.6 15.6V8.4L15.8 12l-6.2 3.6Z" />
+                  </svg>
+                  <BidiText locale={locale}>{copy.cartoonsCta}</BidiText>
+                </a>
+              </div>
+            )}
+          </section>
+
+          {/* Сетка роликов с праздников (@RoyalEvent, эмбед разрешён — LiteYouTube) */}
           <section className="mt-8">
             <h2 className="mb-3 text-base font-semibold">
               <BidiText locale={locale}>{copy.gridTitle}</BidiText>
