@@ -15,7 +15,6 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         : "Команда Мишаня в Стране Чудес: 11 лет детских праздников в Израиле, 10 000+ мероприятий, 783 отзыва с оценкой 5,0 и ведущие на русском и иврите.",
     path: `/${locale}/about`,
     canonicalPath: `/${locale}/about`,
-    image: "/proof/kids-1-3/page-09.webp",
     locale,
   });
 }

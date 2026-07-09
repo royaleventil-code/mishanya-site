@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MapPin } from "lucide-react";
 import { CITIES, getCityById } from "@/data/cities";
+import { PROGRAMS } from "@/data/programs";
 import { BidiText } from "@/components/BidiText";
 import { ProgramLinkCard } from "@/components/ProgramLinkCard";
 import { PublicFooter } from "@/components/PublicFooter";
@@ -156,7 +157,7 @@ export default async function CityPage({ params }: Props) {
               ))}
             </ul>
             <p className="mt-3 text-sm text-[var(--color-muted)]">
-              <BidiText locale={locale}>{dict.city.programsNote}</BidiText>{" "}
+              <BidiText locale={locale}>{dict.city.programsNote(PROGRAMS.length)}</BidiText>{" "}
               <Link
                 href={localePath(locale, "/all")}
                 className="font-semibold text-[var(--color-ink)] underline-offset-4 hover:underline"

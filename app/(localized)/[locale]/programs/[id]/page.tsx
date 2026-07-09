@@ -10,6 +10,7 @@ import { PublicHeader } from "@/components/PublicHeader";
 import { getDictionary } from "@/lib/dictionaries";
 import { isLocale, localePath, type Locale } from "@/lib/i18n";
 import { getLocalizedProgramById, getLocalizedPrograms, hasProgramCopy } from "@/lib/localized-data";
+import { matchesVisibilityRule } from "@/lib/filtering";
 import { formatShekelPrice, formatProgramPriceLabel, hasStartingPrice } from "@/lib/prices";
 import { SEGMENTS } from "@/lib/segments";
 import { createPageMetadata, siteUrl } from "@/lib/seo";
@@ -76,30 +77,32 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return metadata;
 }
 
-// Возрастные диапазоны программы по полу из showFor (без правила — полный диапазон 1-10)
-function ageRanges(program: NonNullable<ReturnType<typeof getLocalizedProgramById>>) {
-  const ranges: Record<"boy" | "girl", [number, number] | null> = { boy: null, girl: null };
+// Аудитория программы = множество «пол-возраст», для которых она видна в каталоге
+// (та же семантика видимости, что filterPrograms: showFor + hiddenFor)
+function audienceSet(program: NonNullable<ReturnType<typeof getLocalizedProgramById>>): Set<string> {
+  const result = new Set<string>();
   for (const gender of ["boy", "girl"] as const) {
-    if (!program.segments.includes(gender) && !program.segments.includes("all")) continue;
-    const rule = program.showFor?.find((entry) => entry.gender === gender);
-    ranges[gender] = rule ? [rule.minAge ?? 1, rule.maxAge ?? 10] : [1, 10];
+    if (!program.segments.includes(gender)) continue;
+    for (let age = 1; age <= 10; age++) {
+      const audience = { gender, age };
+      const shown =
+        !program.showFor || program.showFor.some((rule) => matchesVisibilityRule(rule, gender, audience));
+      const hidden = program.hiddenFor?.some((rule) => matchesVisibilityRule(rule, gender, audience)) ?? false;
+      if (shown && !hidden) result.add(`${gender}-${age}`);
+    }
   }
-  return ranges;
+  return result;
 }
 
-// Похожие программы: та же аудитория (пересечение возрастов по полу), ближе по цене — выше
+// Похожие программы: та же аудитория (пересечение множеств «пол-возраст»), ближе по цене — выше
 function relatedPrograms(locale: Locale, current: NonNullable<ReturnType<typeof getLocalizedProgramById>>) {
-  const currentRanges = ageRanges(current);
+  const currentAudience = audienceSet(current);
   return getLocalizedPrograms(locale)
     .filter((program) => program.id !== current.id && hasProgramCopy(locale, program.id))
     .map((program) => {
-      const ranges = ageRanges(program);
       let overlap = 0;
-      for (const gender of ["boy", "girl"] as const) {
-        const a = currentRanges[gender];
-        const b = ranges[gender];
-        if (!a || !b) continue;
-        overlap += Math.max(0, Math.min(a[1], b[1]) - Math.max(a[0], b[0]) + 1);
+      for (const key of audienceSet(program)) {
+        if (currentAudience.has(key)) overlap += 1;
       }
       return { program, overlap };
     })

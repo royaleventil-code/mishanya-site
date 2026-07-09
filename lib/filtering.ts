@@ -1,6 +1,6 @@
 import type { AudienceContext, FilterState, Hero, Program, ProgramVisibilityRule, SegmentId } from "./types";
 
-function matchesVisibilityRule(
+export function matchesVisibilityRule(
   rule: ProgramVisibilityRule,
   segment: SegmentId,
   audience?: AudienceContext,

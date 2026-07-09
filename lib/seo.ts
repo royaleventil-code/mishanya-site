@@ -73,8 +73,9 @@ export function createPageMetadata({
   path,
   canonicalPath = path,
   image = DEFAULT_IMAGE,
-  imageWidth = 1200,
-  imageHeight = 630,
+  // дефолтный баннер квадратный 800×800; для остальных картинок прежняя декларация 1200×630
+  imageWidth = image === DEFAULT_IMAGE ? 800 : 1200,
+  imageHeight = image === DEFAULT_IMAGE ? 800 : 630,
   noIndex = false,
   locale = "ru",
 }: {

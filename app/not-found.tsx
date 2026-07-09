@@ -5,7 +5,8 @@ import { PublicHeader } from "@/components/PublicHeader";
 export default function NotFound() {
   return (
     <main id="main" className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
-      <PublicHeader />
+      {/* путь 404 не существует — переключатель языка ведёт на главные */}
+      <PublicHeader langHrefOverrides={{ ru: "/ru", he: "/he" }} />
       <section className="px-5 py-20 sm:px-6 sm:py-28">
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-sm font-bold text-[#e34f35]">

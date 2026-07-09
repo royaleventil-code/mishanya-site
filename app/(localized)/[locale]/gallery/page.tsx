@@ -15,7 +15,6 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         : "Галерея Мишани: реальные фото детских праздников, видео шоу-программ и отзывы родителей. 5,0 по 783 отзывам, праздники по всему Израилю.",
     path: `/${locale}/gallery`,
     canonicalPath: `/${locale}/gallery`,
-    image: "/proof/girls-4-6/page-14.webp",
     locale,
   });
 }

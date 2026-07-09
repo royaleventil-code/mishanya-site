@@ -29,7 +29,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin/", "/boy/", "/girl/"],
+        disallow: ["/admin/"],
       },
     ],
     sitemap: siteUrl("/sitemap.xml"),
