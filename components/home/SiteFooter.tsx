@@ -1,6 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CITIES } from "@/data/cities";
+import { HOLIDAYS } from "@/data/holidays";
+import { VENUES } from "@/data/venues";
+import { MUNICIPALITIES_COPY, BUSINESS_COPY } from "@/data/b2b";
+import { SHOWS_PAGE_COPY } from "@/data/shows";
+import { VIDEOS_PAGE_COPY } from "@/data/videos";
+import { CHARITY_PAGE_COPY } from "@/data/charity";
+import { BAR_MITZVAH_COPY } from "@/data/bar-mitzvah";
 import { BidiText } from "@/components/BidiText";
 import { getDictionary } from "@/lib/dictionaries";
 import { localePath, type Locale } from "@/lib/i18n";
@@ -136,6 +143,56 @@ export function SiteFooter({ locale = "ru" }: { locale?: Locale }) {
           ))}
         </div>
       </div>
+
+      {/* Площадки и сезоны — перелинковка новых SEO-страниц (гейт по наличию перевода) */}
+      {(VENUES.some((v) => v.copy[locale].name) || HOLIDAYS.some((h) => h.copy[locale].name)) && (
+        <div className="mx-auto mt-6 max-w-6xl border-t border-white/10 pt-6 text-sm">
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-white/60">
+            {VENUES.filter((venue) => venue.copy[locale].name).map((venue) => (
+              <Link
+                key={venue.id}
+                href={localePath(locale, `/venue/${venue.id}`)}
+                className="transition hover:text-white"
+              >
+                <BidiText locale={locale}>{venue.copy[locale].name}</BidiText>
+              </Link>
+            ))}
+            {HOLIDAYS.filter((holiday) => holiday.copy[locale].name).map((holiday) => (
+              <Link
+                key={holiday.id}
+                href={localePath(locale, `/holiday/${holiday.id}`)}
+                className="transition hover:text-white"
+              >
+                <BidiText locale={locale}>{holiday.copy[locale].name}</BidiText>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Бизнесу и событиям — гейт на каждую ссылку отдельно (нет copy → нет ссылки) */}
+      {(() => {
+        const b2bLinks = [
+          { href: "/municipalities", label: MUNICIPALITIES_COPY[locale].breadcrumb },
+          { href: "/business", label: BUSINESS_COPY[locale].breadcrumb },
+          { href: "/shows", label: SHOWS_PAGE_COPY[locale].breadcrumb },
+          { href: "/bar-mitzvah", label: BAR_MITZVAH_COPY[locale].breadcrumb },
+          { href: "/videos", label: VIDEOS_PAGE_COPY[locale].breadcrumb },
+          { href: "/charity", label: CHARITY_PAGE_COPY[locale].breadcrumb },
+        ].filter((link) => link.label);
+        if (b2bLinks.length === 0) return null;
+        return (
+          <div className="mx-auto mt-6 max-w-6xl border-t border-white/10 pt-6 text-sm">
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-white/60">
+              {b2bLinks.map((link) => (
+                <Link key={link.href} href={localePath(locale, link.href)} className="transition hover:text-white">
+                  <BidiText locale={locale}>{link.label}</BidiText>
+                </Link>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="mx-auto mt-6 max-w-6xl border-t border-white/10 pt-6 text-xs text-white/40">
         <BidiText locale={locale}>{`© 2026 ${dict.brand.name} · Royal Event Israel`}</BidiText>

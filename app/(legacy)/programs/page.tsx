@@ -19,7 +19,8 @@ export const metadata: Metadata = {
 export default function ProgramsPage() {
   return (
     <main id="main" className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
-      <PublicHeader />
+      {/* Легаси-путь /programs не существует в локалях — переключатель языка ведём на живые /ru/all и /he/all */}
+      <PublicHeader langHrefOverrides={{ ru: "/ru/all", he: "/he/all" }} />
       <RedirectToAll />
       <PublicFooter />
     </main>

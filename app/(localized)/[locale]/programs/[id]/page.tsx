@@ -37,7 +37,8 @@ const TITLE_DISAMBIGUATION: Record<string, Record<Locale, string>> = {
 
 function programDescription(locale: Locale, title: string, tagline: string | undefined, durationLabel: string, priceLabel: string): string {
   if (locale === "he") {
-    return `"${title}" — תוכנית יום הולדת לילדים מבית מישניה בארץ הפלאות. ${tagline ? `${tagline}. ` : ""}${durationLabel}, ${priceLabel}. דמויות, מופעים והזמנה מהירה ב־WhatsApp.`;
+    // Короткий вариант шапки: полный «מבית מישניה בארץ הפלאות» давал description >170 зн.
+    return `"${title}" — תוכנית יום הולדת לילדים של מישניה. ${tagline ? `${tagline}. ` : ""}${durationLabel}, ${priceLabel}. דמויות, מופעים והזמנה מהירה ב־WhatsApp.`;
   }
   return `«${title}» — программа детского праздника от Мишани. ${tagline ? `${tagline}. ` : ""}${durationLabel}, ${priceLabel}. Герои, шоу и быстрый заказ в WhatsApp.`;
 }
@@ -55,7 +56,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const priceLabel = formatProgramPriceLabel(program.id, program.priceFrom, locale);
   const titleSuffix = TITLE_DISAMBIGUATION[program.id]?.[locale] ?? "";
   const metadata = createPageMetadata({
-    title: `${program.title}${titleSuffix} — ${locale === "he" ? "תוכנית יום הולדת" : "программа детского праздника"} | ${dict.brand.name}`,
+    // Короткий title: длинный вариант с полным брендом резался в SERP (67-84 зн.)
+    title: `${program.title}${titleSuffix} — ${locale === "he" ? "תוכנית יום הולדת | מישניה" : "детский праздник | Мишаня"}`,
     description: programDescription(locale, program.title, program.tagline, program.durationLabel, priceLabel),
     path: `/${locale}/programs/${program.id}`,
     canonicalPath: `/${locale}/programs/${program.id}`,

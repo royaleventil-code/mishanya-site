@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { BidiText } from "@/components/BidiText";
+import { MUNICIPALITIES_COPY, BUSINESS_COPY } from "@/data/b2b";
+import { SHOWS_PAGE_COPY } from "@/data/shows";
+import { VIDEOS_PAGE_COPY } from "@/data/videos";
 import { getDictionary } from "@/lib/dictionaries";
 import { localePath, type Locale } from "@/lib/i18n";
 import { WA_DISPLAY } from "@/lib/whatsapp";
@@ -12,6 +15,19 @@ export function PublicFooter({ locale = "ru" }: { locale?: Locale }) {
     { href: localePath(locale, "/all"), label: dict.common.programs },
     { href: localePath(locale, "/gallery"), label: dict.catalog.proof.eyebrow },
     { href: localePath(locale, "/faq"), label: dict.common.faqShort },
+    // Новые разделы — до перевода he-ссылки скрыты (гейт по наличию copy)
+    ...(SHOWS_PAGE_COPY[locale].breadcrumb
+      ? [{ href: localePath(locale, "/shows"), label: SHOWS_PAGE_COPY[locale].breadcrumb }]
+      : []),
+    ...(MUNICIPALITIES_COPY[locale].breadcrumb
+      ? [{ href: localePath(locale, "/municipalities"), label: MUNICIPALITIES_COPY[locale].breadcrumb }]
+      : []),
+    ...(BUSINESS_COPY[locale].breadcrumb
+      ? [{ href: localePath(locale, "/business"), label: BUSINESS_COPY[locale].breadcrumb }]
+      : []),
+    ...(VIDEOS_PAGE_COPY[locale].breadcrumb
+      ? [{ href: localePath(locale, "/videos"), label: VIDEOS_PAGE_COPY[locale].breadcrumb }]
+      : []),
     { href: localePath(locale, "/contacts"), label: dict.common.contacts },
     { href: localePath(locale, "/accessibility"), label: dict.a11y.statementLink },
   ];

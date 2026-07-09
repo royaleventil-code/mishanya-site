@@ -10,6 +10,8 @@ import { Faq } from "./Faq";
 import { FinalCta } from "./FinalCta";
 import { PublicFooter } from "./PublicFooter";
 import { AgeAtmosphere } from "./AgeAtmosphere";
+import { AgeGuide } from "./AgeGuide";
+import type { AgeGuideData } from "@/data/age-guide";
 import {
   BOYS_4_5_PROOF,
   BOYS_6_10_PROOF,
@@ -28,9 +30,11 @@ type Props = {
   title: string;
   emojiOverride?: string;
   audience?: AudienceContext;
+  // Возрастной гайд + FAQ (только на страницах /{boy|girl}/{age}); без пропа блок не рендерится
+  ageGuide?: AgeGuideData | null;
 };
 
-export function SegmentPage({ locale = "ru", segment, title, emojiOverride, audience }: Props) {
+export function SegmentPage({ locale = "ru", segment, title, emojiOverride, audience, ageGuide }: Props) {
   const cfg = SEGMENTS[segment];
   const programs = getLocalizedPrograms(locale);
   const heroes = getLocalizedHeroes(locale);
@@ -79,10 +83,12 @@ export function SegmentPage({ locale = "ru", segment, title, emojiOverride, audi
             heroes={heroes}
             audience={audience}
           />
+          {ageGuide && <AgeGuide locale={locale} data={ageGuide} />}
           <SocialProofSection locale={locale} proofSet={proofSet} />
           <HowItWorks locale={locale} />
           <Trust locale={locale} />
-          <Faq locale={locale} />
+          {/* при возрастном гайде FAQPage уже вставлен страницей - второй не дублируем */}
+          <Faq locale={locale} jsonLd={!ageGuide} />
           <FinalCta locale={locale} accent={cfg.accent} />
           {segment === "all" && <ProgramLinksIndex locale={locale} programs={programs} />}
           <PublicFooter locale={locale} />

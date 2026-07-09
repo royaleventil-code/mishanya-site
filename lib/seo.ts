@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getAgeSeoFacts } from "@/data/age-guide";
 import { getDictionary } from "@/lib/dictionaries";
 import { LOCALE_CONFIG, localePath, switchLocalePath, type Locale } from "@/lib/i18n";
 import type { Gender } from "@/lib/types";
@@ -166,6 +167,54 @@ export function createAgeProgramsMetadata({
   const child = gender === "boy" ? "мальчика" : "девочки";
   const heChild = gender === "boy" ? "לבן" : "לבת";
 
+  // Description 140–160 знаков с реальными данными возраста: 2–3 названия программ,
+  // минимальная цена и CTA. Перебираем варианты и берем первый, попавший в диапазон.
+  const facts = getAgeSeoFacts(locale, gender, age);
+  let description =
+    locale === "he"
+      ? `תוכניות יום הולדת ${heChild} ${age}: דמויות, מופעים, מחירים, תמונות, סרטונים ובחירה מהירה ב־WhatsApp.`
+      : hasAgeWhatsappPreview
+        ? `Программа праздника для ${child} ${ageLabel}: герои, шоу, цены, фото, видео и быстрый выбор.`
+        : `${capitalizedAudience}: готовые программы с ценами, героями и шоу. Подберем праздник под возраст, формат и место проведения в Израиле.`;
+  if (facts) {
+    const price =
+      locale === "he"
+        ? `${String(facts.minPrice).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} ₪`
+        : `${String(facts.minPrice).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} ₪`;
+    const ruPrograms = (n: number) => {
+      if (n % 10 === 1 && n % 100 !== 11) return `${n} программа`;
+      if ([2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100)) return `${n} программы`;
+      return `${n} программ`;
+    };
+    const heads = [2, 3].map((n) => {
+      const titles = facts.titles.slice(0, n);
+      const rest = facts.count - titles.length;
+      return locale === "he"
+        ? `יום הולדת ${heChild} ${age}: ${titles.join(", ")} ועוד ${rest} תוכניות במחיר החל מ־${price}.`
+        : `Праздник для ${audience}: ${titles.map((t) => `«${t}»`).join(", ")} и еще ${ruPrograms(rest)} с ценами от ${price}.`;
+    });
+    const tails =
+      locale === "he"
+        ? [
+            " דמויות, מופעים, תמונות וסרטונים — בחירה מהירה ב־WhatsApp.",
+            " דמויות, מופעים ובחירה מהירה ב־WhatsApp.",
+            " בחירה מהירה ב־WhatsApp.",
+          ]
+        : [
+            " Ведущий и герои приедут сами — напишите в WhatsApp, подберем за 5 минут.",
+            " Напишите в WhatsApp — подберем программу за 5 минут.",
+            " Пишите в WhatsApp — подберем за 5 минут.",
+            " Быстрый подбор в WhatsApp.",
+          ];
+    const candidates: string[] = [];
+    for (const head of heads) for (const tail of tails) candidates.push(head + tail);
+    description =
+      candidates.find((text) => text.length >= 140 && text.length <= 160) ??
+      [...candidates].sort(
+        (a, b) => Math.abs(150 - a.length) - Math.abs(150 - b.length),
+      )[0];
+  }
+
   return createPageMetadata({
     title:
       locale === "he"
@@ -173,12 +222,7 @@ export function createAgeProgramsMetadata({
         : hasAgeWhatsappPreview
           ? `Программа для ${child} ${ageLabel} | ${name}`
           : `Программы для ${audience} | ${name}`,
-    description:
-      locale === "he"
-        ? `תוכניות יום הולדת ${heChild} ${age}: דמויות, מופעים, מחירים, תמונות, סרטונים ובחירה מהירה ב־WhatsApp.`
-        : hasAgeWhatsappPreview
-          ? `Программа праздника для ${child} ${ageLabel}: герои, шоу, цены, фото, видео и быстрый выбор.`
-          : `${capitalizedAudience}: готовые программы с ценами, героями и шоу. Подберем праздник под возраст, формат и место проведения в Израиле.`,
+    description,
     path,
     canonicalPath: localizedProgramPath(locale, `/${gender}/${age}`),
     image: hasAgeWhatsappPreview

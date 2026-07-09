@@ -7,7 +7,8 @@ import { BidiText } from "@/components/BidiText";
 import { getDictionary } from "@/lib/dictionaries";
 import type { Locale } from "@/lib/i18n";
 
-export function Faq({ locale = "ru" }: { locale?: Locale }) {
+// jsonLd=false — когда на странице уже есть свой FAQPage (у Google допустим только один на страницу)
+export function Faq({ locale = "ru", jsonLd = true }: { locale?: Locale; jsonLd?: boolean }) {
   const [open, setOpen] = useState<number | null>(null);
   const reduce = useReducedMotion();
   const dict = getDictionary(locale);
@@ -27,10 +28,13 @@ export function Faq({ locale = "ru" }: { locale?: Locale }) {
 
   return (
     <section className="mx-auto max-w-3xl px-5 py-10 sm:px-6 sm:py-14">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-      />
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          // экранируем «<» как на остальных страницах — текст не должен разорвать inline-скрипт
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd).replace(/</g, "\\u003c") }}
+        />
+      )}
       <p className="text-sm font-black uppercase tracking-wide text-[#ff9f0a]">
         {dict.catalog.faq.eyebrow}
       </p>

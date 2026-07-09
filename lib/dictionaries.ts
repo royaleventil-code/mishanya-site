@@ -46,6 +46,7 @@ export type Dictionary = {
   city: {
     programsTitle: string;
     programsNote: (count: number) => string;
+    proofTitle: string;
     faqTitle: string;
     otherCitiesTitle: string;
     ctaTitle: string;
@@ -254,6 +255,7 @@ export const DICTIONARIES = {
       programsTitle: "Популярные программы",
       programsNote: (count: number) =>
         `Это лишь часть каталога — всего у Мишани ${count} программ под любой возраст.`,
+      proofTitle: "Мы уже праздновали здесь",
       faqTitle: "Частые вопросы",
       otherCitiesTitle: "Мы работаем и в других городах",
       ctaTitle: "Расскажите, где и когда праздник — подберём программу и посчитаем цену",
@@ -665,6 +667,7 @@ export const DICTIONARIES = {
     city: {
       programsTitle: "תוכניות פופולריות",
       programsNote: (count: number) => `זה רק חלק מהקטלוג - למישניה ${count} תוכניות לכל גיל.`,
+      proofTitle: "כבר חגגנו כאן",
       faqTitle: "שאלות נפוצות",
       otherCitiesTitle: "אנחנו פועלים גם בערים נוספות",
       ctaTitle: "ספרו לנו איפה ומתי החגיגה — נתאים תוכנית ונחשב מחיר",
