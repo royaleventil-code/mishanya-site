@@ -6,6 +6,8 @@ import { PublicHeader } from "@/components/PublicHeader";
 export default function NotFound() {
   return (
     <RootDocument locale="ru">
+    {/* React 19 поднимает <title> в <head>; у 404 не было title вовсе */}
+    <title>Страница не найдена (404) | Мишаня в Стране Чудес</title>
     <main id="main" className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
       {/* путь 404 не существует — переключатель языка ведёт на главные */}
       <PublicHeader langHrefOverrides={{ ru: "/ru", he: "/he" }} />
