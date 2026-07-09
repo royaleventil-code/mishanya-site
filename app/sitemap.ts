@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { CITIES } from "@/data/cities";
 import { PROGRAMS } from "@/data/programs";
 import { LOCALES, localePath, type Locale } from "@/lib/i18n";
 import { hasProgramCopy } from "@/lib/localized-data";
@@ -72,5 +73,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }),
   );
 
-  return [...baseEntries, ...programEntries];
+  const cityEntries = LOCALES.flatMap((locale) =>
+    CITIES.map((city) => {
+      const path = `/city/${city.id}`;
+      return {
+        url: localizedUrl(locale, path),
+        lastModified,
+        changeFrequency: "weekly" as const,
+        priority: 0.9,
+        alternates: alternates(path),
+      };
+    }),
+  );
+
+  return [...baseEntries, ...programEntries, ...cityEntries];
 }
