@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Check, Clock, Users } from "lucide-react";
 import { PROGRAMS } from "@/data/programs";
 import { BidiText } from "@/components/BidiText";
-import { ProgramLinkCard } from "@/components/ProgramLinkCard";
+import { ProgramCatalogCard } from "@/components/ProgramCatalogCard";
 import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { getDictionary } from "@/lib/dictionaries";
@@ -388,10 +388,10 @@ export default async function LocalizedProgramPage({ params }: Props) {
             {related.length > 0 && (
               <section className="mt-8 border-t border-black/5 pt-6">
                 <h2 className="mb-3 text-base font-semibold">{dict.program.relatedTitle}</h2>
-                <ul className="grid gap-3 sm:grid-cols-2">
+                <ul className="grid gap-4 sm:grid-cols-2">
                   {related.map((item) => (
                     <li key={item.id}>
-                      <ProgramLinkCard locale={locale} program={item} />
+                      <ProgramCatalogCard locale={locale} program={item} />
                     </li>
                   ))}
                 </ul>

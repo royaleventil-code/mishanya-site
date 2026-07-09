@@ -7,12 +7,10 @@ import {
   CARTOONS_CHANNEL_URL,
   cartoonWatchUrl,
   formatCartoonViews,
-  VIDEOS,
   VIDEOS_PAGE_COPY,
   YOUTUBE_CHANNEL_URL,
 } from "@/data/videos";
 import { BidiText } from "@/components/BidiText";
-import { LiteYouTube } from "@/components/LiteYouTube";
 import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { getDictionary } from "@/lib/dictionaries";
@@ -64,18 +62,8 @@ function videosJsonLd(locale: Locale) {
       uploadDate: cartoon.uploadDate,
       thumbnailUrl: `https://i.ytimg.com/vi/${cartoon.videoId}/hqdefault.jpg`,
       url: cartoonWatchUrl(cartoon.videoId),
-    })),
-    ...VIDEOS.slice(0, 6).map((video) => ({
-      "@context": "https://schema.org",
-      "@type": "VideoObject",
-      name: video.title,
-      description:
-        locale === "he"
-          ? `"${video.title}" - סרטון מערוץ היוטיוב של מישניה בארץ הפלאות`
-          : `«${video.title}» — ролик с YouTube-канала «Мишаня в Стране Чудес»`,
-      uploadDate: video.uploadDate,
-      thumbnailUrl: `https://i.ytimg.com/vi/${video.videoId}/hqdefault.jpg`,
-      embedUrl: `https://www.youtube-nocookie.com/embed/${video.videoId}`,
+      // Ролики русскоязычные — честная разметка языка и на he-странице
+      inLanguage: "ru",
     })),
   ];
 }
@@ -136,7 +124,7 @@ export default async function VideosPage({ params }: Props) {
             ))}
           </div>
 
-          {/* ТОП-20 мультиков: эмбед у канала запрещён (playableInEmbed:false) —
+          {/* ТОП-21 мультиков: эмбед у канала запрещён (playableInEmbed:false) —
               вся карточка = внешняя ссылка на youtube.com/watch, БЕЗ iframe */}
           <section className="mt-8">
             {copy.cartoonsTitle && (
@@ -209,54 +197,6 @@ export default async function VideosPage({ params }: Props) {
             )}
           </section>
 
-          {/* Сетка роликов с праздников (@RoyalEvent, эмбед разрешён — LiteYouTube) */}
-          <section className="mt-8">
-            <h2 className="mb-3 text-base font-semibold">
-              <BidiText locale={locale}>{copy.gridTitle}</BidiText>
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {VIDEOS.map((video) => (
-                <figure
-                  key={video.videoId}
-                  className="rounded-2xl p-3"
-                  style={{ background: "rgba(255,255,255,0.55)", border: "1px solid rgba(0,0,0,0.06)" }}
-                >
-                  <LiteYouTube videoId={video.videoId} title={video.title} />
-                  <figcaption className="mt-2">
-                    <p className="text-sm font-semibold leading-snug">{video.title}</p>
-                    {video.caption[locale] && (
-                      <p className="mt-0.5 text-xs text-[var(--color-muted)]">
-                        <BidiText locale={locale}>{video.caption[locale]}</BidiText>
-                      </p>
-                    )}
-                  </figcaption>
-                </figure>
-              ))}
-            </div>
-          </section>
-
-          {/* Канал на YouTube */}
-          <section className="mt-8 text-center">
-            <h2 className="text-base font-semibold">
-              <BidiText locale={locale}>{copy.channelTitle}</BidiText>
-            </h2>
-            <p className="mx-auto mt-1 max-w-md text-sm text-[var(--color-ink-soft)]">
-              <BidiText locale={locale}>{copy.channelText}</BidiText>
-            </p>
-            <a
-              href={YOUTUBE_CHANNEL_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="cta-glow mt-4 inline-flex items-center gap-2 rounded-full bg-[#e62117] px-7 py-4 text-base font-black text-white transition active:scale-95"
-              style={{ ["--cta-glow-color" as unknown as string]: "rgba(230,33,23,0.4)" }}
-            >
-              <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5" aria-hidden>
-                <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31.3 31.3 0 0 0 0 12a31.3 31.3 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31.3 31.3 0 0 0 24 12a31.3 31.3 0 0 0-.5-5.8ZM9.6 15.6V8.4L15.8 12l-6.2 3.6Z" />
-              </svg>
-              <BidiText locale={locale}>{copy.channelCta}</BidiText>
-            </a>
-          </section>
-
           {/* FAQ */}
           <section className="mt-8">
             <h2 className="mb-3 text-base font-semibold">
@@ -301,6 +241,15 @@ export default async function VideosPage({ params }: Props) {
               >
                 <BidiText locale={locale}>{copy.seeAlsoShows}</BidiText>
               </Link>
+              {/* Секция роликов @RoyalEvent убрана 10.07.2026 — канал остаётся текстовой ссылкой */}
+              <a
+                href={YOUTUBE_CHANNEL_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--color-ink)] underline-offset-4 transition hover:underline"
+              >
+                <BidiText locale={locale}>{copy.seeAlsoChannel}</BidiText>
+              </a>
             </div>
           </section>
         </article>

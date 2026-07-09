@@ -4,10 +4,12 @@ import { notFound } from "next/navigation";
 import { School } from "lucide-react";
 import { BUSINESS_COPY } from "@/data/b2b";
 import { BidiText } from "@/components/BidiText";
+import { ProgramCatalogCard } from "@/components/ProgramCatalogCard";
 import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { getDictionary } from "@/lib/dictionaries";
 import { isLocale, localePath, type Locale } from "@/lib/i18n";
+import { getLocalizedProgramById } from "@/lib/localized-data";
 import { createPageMetadata, siteUrl } from "@/lib/seo";
 import { whatsappLink } from "@/lib/whatsapp";
 
@@ -80,6 +82,14 @@ export default async function BusinessPage({ params }: Props) {
 
   const dict = getDictionary(locale);
   const waHref = whatsappLink(copy.waMessage);
+  // «Что привозим»: пункты-программы показываем каталожными карточками,
+  // остальные (без /programs/-ссылки) остаются текстовым списком
+  const offerPrograms = copy.offer
+    .map((item) => (item.href?.startsWith("/programs/") ? item.href.slice("/programs/".length) : null))
+    .filter((id): id is string => Boolean(id))
+    .map((id) => getLocalizedProgramById(locale, id))
+    .filter((program): program is NonNullable<typeof program> => Boolean(program));
+  const offerRest = copy.offer.filter((item) => !item.href?.startsWith("/programs/"));
   // экранируем «<»: текст с "</script>" не должен ломать inline-скрипт
   const jsonLd = JSON.stringify(businessJsonLd(locale)).replace(/</g, "\\u003c");
 
@@ -149,8 +159,15 @@ export default async function BusinessPage({ params }: Props) {
             <h2 className="mb-3 text-base font-semibold">
               <BidiText locale={locale}>{copy.offerTitle}</BidiText>
             </h2>
-            <ul className="space-y-2 text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
-              {copy.offer.map((item, index) => (
+            <ul className="grid gap-4 sm:grid-cols-2">
+              {offerPrograms.map((program) => (
+                <li key={program.id}>
+                  <ProgramCatalogCard locale={locale} program={program} />
+                </li>
+              ))}
+            </ul>
+            <ul className="mt-4 space-y-2 text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
+              {offerRest.map((item, index) => (
                 <li key={index} className="flex gap-2">
                   <span aria-hidden className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-ink-soft)]" />
                   {item.href ? (

@@ -5,7 +5,7 @@ import { Blocks, Building2, Home, Trees, type LucideIcon } from "lucide-react";
 import { VENUES, getVenueById, hasVenueCopy } from "@/data/venues";
 import { PROGRAMS } from "@/data/programs";
 import { BidiText } from "@/components/BidiText";
-import { ProgramLinkCard } from "@/components/ProgramLinkCard";
+import { ProgramCatalogCard } from "@/components/ProgramCatalogCard";
 import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { getDictionary } from "@/lib/dictionaries";
@@ -167,10 +167,10 @@ export default async function VenuePage({ params }: Props) {
           {/* Программы */}
           <section className="mt-8">
             <h2 className="mb-3 text-base font-semibold">{dict.city.programsTitle}</h2>
-            <ul className="grid gap-3 sm:grid-cols-2">
+            <ul className="grid gap-4 sm:grid-cols-2">
               {programs.map((program) => (
                 <li key={program.id}>
-                  <ProgramLinkCard locale={locale} program={program} />
+                  <ProgramCatalogCard locale={locale} program={program} />
                 </li>
               ))}
             </ul>

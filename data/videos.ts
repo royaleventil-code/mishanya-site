@@ -2,7 +2,11 @@ import type { Locale } from "@/lib/i18n";
 
 export type VideosFaqItem = { q: string; a: string };
 
-/** Канал «Мишаня в Стране Чудес Детские праздники в Израиле», handle @RoyalEvent */
+/**
+ * Канал «Мишаня в Стране Чудес Детские праздники в Израиле», handle @RoyalEvent.
+ * Секция с его роликами убрана со страницы /videos 10.07.2026 (решение Михаила:
+ * старые вертикальные превью портили вид) — остаётся только текстовая ссылка.
+ */
 export const YOUTUBE_CHANNEL_URL = "https://www.youtube.com/channel/UCo189jVSku-2H_0Rgrw9JCw";
 
 /**
@@ -13,16 +17,6 @@ export const YOUTUBE_CHANNEL_URL = "https://www.youtube.com/channel/UCo189jVSku-
  * карточки мультиков ведут внешней ссылкой на youtube.com/watch, НЕ iframe.
  */
 export const CARTOONS_CHANNEL_URL = "https://www.youtube.com/channel/UC1wRSZXeAkXQeXjRpvAgZJg";
-
-export type VideoItem = {
-  videoId: string;
-  /** Название ролика — заголовок карточки, aria-label плеера и name в VideoObject */
-  title: string;
-  /** Подпись под карточкой («279K просмотров»); иврит придёт отдельным пайплайном */
-  caption: Record<Locale, string>;
-  /** Дата загрузки на YouTube (ISO YYYY-MM-DD) — uploadDate в VideoObject */
-  uploadDate: string;
-};
 
 export type CartoonItem = {
   videoId: string;
@@ -46,7 +40,7 @@ export function cartoonWatchUrl(videoId: string): string {
 /**
  * Формат просмотров под YouTube: усечение (не округление) до 1 знака.
  * RU: «12,5 млн просмотров» / «850 тыс. просмотров».
- * HE: цифры не переводятся, шаблон «אלף/מיליון צפיות» уже используется в caption выше.
+ * HE: цифры не переводятся, шаблон «אלף/מיליון צפיות».
  */
 export function formatCartoonViews(views: number, locale: Locale): string {
   if (views >= 1_000_000) {
@@ -60,8 +54,9 @@ export function formatCartoonViews(views: number, locale: Locale): string {
 }
 
 /**
- * ТОП-20 мультиков канала «Mishanya in Wonderland», по популярности.
- * Просмотры и названия зафиксированы 09.07.2026, названия = как на YouTube.
+ * ТОП-21 мультиков канала «Mishanya in Wonderland», по популярности
+ * (21 = ровные 7 рядов × 3 карточки в десктопной сетке).
+ * Просмотры и названия зафиксированы 09-10.07.2026, названия = как на YouTube.
  * he-описания заполнены (батч 2, 07.2026); пустая строка скрыла бы описание на he.
  */
 export const CARTOONS: readonly CartoonItem[] = [
@@ -286,102 +281,15 @@ export const CARTOONS: readonly CartoonItem[] = [
       he: "רולטה קסומה הופכת את מישניה ואת משוניה לחתלתולים מצחיקים.",
     },
   },
-];
-
-/**
- * Рабочие videoId канала @RoyalEvent (проверены по oEmbed, эмбед разрешён —
- * поэтому здесь LiteYouTube, в отличие от канала мультиков).
- * Порядок — по популярности; просмотры зафиксированы на 07.2026.
- */
-export const VIDEOS: readonly VideoItem[] = [
   {
-    videoId: "5_-XcOs9RGc",
-    uploadDate: "2018-07-10",
-    title: "ימי הולדת לילדים Mishanja co il",
-    caption: {
-      ru: "279K просмотров",
-      he: "279 אלף צפיות",
-    },
-  },
-  {
-    videoId: "9tq3HAD_Kew",
-    uploadDate: "2018-03-06",
-    title: "Страна Чудес — День рождения для ребёнка",
-    caption: {
-      ru: "231K просмотров",
-      he: "231 אלף צפיות",
-    },
-  },
-  {
-    videoId: "uOKXQl9Utcw",
-    uploadDate: "2018-11-20",
-    title: "Луч Солнца Золотого — Бременские Музыканты — караоке для детей",
-    caption: {
-      ru: "135K просмотров",
-      he: "135 אלף צפיות",
-    },
-  },
-  {
-    videoId: "PbA3JviEFCY",
-    uploadDate: "2019-04-25",
-    title: "Антошка — детское караоке",
-    caption: {
-      ru: "101K просмотров",
-      he: "101 אלף צפיות",
-    },
-  },
-  {
-    videoId: "A_vdaDm4um8",
-    uploadDate: "2017-02-26",
-    title: "Детские праздники и дни рождения в Израиле «Страна Чудес»",
-    caption: {
-      ru: "17K просмотров",
-      he: "17 אלף צפיות",
-    },
-  },
-  {
-    videoId: "X0qBGjIU47Y",
-    uploadDate: "2019-05-06",
-    title: "Пусть бегут неуклюже — караоке",
-    caption: {
-      ru: "9,9K просмотров",
-      he: "9.9 אלף צפיות",
-    },
-  },
-  {
-    videoId: "-ajMWjHE1_M",
-    uploadDate: "2013-05-01",
-    title: "LaserMan Show — лазерное шоу в Израиле",
-    caption: {
-      ru: "6,7K просмотров",
-      he: "6.7 אלף צפיות",
-    },
-  },
-  {
-    videoId: "Kh6AZUa_uks",
-    uploadDate: "2022-06-08",
-    title: "Детские праздники в Израиле — аниматоры на день рождения",
-    caption: {
-      ru: "5,2K просмотров",
-      he: "5.2 אלף צפיות",
-    },
-  },
-  {
-    videoId: "GpZdIMXlOc0",
-    uploadDate: "2018-07-25",
-    title: "Лучший фокусник в Израиле — читает мысли",
-    caption: {
-      ru: "4,1K просмотров",
-      he: "4.1 אלף צפיות",
-    },
-  },
-  {
-    videoId: "GYAqSvd04NM",
-    uploadDate: "2018-05-09",
-    title: "Танец Зайца и Волка — «Ну, погоди!»",
-    caption: {
-      ru: "4K просмотров",
-      he: "4 אלף צפיות",
+    videoId: "uqpclhoZhr4",
+    title: "Песенка про Дантиста | Песенка про стоматолога",
+    views: 844_359,
+    duration: "2:47",
+    uploadDate: "2021-06-11",
+    description: {
+      ru: "Мишаня поёт весёлую песенку о том, что лечить зубы совсем не страшно.",
+      he: "מישניה שר שיר שמח, ומסביר שטיפול שיניים בכלל לא מפחיד.",
     },
   },
 ];
@@ -398,15 +306,13 @@ export type VideosPageCopy = {
   cartoonsTitle: string;
   /** Кнопка канала мультиков; пусто → кнопка скрыта */
   cartoonsCta: string;
-  gridTitle: string;
-  channelTitle: string;
-  channelText: string;
-  channelCta: string;
   faqTitle: string;
   faq: readonly VideosFaqItem[];
   seeAlsoTitle: string;
   seeAlsoPrograms: string;
   seeAlsoShows: string;
+  /** Текстовая ссылка на канал @RoyalEvent в «Смотрите также» (секция роликов убрана) */
+  seeAlsoChannel: string;
 };
 
 export const VIDEOS_PAGE_COPY: Record<Locale, VideosPageCopy> = {
@@ -423,11 +329,6 @@ export const VIDEOS_PAGE_COPY: Record<Locale, VideosPageCopy> = {
     ],
     cartoonsTitle: "Самые популярные мультики канала",
     cartoonsCta: "Смотреть канал мультиков на YouTube",
-    gridTitle: "Ролики с наших праздников и караоке",
-    channelTitle: "Больше роликов — на канале",
-    channelText:
-      "На канале — сотни видео с праздников, шоу и караоке. Подпишитесь, чтобы не пропускать новые ролики.",
-    channelCta: "Смотреть канал на YouTube",
     faqTitle: "Частые вопросы",
     faq: [
       {
@@ -440,15 +341,16 @@ export const VIDEOS_PAGE_COPY: Record<Locale, VideosPageCopy> = {
       },
       {
         q: "Можно ли увидеть героя или ведущего до праздника?",
-        a: "Да. Включите ребёнку пару мультиков с этой страницы или посмотрите ролики с наших праздников ниже — видно, как выглядят герои и как проходят праздники вживую.",
+        a: "Да. Включите ребёнку пару мультиков с этой страницы — он заранее познакомится с Мишаней. А фотографии всех героев и ведущих собраны в каталоге программ на сайте.",
       },
     ],
     seeAlsoTitle: "Смотрите также",
     seeAlsoPrograms: "Все программы праздников",
     seeAlsoShows: "Спектакли и шоу",
+    seeAlsoChannel: "Канал с роликами наших праздников на YouTube",
   },
   he: {
-    breadcrumb: "סרטונים וקריוקי",
+    breadcrumb: "סרטים מצוירים וסרטונים",
     h1: "סרטים מצוירים וסרטונים עם מישניה",
     seoTitle: "סרטים מצוירים עם מישניה - ערוץ עם 341 אלף מנויים ביוטיוב",
     seoDescription:
@@ -460,11 +362,6 @@ export const VIDEOS_PAGE_COPY: Record<Locale, VideosPageCopy> = {
     ],
     cartoonsTitle: "הסרטונים הכי פופולריים בערוץ Mishanya in Wonderland",
     cartoonsCta: "לצפות בערוץ Mishanya in Wonderland ביוטיוב",
-    gridTitle: "סרטונים מהחגיגות שלנו וקריוקי",
-    channelTitle: "עוד סרטונים - בערוץ",
-    channelText:
-      "בערוץ יש מאות סרטונים מאירועים, שואו וקריוקי. הירשמו כדי לא לפספס סרטונים חדשים.",
-    channelCta: "לצפות בערוץ ביוטיוב",
     faqTitle: "שאלות נפוצות",
     faq: [
       {
@@ -477,11 +374,12 @@ export const VIDEOS_PAGE_COPY: Record<Locale, VideosPageCopy> = {
       },
       {
         q: "אפשר לראות את הדמות או המנחה עוד לפני החגיגה?",
-        a: "כן. הפעילו לילד כמה סרטונים מהעמוד הזה, או צפו בסרטונים מהחגיגות שלנו למטה - אפשר לראות איך נראות הדמויות ואיך נראות החגיגות בחיים האמיתיים.",
+        a: "כן. הפעילו לילד כמה סרטונים מהעמוד הזה - כך הוא יכיר את מישניה מראש. ותמונות של כל הדמויות והמנחים מחכות לכם בקטלוג התוכניות באתר.",
       },
     ],
     seeAlsoTitle: "ראו גם",
     seeAlsoPrograms: "כל תוכניות החגיגות",
     seeAlsoShows: "מופעים ושואו",
+    seeAlsoChannel: "ערוץ היוטיוב עם סרטונים מהחגיגות שלנו",
   },
 };
