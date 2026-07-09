@@ -88,7 +88,36 @@ export function SiteFooter({ locale = "ru" }: { locale?: Locale }) {
         </div>
       </div>
 
-      <div className="mx-auto mt-8 max-w-6xl border-t border-white/10 pt-6 text-xs text-white/40">
+      {/* Праздник по возрасту — перелинковка возрастных страниц */}
+      <div className="mx-auto mt-8 max-w-6xl border-t border-white/10 pt-6 text-sm">
+        <div className="font-black text-white/90">{dict.common.byAgeTitle}</div>
+        <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-white/60">
+          <span className="me-1 text-xs font-semibold text-white/45">{dict.common.boys}:</span>
+          {Array.from({ length: 10 }, (_, i) => i + 1).map((age) => (
+            <Link
+              key={`boy-${age}`}
+              href={localePath(locale, `/boy/${age}`)}
+              className="tabular-nums transition hover:text-white"
+            >
+              {age}
+            </Link>
+          ))}
+        </div>
+        <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-white/60">
+          <span className="me-1 text-xs font-semibold text-white/45">{dict.common.girls}:</span>
+          {Array.from({ length: 10 }, (_, i) => i + 1).map((age) => (
+            <Link
+              key={`girl-${age}`}
+              href={localePath(locale, `/girl/${age}`)}
+              className="tabular-nums transition hover:text-white"
+            >
+              {age}
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      <div className="mx-auto mt-6 max-w-6xl border-t border-white/10 pt-6 text-xs text-white/40">
         <BidiText locale={locale}>{`© 2026 ${dict.brand.name} · Royal Event Israel`}</BidiText>
       </div>
     </footer>

@@ -29,6 +29,17 @@ export function getLocalizedPrograms(locale: Locale): Program[] {
   });
 }
 
+// Есть ли у программы перевод на данный язык (для he-страниц без перевода контент упал бы в русский)
+export function hasProgramCopy(locale: Locale, programId: string): boolean {
+  if (locale === "ru") return true;
+  const copy: Record<string, ProgramCopy | undefined> = PROGRAM_COPY[locale];
+  return Boolean(copy[programId]);
+}
+
+export function getLocalizedProgramById(locale: Locale, programId: string): Program | undefined {
+  return getLocalizedPrograms(locale).find((program) => program.id === programId);
+}
+
 export function getLocalizedHeroes(locale: Locale): Hero[] {
   if (locale === "ru") return HEROES;
   const copy: Record<string, string | undefined> = HERO_COPY[locale];

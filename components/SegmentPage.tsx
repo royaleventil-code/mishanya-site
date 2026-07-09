@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { PublicHeader } from "./PublicHeader";
+import { BidiText } from "./BidiText";
 import { Hero } from "./Hero";
 import { ProgramsSection } from "./ProgramsSection";
 import { SocialProofSection } from "./SocialProofSection";
@@ -14,10 +16,11 @@ import {
   GIRLS_4_6_PROOF,
   GIRLS_7_10_PROOF,
 } from "@/data/social-proof";
-import { getLocalizedHeroes, getLocalizedPrograms } from "@/lib/localized-data";
+import { getDictionary } from "@/lib/dictionaries";
+import { getLocalizedHeroes, getLocalizedPrograms, hasProgramCopy } from "@/lib/localized-data";
 import { SEGMENTS } from "@/lib/segments";
-import type { Locale } from "@/lib/i18n";
-import type { AudienceContext, SegmentId } from "@/lib/types";
+import { localePath, type Locale } from "@/lib/i18n";
+import type { AudienceContext, Program, SegmentId } from "@/lib/types";
 
 type Props = {
   locale?: Locale;
@@ -81,9 +84,37 @@ export function SegmentPage({ locale = "ru", segment, title, emojiOverride, audi
           <Trust locale={locale} />
           <Faq locale={locale} />
           <FinalCta locale={locale} accent={cfg.accent} />
+          {segment === "all" && <ProgramLinksIndex locale={locale} programs={programs} />}
           <PublicFooter locale={locale} />
         </div>
       </main>
     </>
+  );
+}
+
+// Тихий индекс текстовых ссылок на страницы программ — внутренняя перелинковка для поисковиков.
+// Видимое поведение каталога (карточки-модалки) не трогаем.
+function ProgramLinksIndex({ locale, programs }: { locale: Locale; programs: Program[] }) {
+  const dict = getDictionary(locale);
+  const linked = programs.filter((program) => hasProgramCopy(locale, program.id));
+
+  return (
+    <section className="mx-auto max-w-3xl px-5 pb-12 sm:px-6">
+      <h2 className="text-sm font-semibold text-[var(--color-ink-soft)]">
+        {dict.common.programsIndexTitle}
+      </h2>
+      <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm">
+        {linked.map((program) => (
+          <li key={program.id}>
+            <Link
+              href={localePath(locale, `/programs/${program.id}`)}
+              className="text-[var(--color-ink-soft)] underline-offset-4 transition hover:text-[var(--color-ink)] hover:underline"
+            >
+              <BidiText locale={locale}>{program.title}</BidiText>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

@@ -29,10 +29,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       program.tagline ??
       "Программа детского праздника с ценой, составом и возможностью уточнить детали в новом каталоге.",
     alternates: {
-      canonical: "/ru/all",
+      canonical: `/ru/programs/${program.id}`,
     },
     robots: {
-      index: false,
+      index: true,
       follow: true,
     },
   };
@@ -47,9 +47,9 @@ export default async function ProgramDetailPage({ params }: Props) {
     <main id="main" className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
       <PublicHeader />
       <RedirectToAll
-        target={`/ru/all?program=${encodeURIComponent(program.id)}`}
+        target={`/ru/programs/${encodeURIComponent(program.id)}`}
         title={`Открываем программу «${program.title}»`}
-        text="Эта программа теперь открывается в новом каталоге со всеми ценами, описанием и быстрым переходом в WhatsApp."
+        text="Эта программа теперь живёт на собственной странице с ценой, составом и быстрым переходом в WhatsApp."
       />
       <PublicFooter />
     </main>
