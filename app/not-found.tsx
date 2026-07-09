@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { RootDocument } from "@/app/RootDocument";
 import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 
 export default function NotFound() {
   return (
+    <RootDocument locale="ru">
     <main id="main" className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
       {/* путь 404 не существует — переключатель языка ведёт на главные */}
       <PublicHeader langHrefOverrides={{ ru: "/ru", he: "/he" }} />
@@ -37,5 +39,6 @@ export default function NotFound() {
       </section>
       <PublicFooter />
     </main>
+    </RootDocument>
   );
 }

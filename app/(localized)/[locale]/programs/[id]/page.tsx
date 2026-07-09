@@ -63,7 +63,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     locale,
   });
 
-  // У 14 программ нет иврита — на них hreflang he не ставим
+  // Страховка на случай непереведённой программы (сейчас HE есть у всех 39): hreflang he не ставим
   if (!hasProgramCopy("he", id)) {
     metadata.alternates = {
       canonical: `/${locale}/programs/${program.id}`,
@@ -204,7 +204,7 @@ export default async function LocalizedProgramPage({ params }: Props) {
       />
       <PublicHeader
         locale={locale}
-        // у непереведённых программ нет HE-зеркала — переключатель ведёт в HE-каталог
+        // страховка: у непереведённой программы нет HE-зеркала — переключатель ведёт в HE-каталог
         langHrefOverrides={hasProgramCopy("he", id) ? undefined : { he: "/he/all" }}
       />
 

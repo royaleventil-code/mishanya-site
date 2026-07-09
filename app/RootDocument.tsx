@@ -139,8 +139,13 @@ function rootJsonLd(locale: Locale) {
         { "@type": "City", name: "Jerusalem" },
         { "@type": "City", name: "Beer Sheva" },
         { "@type": "City", name: "Kiryat Yam" },
+        { "@type": "City", name: "Kiryat Bialik" },
+        { "@type": "City", name: "Kiryat Motzkin" },
+        { "@type": "City", name: "Kiryat Ata" },
+        { "@type": "City", name: "Rishon LeZion" },
         { "@type": "Country", name: "Israel" },
       ],
+      knowsLanguage: ["ru", "he"],
       aggregateRating: {
         "@type": "AggregateRating",
         ratingValue: "5.0",
