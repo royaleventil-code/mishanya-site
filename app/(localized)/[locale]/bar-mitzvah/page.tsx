@@ -5,8 +5,8 @@ import { notFound } from "next/navigation";
 import { PartyPopper } from "lucide-react";
 import { BAR_MITZVAH_MEDIA, BAR_MITZVAH_COPY } from "@/data/bar-mitzvah";
 import { BidiText } from "@/components/BidiText";
+import { SiteFooter } from "@/components/home/SiteFooter";
 import { LiteYouTube } from "@/components/LiteYouTube";
-import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { getDictionary } from "@/lib/dictionaries";
 import { isLocale, localePath, type Locale } from "@/lib/i18n";
@@ -338,7 +338,7 @@ export default async function BarMitzvahPage({ params }: Props) {
         </article>
       </div>
 
-      <PublicFooter locale={locale} />
+      <SiteFooter locale={locale} />
     </main>
   );
 }

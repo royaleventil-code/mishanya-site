@@ -1,4 +1,5 @@
 import FormatsContent from "@/components/formats/FormatsContent";
+import { SiteFooter } from "@/components/home/SiteFooter";
 import { createPageMetadata, SITE_NAME } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
@@ -11,5 +12,10 @@ export const metadata = createPageMetadata({
 });
 
 export default function FormatsPage() {
-  return <FormatsContent />;
+  return (
+    <>
+      <FormatsContent />
+      <SiteFooter />
+    </>
+  );
 }

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { CITIES, hasCityCopy } from "@/data/cities";
 import { FAQ_PAGE } from "@/data/faq";
 import { BidiText } from "@/components/BidiText";
-import { PublicFooter } from "@/components/PublicFooter";
+import { SiteFooter } from "@/components/home/SiteFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { getDictionary } from "@/lib/dictionaries";
 import { isLocale, localePath, type Locale } from "@/lib/i18n";
@@ -153,7 +153,7 @@ export default async function FaqPage({ params }: Props) {
         </article>
       </div>
 
-      <PublicFooter locale={locale} />
+      <SiteFooter locale={locale} />
     </main>
   );
 }

@@ -14,8 +14,8 @@ import {
 import { HOLIDAYS, getHolidayById, hasHolidayCopy } from "@/data/holidays";
 import { PROGRAMS } from "@/data/programs";
 import { BidiText } from "@/components/BidiText";
+import { SiteFooter } from "@/components/home/SiteFooter";
 import { ProgramCatalogCard } from "@/components/ProgramCatalogCard";
-import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { getDictionary } from "@/lib/dictionaries";
 import { isLocale, localePath, type Locale } from "@/lib/i18n";
@@ -270,7 +270,7 @@ export default async function HolidayPage({ params }: Props) {
         </article>
       </div>
 
-      <PublicFooter locale={locale} />
+      <SiteFooter locale={locale} />
     </main>
   );
 }

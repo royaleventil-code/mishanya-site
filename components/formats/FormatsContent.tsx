@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { BidiText } from "@/components/BidiText";
-import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { localePath, type Locale } from "@/lib/i18n";
 import { getPageCopy } from "@/lib/page-copy";
@@ -228,7 +227,6 @@ export default function FormatsContent({ locale = "ru" }: { locale?: Locale }) {
         </div>
       </section>
 
-      <PublicFooter locale={locale} />
     </main>
   );
 }

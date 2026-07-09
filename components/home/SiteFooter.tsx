@@ -19,8 +19,10 @@ export function SiteFooter({ locale = "ru" }: { locale?: Locale }) {
 
   return (
     <footer className="bg-[#0f0f14] px-5 pb-28 pt-12 text-white sm:px-6 md:pb-12">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
-        <div className="max-w-xs">
+      {/* Ровная сетка: бренд-колонка + три текстовые колонки с заголовками на одной линии,
+          всё выровнено по стартовому краю (RTL-friendly) */}
+      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-[minmax(0,20rem)_1fr_1fr_1fr] md:gap-8">
+        <div className="col-span-2 md:col-span-1">
           <Image
             src={dict.brand.logo}
             alt={dict.brand.logoAlt}
@@ -28,12 +30,12 @@ export function SiteFooter({ locale = "ru" }: { locale?: Locale }) {
             height={100}
             className="h-16 w-auto"
           />
-          <p className="mt-3 text-sm leading-6 text-white/60">
+          <p className="mt-3 max-w-xs text-sm leading-6 text-white/60">
             <BidiText locale={locale}>{dict.brand.siteDescription}</BidiText>
           </p>
         </div>
 
-        <div className="flex flex-col gap-2 text-sm">
+        <div className="flex flex-col items-start gap-2 text-start text-sm">
           <div className="font-black text-white/90">{dict.common.contacts}</div>
           <a
             href={whatsappLink(waMessages.default)}
@@ -48,7 +50,7 @@ export function SiteFooter({ locale = "ru" }: { locale?: Locale }) {
           </a>
         </div>
 
-        <div className="flex flex-col gap-2 text-sm">
+        <div className="flex flex-col items-start gap-2 text-start text-sm">
           <div className="font-black text-white/90">{dict.common.social}</div>
           <a
             href="https://www.instagram.com/show.mishanya/"
@@ -76,10 +78,13 @@ export function SiteFooter({ locale = "ru" }: { locale?: Locale }) {
           </a>
         </div>
 
-        <div className="flex flex-col gap-2 text-sm">
+        <div className="flex flex-col items-start gap-2 text-start text-sm">
           <div className="font-black text-white/90">{dict.common.site}</div>
           <Link href={localePath(locale, "/all")} className="text-white/70 transition hover:text-white">
             {dict.common.programs}
+          </Link>
+          <Link href={localePath(locale, "/formats")} className="text-white/70 transition hover:text-white">
+            {dict.common.formats}
           </Link>
           <Link href={localePath(locale, "/gallery")} className="text-white/70 transition hover:text-white">
             {dict.common.gallery}
@@ -89,6 +94,9 @@ export function SiteFooter({ locale = "ru" }: { locale?: Locale }) {
           </Link>
           <Link href={localePath(locale, "/about")} className="text-white/70 transition hover:text-white">
             {dict.common.about}
+          </Link>
+          <Link href={localePath(locale, "/contacts")} className="text-white/70 transition hover:text-white">
+            {dict.common.contacts}
           </Link>
           <Link
             href={localePath(locale, "/accessibility")}
@@ -102,29 +110,32 @@ export function SiteFooter({ locale = "ru" }: { locale?: Locale }) {
       {/* Праздник по возрасту — перелинковка возрастных страниц */}
       <div className="mx-auto mt-8 max-w-6xl border-t border-white/10 pt-6 text-sm">
         <div className="font-black text-white/90">{dict.common.byAgeTitle}</div>
-        <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-white/60">
-          <span className="me-1 text-xs font-semibold text-white/45">{dict.common.boys}:</span>
-          {Array.from({ length: 10 }, (_, i) => i + 1).map((age) => (
-            <Link
-              key={`boy-${age}`}
-              href={localePath(locale, `/boy/${age}`)}
-              className="tabular-nums transition hover:text-white"
-            >
-              {age}
-            </Link>
-          ))}
-        </div>
-        <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-white/60">
-          <span className="me-1 text-xs font-semibold text-white/45">{dict.common.girls}:</span>
-          {Array.from({ length: 10 }, (_, i) => i + 1).map((age) => (
-            <Link
-              key={`girl-${age}`}
-              href={localePath(locale, `/girl/${age}`)}
-              className="tabular-nums transition hover:text-white"
-            >
-              {age}
-            </Link>
-          ))}
+        {/* Грид с колонкой лейблов: цифры обеих строк начинаются на одной вертикали */}
+        <div className="mt-2 grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-1 text-white/60">
+          <span className="text-xs font-semibold text-white/45">{dict.common.boys}:</span>
+          <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((age) => (
+              <Link
+                key={`boy-${age}`}
+                href={localePath(locale, `/boy/${age}`)}
+                className="tabular-nums transition hover:text-white"
+              >
+                {age}
+              </Link>
+            ))}
+          </span>
+          <span className="text-xs font-semibold text-white/45">{dict.common.girls}:</span>
+          <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((age) => (
+              <Link
+                key={`girl-${age}`}
+                href={localePath(locale, `/girl/${age}`)}
+                className="tabular-nums transition hover:text-white"
+              >
+                {age}
+              </Link>
+            ))}
+          </span>
         </div>
       </div>
 

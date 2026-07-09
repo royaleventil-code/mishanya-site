@@ -1,5 +1,5 @@
 import { ContactsContent } from "@/components/contacts/ContactsContent";
-import { PublicFooter } from "@/components/PublicFooter";
+import { SiteFooter } from "@/components/home/SiteFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { createPageMetadata, SITE_NAME } from "@/lib/seo";
 
@@ -17,7 +17,7 @@ export default function ContactsPage() {
     <main id="main" className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
       <PublicHeader />
       <ContactsContent />
-      <PublicFooter />
+      <SiteFooter />
     </main>
   );
 }

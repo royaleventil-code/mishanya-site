@@ -16,7 +16,6 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { BidiText } from "@/components/BidiText";
-import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import {
   BOYS_4_5_PROOF,
@@ -317,7 +316,6 @@ export default function GalleryContent({ locale = "ru" }: { locale?: Locale }) {
         </div>
       </section>
 
-      <PublicFooter locale={locale} />
     </main>
   );
 }

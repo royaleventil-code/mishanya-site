@@ -11,7 +11,7 @@ import {
   YOUTUBE_CHANNEL_URL,
 } from "@/data/videos";
 import { BidiText } from "@/components/BidiText";
-import { PublicFooter } from "@/components/PublicFooter";
+import { SiteFooter } from "@/components/home/SiteFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { getDictionary } from "@/lib/dictionaries";
 import { isLocale, localePath, type Locale } from "@/lib/i18n";
@@ -255,7 +255,7 @@ export default async function VideosPage({ params }: Props) {
         </article>
       </div>
 
-      <PublicFooter locale={locale} />
+      <SiteFooter locale={locale} />
     </main>
   );
 }

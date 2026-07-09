@@ -4,8 +4,8 @@ import { notFound } from "next/navigation";
 import { School } from "lucide-react";
 import { BUSINESS_COPY } from "@/data/b2b";
 import { BidiText } from "@/components/BidiText";
+import { SiteFooter } from "@/components/home/SiteFooter";
 import { ProgramCatalogCard } from "@/components/ProgramCatalogCard";
-import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { getDictionary } from "@/lib/dictionaries";
 import { isLocale, localePath, type Locale } from "@/lib/i18n";
@@ -256,7 +256,7 @@ export default async function BusinessPage({ params }: Props) {
         </article>
       </div>
 
-      <PublicFooter locale={locale} />
+      <SiteFooter locale={locale} />
     </main>
   );
 }

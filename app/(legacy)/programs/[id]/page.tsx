@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import { SiteFooter } from "@/components/home/SiteFooter";
 import { notFound } from "next/navigation";
 import { PROGRAMS, getProgramById } from "@/data/programs";
-import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { RedirectToAll } from "../RedirectToAll";
 
@@ -51,7 +51,7 @@ export default async function ProgramDetailPage({ params }: Props) {
         title={`Открываем программу «${program.title}»`}
         text="Эта программа теперь живёт на собственной странице с ценой, составом и быстрым переходом в WhatsApp."
       />
-      <PublicFooter />
+      <SiteFooter />
     </main>
   );
 }

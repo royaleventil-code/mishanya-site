@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PublicFooter } from "@/components/PublicFooter";
+import { SiteFooter } from "@/components/home/SiteFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { createPageMetadata, siteName } from "@/lib/seo";
 import { isLocale, localePath, type Locale } from "@/lib/i18n";
@@ -193,7 +193,7 @@ export default async function AccessibilityStatementPage({
           </Link>
         </div>
       </div>
-      <PublicFooter locale={locale} />
+      <SiteFooter locale={locale} />
     </main>
   );
 }

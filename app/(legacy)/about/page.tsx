@@ -1,4 +1,5 @@
 import AboutContent from "@/components/about/AboutContent";
+import { SiteFooter } from "@/components/home/SiteFooter";
 import { createPageMetadata, SITE_NAME } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
@@ -10,5 +11,10 @@ export const metadata = createPageMetadata({
 });
 
 export default function AboutPage() {
-  return <AboutContent />;
+  return (
+    <>
+      <AboutContent />
+      <SiteFooter />
+    </>
+  );
 }

@@ -1,5 +1,5 @@
 import { ContactsContent } from "@/components/contacts/ContactsContent";
-import { PublicFooter } from "@/components/PublicFooter";
+import { SiteFooter } from "@/components/home/SiteFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { createPageMetadata, siteName } from "@/lib/seo";
 import { isLocale, type Locale } from "@/lib/i18n";
@@ -30,7 +30,7 @@ export default async function LocalizedContactsPage({ params }: { params: Promis
     <main id="main" className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
       <PublicHeader locale={locale} />
       <ContactsContent locale={locale} />
-      <PublicFooter locale={locale} />
+      <SiteFooter locale={locale} />
     </main>
   );
 }

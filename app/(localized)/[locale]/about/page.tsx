@@ -1,4 +1,5 @@
 import AboutContent from "@/components/about/AboutContent";
+import { SiteFooter } from "@/components/home/SiteFooter";
 import { createPageMetadata, siteName } from "@/lib/seo";
 import { isLocale, type Locale } from "@/lib/i18n";
 
@@ -22,5 +23,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function LocalizedAboutPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: localeParam } = await params;
   const locale: Locale = isLocale(localeParam) ? localeParam : "ru";
-  return <AboutContent locale={locale} />;
+  return (
+    <>
+      <AboutContent locale={locale} />
+      <SiteFooter locale={locale} />
+    </>
+  );
 }

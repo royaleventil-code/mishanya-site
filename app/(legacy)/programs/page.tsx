@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PublicFooter } from "@/components/PublicFooter";
+import { SiteFooter } from "@/components/home/SiteFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { RedirectToAll } from "./RedirectToAll";
 
@@ -22,7 +22,7 @@ export default function ProgramsPage() {
       {/* Легаси-путь /programs не существует в локалях — переключатель языка ведём на живые /ru/all и /he/all */}
       <PublicHeader langHrefOverrides={{ ru: "/ru/all", he: "/he/all" }} />
       <RedirectToAll />
-      <PublicFooter />
+      <SiteFooter />
     </main>
   );
 }

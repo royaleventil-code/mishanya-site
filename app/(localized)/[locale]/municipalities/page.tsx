@@ -4,8 +4,8 @@ import { notFound } from "next/navigation";
 import { Landmark } from "lucide-react";
 import { B2B_EMAIL, MUNICIPALITIES_COPY } from "@/data/b2b";
 import { BidiText } from "@/components/BidiText";
+import { SiteFooter } from "@/components/home/SiteFooter";
 import { LiteYouTube } from "@/components/LiteYouTube";
-import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { getDictionary } from "@/lib/dictionaries";
 import { isLocale, localePath, type Locale } from "@/lib/i18n";
@@ -335,7 +335,7 @@ export default async function MunicipalitiesPage({ params }: Props) {
         </article>
       </div>
 
-      <PublicFooter locale={locale} />
+      <SiteFooter locale={locale} />
     </main>
   );
 }

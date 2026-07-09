@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SiteFooter } from "@/components/home/SiteFooter";
 import { PublicHeader } from "./PublicHeader";
 import { BidiText } from "./BidiText";
 import { Hero } from "./Hero";
@@ -8,7 +9,6 @@ import { HowItWorks } from "./HowItWorks";
 import { Trust } from "./Trust";
 import { Faq } from "./Faq";
 import { FinalCta } from "./FinalCta";
-import { PublicFooter } from "./PublicFooter";
 import { AgeAtmosphere } from "./AgeAtmosphere";
 import { AgeGuide } from "./AgeGuide";
 import type { AgeGuideData } from "@/data/age-guide";
@@ -91,7 +91,7 @@ export function SegmentPage({ locale = "ru", segment, title, emojiOverride, audi
           <Faq locale={locale} jsonLd={!ageGuide} />
           <FinalCta locale={locale} accent={cfg.accent} />
           {segment === "all" && <ProgramLinksIndex locale={locale} programs={programs} />}
-          <PublicFooter locale={locale} />
+          <SiteFooter locale={locale} />
         </div>
       </main>
     </>

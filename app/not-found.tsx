@@ -1,6 +1,6 @@
 import Link from "next/link";
+import { SiteFooter } from "@/components/home/SiteFooter";
 import { RootDocument } from "@/app/RootDocument";
-import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 
 export default function NotFound() {
@@ -39,7 +39,7 @@ export default function NotFound() {
           </div>
         </div>
       </section>
-      <PublicFooter />
+      <SiteFooter />
     </main>
     </RootDocument>
   );
