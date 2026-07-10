@@ -33,6 +33,9 @@ export type CharityPageCopy = {
   helpText: string;
   helpCta: string;
   socialLabel: string;
+  /** Виджет-«окно браузера» со скриншотом главной mdterra.org (клик → сайт фонда) */
+  siteWidgetAlt: string;
+  siteWidgetCta: string;
 };
 
 export const CHARITY_PAGE_COPY: Record<Locale, CharityPageCopy> = {
@@ -76,6 +79,8 @@ export const CHARITY_PAGE_COPY: Record<Locale, CharityPageCopy> = {
       "Мы не собираем пожертвования на этом сайте — вся помощь идёт напрямую через фонд. На сайте mdterra.org можно сделать пожертвование, заполнить волонтёрскую анкету или предложить партнёрство от организации; отчёты о пожертвованиях фонд публикует открыто.",
     helpCta: "Помочь фонду",
     socialLabel: "Фонд в соцсетях:",
+    siteWidgetAlt: "Главная страница сайта фонда «Страна чудесных снов» — mdterra.org",
+    siteWidgetCta: "Открыть сайт фонда",
   },
   he: {
     breadcrumb: "צדקה",
@@ -117,5 +122,7 @@ export const CHARITY_PAGE_COPY: Record<Locale, CharityPageCopy> = {
       "אנחנו לא אוספים תרומות באתר הזה - כל הסיוע עובר ישירות דרך הקרן. באתר mdterra.org אפשר לתרום, למלא טופס התנדבות או להציע שיתוף פעולה מטעם ארגון; הקרן מפרסמת דוחות תרומות בשקיפות מלאה.",
     helpCta: "לעזור לקרן",
     socialLabel: "הקרן ברשתות החברתיות:",
+    siteWidgetAlt: "עמוד הבית של אתר הקרן mdterra.org",
+    siteWidgetCta: "לאתר הקרן",
   },
 };

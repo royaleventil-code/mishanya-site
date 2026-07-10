@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { HeartHandshake } from "lucide-react";
+import { ArrowUpRight, HeartHandshake } from "lucide-react";
 import {
   CHARITY_LINKS,
   CHARITY_PAGE_COPY,
@@ -175,6 +175,51 @@ export default async function CharityPage({ params }: Props) {
             <p className="text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
               <BidiText locale={locale}>{copy.helpText}</BidiText>
             </p>
+
+            {/* Виджет-«окно браузера»: скриншот главной mdterra.org, весь блок — ссылка на сайт фонда */}
+            <a
+              href={CHARITY_LINKS.site}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group mt-5 block overflow-hidden rounded-2xl bg-white shadow-[0_16px_40px_rgba(15,15,20,0.08)] ring-1 ring-black/[0.08] transition hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(15,15,20,0.14)]"
+            >
+              {/* Шапка «браузера» — всегда LTR, как настоящая адресная строка */}
+              <span className="flex items-center gap-2 border-b border-black/5 bg-[#f6f3ee] px-4 py-2.5" dir="ltr">
+                <span aria-hidden className="flex gap-1.5">
+                  <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+                  <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
+                  <span className="h-3 w-3 rounded-full bg-[#28c840]" />
+                </span>
+                <span className="mx-auto rounded-full bg-white px-3.5 py-1 text-xs font-semibold tracking-wide text-[var(--color-ink-soft)] shadow-sm">
+                  mdterra.org
+                </span>
+                <ArrowUpRight
+                  aria-hidden
+                  className="h-4 w-4 text-[var(--color-ink-soft)] transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                  strokeWidth={2.2}
+                />
+              </span>
+              <span className="block overflow-hidden">
+                <Image
+                  src="/charity/mdterra-site.webp"
+                  alt={copy.siteWidgetAlt}
+                  width={1100}
+                  height={567}
+                  sizes="(max-width: 640px) 90vw, 640px"
+                  className="w-full transition duration-300 group-hover:scale-[1.015]"
+                  loading="lazy"
+                />
+              </span>
+              <span className="flex items-center justify-center gap-1.5 border-t border-black/5 px-4 py-3 text-sm font-bold text-[var(--color-ink)]">
+                <BidiText locale={locale}>{copy.siteWidgetCta}</BidiText>
+                <ArrowUpRight
+                  aria-hidden
+                  className="h-4 w-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 rtl:-scale-x-100 rtl:group-hover:-translate-x-0.5"
+                  strokeWidth={2.4}
+                />
+              </span>
+            </a>
+
             <div className="mt-4 text-center">
               <a
                 href={CHARITY_LINKS.site}
