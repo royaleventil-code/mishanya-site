@@ -6,7 +6,7 @@ import { getDictionary } from "@/lib/dictionaries";
 import type { Locale } from "@/lib/i18n";
 import { getWhatsAppMessages, whatsappLink } from "@/lib/whatsapp";
 
-// На главной мобильная версия показывает StickyCta-полосу внизу — там круглая
+// На главной мобильная версия показывает StickyCta-полосу внизу - там круглая
 // кнопка была бы дублем, поэтому на этих путях она видна только с md (десктоп).
 const HOME_PATHS = new Set(["", "/", "/ru", "/he"]);
 

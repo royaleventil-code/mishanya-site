@@ -167,7 +167,7 @@ export function createAgeProgramsMetadata({
   const child = gender === "boy" ? "мальчика" : "девочки";
   const heChild = gender === "boy" ? "לבן" : "לבת";
 
-  // Description 140–160 знаков с реальными данными возраста: 2–3 названия программ,
+  // Description 140-160 знаков с реальными данными возраста: 2-3 названия программ,
   // минимальная цена и CTA. Перебираем варианты и берем первый, попавший в диапазон.
   const facts = getAgeSeoFacts(locale, gender, age);
   let description =
@@ -196,14 +196,14 @@ export function createAgeProgramsMetadata({
     const tails =
       locale === "he"
         ? [
-            " דמויות, מופעים, תמונות וסרטונים — בחירה מהירה ב־WhatsApp.",
+            " דמויות, מופעים, תמונות וסרטונים - בחירה מהירה ב־WhatsApp.",
             " דמויות, מופעים ובחירה מהירה ב־WhatsApp.",
             " בחירה מהירה ב־WhatsApp.",
           ]
         : [
-            " Ведущий и герои приедут сами — напишите в WhatsApp, подберем за 5 минут.",
-            " Напишите в WhatsApp — подберем программу за 5 минут.",
-            " Пишите в WhatsApp — подберем за 5 минут.",
+            " Ведущий и герои приедут сами - напишите в WhatsApp, подберем за 5 минут.",
+            " Напишите в WhatsApp - подберем программу за 5 минут.",
+            " Пишите в WhatsApp - подберем за 5 минут.",
             " Быстрый подбор в WhatsApp.",
           ];
     const candidates: string[] = [];

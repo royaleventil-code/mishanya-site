@@ -4,7 +4,7 @@ export const dynamic = "force-static";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Мишаня в Стране Чудес — детские праздники в Израиле",
+    name: "Мишаня в Стране Чудес - детские праздники в Израиле",
     short_name: "Мишаня",
     description:
       "Детские праздники и дни рождения в Израиле: аниматоры, шоу-программы, 80+ героев.",

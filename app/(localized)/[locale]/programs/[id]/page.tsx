@@ -38,9 +38,9 @@ const TITLE_DISAMBIGUATION: Record<string, Record<Locale, string>> = {
 function programDescription(locale: Locale, title: string, tagline: string | undefined, durationLabel: string, priceLabel: string): string {
   if (locale === "he") {
     // Короткий вариант шапки: полный «מבית מישניה בארץ הפלאות» давал description >170 зн.
-    return `"${title}" — תוכנית יום הולדת לילדים של מישניה. ${tagline ? `${tagline}. ` : ""}${durationLabel}, ${priceLabel}. דמויות, מופעים והזמנה מהירה ב־WhatsApp.`;
+    return `"${title}" - תוכנית יום הולדת לילדים של מישניה. ${tagline ? `${tagline}. ` : ""}${durationLabel}, ${priceLabel}. דמויות, מופעים והזמנה מהירה ב־WhatsApp.`;
   }
-  return `«${title}» — программа детского праздника от Мишани. ${tagline ? `${tagline}. ` : ""}${durationLabel}, ${priceLabel}. Герои, шоу и быстрый заказ в WhatsApp.`;
+  return `«${title}» - программа детского праздника от Мишани. ${tagline ? `${tagline}. ` : ""}${durationLabel}, ${priceLabel}. Герои, шоу и быстрый заказ в WhatsApp.`;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const titleSuffix = TITLE_DISAMBIGUATION[program.id]?.[locale] ?? "";
   const metadata = createPageMetadata({
     // Короткий title: длинный вариант с полным брендом резался в SERP (67-84 зн.)
-    title: `${program.title}${titleSuffix} — ${locale === "he" ? "תוכנית יום הולדת | מישניה" : "детский праздник | Мишаня"}`,
+    title: `${program.title}${titleSuffix} - ${locale === "he" ? "תוכנית יום הולדת | מישניה" : "детский праздник | Мишаня"}`,
     description: programDescription(locale, program.title, program.tagline, program.durationLabel, priceLabel),
     path: `/${locale}/programs/${program.id}`,
     canonicalPath: `/${locale}/programs/${program.id}`,
@@ -96,7 +96,7 @@ function audienceSet(program: NonNullable<ReturnType<typeof getLocalizedProgramB
   return result;
 }
 
-// Похожие программы: та же аудитория (пересечение множеств «пол-возраст»), ближе по цене — выше
+// Похожие программы: та же аудитория (пересечение множеств «пол-возраст»), ближе по цене - выше
 function relatedPrograms(locale: Locale, current: NonNullable<ReturnType<typeof getLocalizedProgramById>>) {
   const currentAudience = audienceSet(current);
   return getLocalizedPrograms(locale)
@@ -206,7 +206,7 @@ export default async function LocalizedProgramPage({ params }: Props) {
       />
       <PublicHeader
         locale={locale}
-        // страховка: у непереведённой программы нет HE-зеркала — переключатель ведёт в HE-каталог
+        // страховка: у непереведённой программы нет HE-зеркала - переключатель ведёт в HE-каталог
         langHrefOverrides={hasProgramCopy("he", id) ? undefined : { he: "/he/all" }}
       />
 

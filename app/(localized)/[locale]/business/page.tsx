@@ -77,7 +77,7 @@ export default async function BusinessPage({ params }: Props) {
   const { locale: localeParam } = await params;
   const locale: Locale = isLocale(localeParam) ? localeParam : "ru";
   const copy = BUSINESS_COPY[locale];
-  // Иврит ещё не прошёл контент-пайплайн — страница есть только на русском
+  // Иврит ещё не прошёл контент-пайплайн - страница есть только на русском
   if (!copy.h1) notFound();
 
   const dict = getDictionary(locale);

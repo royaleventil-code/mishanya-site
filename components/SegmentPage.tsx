@@ -98,7 +98,7 @@ export function SegmentPage({ locale = "ru", segment, title, emojiOverride, audi
   );
 }
 
-// Тихий индекс текстовых ссылок на страницы программ — внутренняя перелинковка для поисковиков.
+// Тихий индекс текстовых ссылок на страницы программ - внутренняя перелинковка для поисковиков.
 // Видимое поведение каталога (карточки-модалки) не трогаем.
 function ProgramLinksIndex({ locale, programs }: { locale: Locale; programs: Program[] }) {
   const dict = getDictionary(locale);

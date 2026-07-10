@@ -52,14 +52,14 @@ export function createRootMetadata(locale: Locale): Metadata {
 
   return {
     metadataBase: new URL(SITE_URL),
-    title: `${dict.brand.name} — ${locale === "he" ? "הפעלות וימי הולדת לילדים בישראל" : "аниматоры и детские праздники в Израиле"}`,
+    title: `${dict.brand.name} - ${locale === "he" ? "הפעלות וימי הולדת לילדים בישראל" : "аниматоры и детские праздники в Израиле"}`,
     description: dict.brand.siteDescription,
     applicationName: dict.brand.name,
     openGraph: {
       type: "website",
       locale: localeConfig.ogLocale,
       siteName: dict.brand.name,
-      title: `${dict.brand.name} — ${locale === "he" ? "הפעלות וימי הולדת לילדים בישראל" : "аниматоры и детские праздники в Израиле"}`,
+      title: `${dict.brand.name} - ${locale === "he" ? "הפעלות וימי הולדת לילדים בישראל" : "аниматоры и детские праздники в Израиле"}`,
       description: dict.brand.siteDescription,
       images: [
         {
@@ -121,7 +121,7 @@ function rootJsonLd(locale: Locale) {
       image: siteUrl(HOME_WHATSAPP_PREVIEW_IMAGE),
       telephone: "+972546163260",
       email: "royal.eventil@gmail.com",
-      priceRange: "₪1500–₪3000",
+      priceRange: "₪1500-₪3000",
       foundingDate: "2015",
       availableLanguage: ["Russian", "Hebrew"],
       hasMap: "https://www.google.com/maps/place/?q=place_id:ChIJcVYXCzq3HRURZpNp45P8WLY",

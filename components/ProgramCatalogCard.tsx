@@ -9,7 +9,7 @@ import { SEGMENTS } from "@/lib/segments";
 
 /**
  * Обложка для статичного контекста (нет пола/возраста): первое правило
- * audienceCovers без ограничений по аудитории (segment "all" или пустое) —
+ * audienceCovers без ограничений по аудитории (segment "all" или пустое) - 
  * та же семантика, что getProgramCover(program, "all", undefined) в каталоге.
  */
 function staticProgramCover(program: Program): string | undefined {
@@ -26,7 +26,7 @@ function staticProgramCover(program: Program): string | undefined {
 
 /**
  * Карточка программы 1:1 как в основном каталоге (ProgramsSection.ProgramCard),
- * но статичная ссылка на /{locale}/programs/{id} вместо модалки — для
+ * но статичная ссылка на /{locale}/programs/{id} вместо модалки - для
  * SSG-страниц городов, площадок, сезонов и «похожих программ».
  */
 export function ProgramCatalogCard({

@@ -78,7 +78,7 @@ export default async function MunicipalitiesPage({ params }: Props) {
   const { locale: localeParam } = await params;
   const locale: Locale = isLocale(localeParam) ? localeParam : "ru";
   const copy = MUNICIPALITIES_COPY[locale];
-  // Иврит ещё не прошёл контент-пайплайн — страница есть только на русском
+  // Иврит ещё не прошёл контент-пайплайн - страница есть только на русском
   if (!copy.h1) notFound();
 
   const dict = getDictionary(locale);
@@ -269,7 +269,7 @@ export default async function MunicipalitiesPage({ params }: Props) {
             </ul>
           </section>
 
-          {/* CTA: WhatsApp + email — мэрии любят почту */}
+          {/* CTA: WhatsApp + email - мэрии любят почту */}
           <div className="mt-8 text-center">
             <p className="mx-auto max-w-md text-sm text-[var(--color-ink-soft)]">
               <BidiText locale={locale}>{copy.ctaTitle}</BidiText>

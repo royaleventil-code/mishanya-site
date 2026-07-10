@@ -90,7 +90,7 @@ export default async function ShowsPage({ params }: Props) {
   const { locale: localeParam } = await params;
   const locale: Locale = isLocale(localeParam) ? localeParam : "ru";
   const copy = SHOWS_PAGE_COPY[locale];
-  // Иврит ещё не прошёл контент-пайплайн — страница есть только на русском
+  // Иврит ещё не прошёл контент-пайплайн - страница есть только на русском
   if (!copy.h1) notFound();
 
   const dict = getDictionary(locale);

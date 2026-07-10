@@ -75,8 +75,8 @@ export const HEROES: Hero[] = [
   { id: "minion", name: "Миньон", kind: "mascot", segments: ["all", "boy", "girl"], languages: ["ru", "he"], hiddenFor: [{ gender: "boy", minAge: 6 }, { gender: "girl", minAge: 7 }] },
   { id: "masha-bear-inflatable", name: "Мишка надувной (Маша и Медведь)", kind: "mascot", segments: ["all", "boy", "girl"], languages: ["ru", "he"], hiddenFor: [{ gender: "boy", minAge: 4 }, { gender: "girl", minAge: 7 }] },
   { id: "ninjago", name: "Ниндзяго", kind: "mascot", segments: ["all", "boy"], languages: ["ru", "he"], hiddenFor: [{ gender: "boy", maxAge: 3 }] },
-  { id: "nu-pogodi-wolf", name: "Ну погоди — Волк", kind: "mascot", segments: [], languages: [] },
-  { id: "nu-pogodi-hare", name: "Ну погоди — Заяц", kind: "mascot", segments: [], languages: [] },
+  { id: "nu-pogodi-wolf", name: "Ну погоди - Волк", kind: "mascot", segments: [], languages: [] },
+  { id: "nu-pogodi-hare", name: "Ну погоди - Заяц", kind: "mascot", segments: [], languages: [] },
   { id: "nu-pogodi-wolf-hare", name: "Ну, погоди! Волк и Заяц", kind: "mascot", segments: ["all", "boy", "girl"], languages: ["ru", "he"], hiddenFor: [{ gender: "boy", minAge: 4 }, { gender: "girl", minAge: 4 }] },
   { id: "olaf", name: "Олаф снеговик", kind: "mascot", segments: ["all", "boy", "girl"], languages: ["ru", "he"], hiddenFor: [{ gender: "boy" }] },
   { id: "pikachu-mascot", name: "Пикачу", kind: "mascot", segments: ["all", "boy", "girl"], languages: ["ru", "he"], hiddenFor: [{ gender: "boy", maxAge: 5 }, { gender: "girl", maxAge: 6 }] },
@@ -90,7 +90,7 @@ export const HEROES: Hero[] = [
 ];
 
 // Возвращает путь к картинке героя, если она положена в /public/heroes/.
-// Если файла нет — возвращает null и карточка отрисует emoji.
+// Если файла нет - возвращает null и карточка отрисует emoji.
 export function getHeroImage(id: string): string | null {
   const map: Record<string, string> = {
     spiderman: "/heroes/spiderman.png",

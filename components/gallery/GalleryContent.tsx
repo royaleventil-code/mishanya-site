@@ -196,7 +196,7 @@ export default function GalleryContent({ locale = "ru" }: { locale?: Locale }) {
         </div>
       </section>
 
-      {/* Reviews — real screenshots in a horizontal scroll row */}
+      {/* Reviews - real screenshots in a horizontal scroll row */}
       <section id="reviews" className="bg-white px-5 py-14 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-6xl">
           <p className="text-sm font-bold uppercase tracking-wide text-[var(--color-all-seg)]">
@@ -234,7 +234,7 @@ export default function GalleryContent({ locale = "ru" }: { locale?: Locale }) {
         </div>
       </section>
 
-      {/* Video — real YouTube hotspots */}
+      {/* Video - real YouTube hotspots */}
       <section className="px-5 py-14 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-6xl">
           <p className="text-sm font-bold uppercase tracking-wide text-[var(--color-girl)]">

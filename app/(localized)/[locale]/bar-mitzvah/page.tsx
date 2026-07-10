@@ -76,7 +76,7 @@ export default async function BarMitzvahPage({ params }: Props) {
   const { locale: localeParam } = await params;
   const locale: Locale = isLocale(localeParam) ? localeParam : "ru";
   const copy = BAR_MITZVAH_COPY[locale];
-  // Иврит ещё не прошёл контент-пайплайн — страница есть только на русском
+  // Иврит ещё не прошёл контент-пайплайн - страница есть только на русском
   if (!copy.h1) notFound();
 
   const dict = getDictionary(locale);
@@ -126,7 +126,7 @@ export default async function BarMitzvahPage({ params }: Props) {
             ))}
           </div>
 
-          {/* Торжественный вход — фирменная фишка (HE-гейт: блок скрыт, пока нет перевода) */}
+          {/* Торжественный вход - фирменная фишка (HE-гейт: блок скрыт, пока нет перевода) */}
           {copy.entranceTitle && (
             <section className="mt-8">
               <h2 className="mb-2 text-base font-semibold">

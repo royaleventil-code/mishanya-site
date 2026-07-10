@@ -16,8 +16,8 @@ export async function generateMetadata({
   return createPageMetadata({
     title:
       locale === "he"
-        ? `${dict.brand.name} — הפעלות וימי הולדת לילדים בישראל`
-        : `${SITE_NAME} — аниматоры и детские праздники в Израиле`,
+        ? `${dict.brand.name} - הפעלות וימי הולדת לילדים בישראל`
+        : `${SITE_NAME} - аниматоры и детские праздники в Израиле`,
     description: dict.brand.siteDescription,
     path: `/${locale}`,
     canonicalPath: `/${locale}`,

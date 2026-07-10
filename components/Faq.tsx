@@ -7,7 +7,7 @@ import { BidiText } from "@/components/BidiText";
 import { getDictionary } from "@/lib/dictionaries";
 import type { Locale } from "@/lib/i18n";
 
-// jsonLd=false — когда на странице уже есть свой FAQPage (у Google допустим только один на страницу)
+// jsonLd=false - когда на странице уже есть свой FAQPage (у Google допустим только один на страницу)
 export function Faq({ locale = "ru", jsonLd = true }: { locale?: Locale; jsonLd?: boolean }) {
   const [open, setOpen] = useState<number | null>(null);
   const reduce = useReducedMotion();
@@ -31,7 +31,7 @@ export function Faq({ locale = "ru", jsonLd = true }: { locale?: Locale; jsonLd?
       {jsonLd && (
         <script
           type="application/ld+json"
-          // экранируем «<» как на остальных страницах — текст не должен разорвать inline-скрипт
+          // экранируем «<» как на остальных страницах - текст не должен разорвать inline-скрипт
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd).replace(/</g, "\\u003c") }}
         />
       )}

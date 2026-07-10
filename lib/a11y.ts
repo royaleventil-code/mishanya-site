@@ -69,7 +69,7 @@ function persist(next: A11yState) {
       window.localStorage.setItem(A11Y_STORAGE_KEY, JSON.stringify(next));
     }
   } catch {
-    // localStorage может быть недоступен (private mode) — режимы работают в рамках сессии
+    // localStorage может быть недоступен (private mode) - режимы работают в рамках сессии
   }
 }
 

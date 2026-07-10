@@ -4,12 +4,12 @@ import { useState } from "react";
 
 type LiteYouTubeProps = {
   videoId: string;
-  /** Название видео — для aria-label кнопки и alt превью */
+  /** Название видео - для aria-label кнопки и alt превью */
   title: string;
 };
 
 /**
- * Лёгкий фасад YouTube: при загрузке страницы — только превью-картинка
+ * Лёгкий фасад YouTube: при загрузке страницы - только превью-картинка
  * с i.ytimg.com (без внешних скриптов), iframe с youtube-nocookie
  * подгружается только после клика по кнопке play.
  */

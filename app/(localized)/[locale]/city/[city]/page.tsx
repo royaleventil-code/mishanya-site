@@ -171,7 +171,7 @@ export default async function CityPage({ params }: Props) {
             ))}
           </div>
 
-          {/* Мы уже праздновали здесь — реальные события из архива */}
+          {/* Мы уже праздновали здесь - реальные события из архива */}
           {proof && (
             <section className="mt-8">
               <h2 className="mb-2 text-base font-semibold">{dict.city.proofTitle}</h2>

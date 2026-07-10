@@ -63,7 +63,7 @@ export default async function CharityPage({ params }: Props) {
   const { locale: localeParam } = await params;
   const locale: Locale = isLocale(localeParam) ? localeParam : "ru";
   const copy = CHARITY_PAGE_COPY[locale];
-  // Иврит ещё не прошёл контент-пайплайн — страница есть только на русском
+  // Иврит ещё не прошёл контент-пайплайн - страница есть только на русском
   if (!copy.h1) notFound();
 
   const dict = getDictionary(locale);
@@ -167,7 +167,7 @@ export default async function CharityPage({ params }: Props) {
             </div>
           </section>
 
-          {/* Благодарность фонда — 3D-рендер реальной грамоты (текст 1:1 с оригиналом от 27.07.2023) */}
+          {/* Благодарность фонда - 3D-рендер реальной грамоты (текст 1:1 с оригиналом от 27.07.2023) */}
           <section className="mt-8">
             <h2 className="mb-3 text-base font-semibold">
               <BidiText locale={locale}>{copy.gratitudeTitle}</BidiText>
@@ -204,14 +204,14 @@ export default async function CharityPage({ params }: Props) {
               <BidiText locale={locale}>{copy.helpText}</BidiText>
             </p>
 
-            {/* Виджет-«окно браузера»: скриншот главной mdterra.org, весь блок — ссылка на сайт фонда */}
+            {/* Виджет-«окно браузера»: скриншот главной mdterra.org, весь блок - ссылка на сайт фонда */}
             <a
               href={CHARITY_LINKS.site}
               target="_blank"
               rel="noopener noreferrer"
               className="group mt-5 block overflow-hidden rounded-2xl bg-white shadow-[0_16px_40px_rgba(15,15,20,0.08)] ring-1 ring-black/[0.08] transition hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(15,15,20,0.14)]"
             >
-              {/* Шапка «браузера» — всегда LTR, как настоящая адресная строка */}
+              {/* Шапка «браузера» - всегда LTR, как настоящая адресная строка */}
               <span className="flex items-center gap-2 border-b border-black/5 bg-[#f6f3ee] px-4 py-2.5" dir="ltr">
                 <span aria-hidden className="flex gap-1.5">
                   <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />

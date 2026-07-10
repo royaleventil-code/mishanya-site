@@ -9,7 +9,7 @@ export default function NotFound() {
     {/* React 19 поднимает <title> в <head>; у 404 не было title вовсе */}
     <title>Страница не найдена (404) | Мишаня в Стране Чудес</title>
     <main id="main" className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
-      {/* путь 404 не существует — переключатель языка ведёт на главные */}
+      {/* путь 404 не существует - переключатель языка ведёт на главные */}
       <PublicHeader langHrefOverrides={{ ru: "/ru", he: "/he" }} />
       <section className="px-5 py-20 sm:px-6 sm:py-28">
         <div className="mx-auto max-w-3xl text-center">

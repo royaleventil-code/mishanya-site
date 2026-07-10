@@ -48,7 +48,7 @@ const PROGRAM_MOODS: Record<string, ProgramMoodConfig> = {
     tint: "rgba(168, 85, 247, 0.28)",
     glow: "rgba(34, 211, 238, 0.32)",
     accent: "#a855f7",
-    marks: ["—", "✦", "—"],
+    marks: [" - ", "✦", " - "],
   },
   "harry-potter": {
     tint: "rgba(245, 158, 11, 0.24)",
@@ -1027,7 +1027,7 @@ function ProgramModal({
             </div>
           </div>
 
-          {/* Includes — iOS list style */}
+          {/* Includes - iOS list style */}
           <div className="mt-7">
             <h3 className="text-base font-semibold mb-3 px-1">{dict.catalog.labels.includes}</h3>
             {program.includesHighlight && (
@@ -1213,7 +1213,7 @@ function ProgramModal({
         </AnimatePresence>
       </motion.div>
 
-      {/* Sticky drag handle — always visible at top, swipe down to close */}
+      {/* Sticky drag handle - always visible at top, swipe down to close */}
       <div
         data-close-drag-handle
         role="button"
@@ -1247,7 +1247,7 @@ function ProgramModal({
         <X className="w-5 h-5" />
       </button>
 
-      {/* Floating navigation arrows — vertically centered on cover area, stay visible on scroll */}
+      {/* Floating navigation arrows - vertically centered on cover area, stay visible on scroll */}
       {total > 1 && (
         <div className="pointer-events-none fixed left-0 right-0 z-[60] flex items-center justify-between px-2 sm:px-5 top-[120px] sm:top-1/2 sm:-translate-y-1/2">
           <button

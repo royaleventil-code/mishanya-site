@@ -3,7 +3,7 @@ import { SITE_URL, siteUrl } from "@/lib/seo";
 
 export const dynamic = "force-static";
 
-// AI-краулеры (поиск и ассистенты) — явно разрешены для видимости в ChatGPT/Claude/Perplexity и т.д.
+// AI-краулеры (поиск и ассистенты) - явно разрешены для видимости в ChatGPT/Claude/Perplexity и т.д.
 const AI_BOTS = [
   "GPTBot",
   "OAI-SearchBot",

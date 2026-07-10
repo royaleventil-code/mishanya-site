@@ -119,7 +119,7 @@ export function SiteFooter({ locale = "ru" }: { locale?: Locale }) {
         </div>
       </div>
 
-      {/* Праздник по возрасту — перелинковка возрастных страниц */}
+      {/* Праздник по возрасту - перелинковка возрастных страниц */}
       <div className="mx-auto mt-8 max-w-6xl border-t border-white/10 pt-6 text-sm">
         <div className="font-black text-white/90">{dict.common.byAgeTitle}</div>
         {/* Грид с колонкой лейблов: цифры обеих строк начинаются на одной вертикали */}
@@ -151,7 +151,7 @@ export function SiteFooter({ locale = "ru" }: { locale?: Locale }) {
         </div>
       </div>
 
-      {/* Города — перелинковка городских страниц */}
+      {/* Города - перелинковка городских страниц */}
       <div className="mx-auto mt-6 max-w-6xl border-t border-white/10 pt-6 text-sm">
         <div className="font-black text-white/90">{dict.common.citiesTitle}</div>
         <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-white/60">
@@ -167,7 +167,7 @@ export function SiteFooter({ locale = "ru" }: { locale?: Locale }) {
         </div>
       </div>
 
-      {/* Площадки и сезоны — перелинковка новых SEO-страниц (гейт по наличию перевода) */}
+      {/* Площадки и сезоны - перелинковка новых SEO-страниц (гейт по наличию перевода) */}
       {(VENUES.some((v) => v.copy[locale].name) || HOLIDAYS.some((h) => h.copy[locale].name)) && (
         <div className="mx-auto mt-6 max-w-6xl border-t border-white/10 pt-6 text-sm">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-white/60">
@@ -193,7 +193,7 @@ export function SiteFooter({ locale = "ru" }: { locale?: Locale }) {
         </div>
       )}
 
-      {/* Бизнесу и событиям — гейт на каждую ссылку отдельно (нет copy → нет ссылки) */}
+      {/* Бизнесу и событиям - гейт на каждую ссылку отдельно (нет copy → нет ссылки) */}
       {(() => {
         const b2bLinks = [
           { href: "/municipalities", label: MUNICIPALITIES_COPY[locale].breadcrumb },

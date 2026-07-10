@@ -143,7 +143,7 @@ export default function AboutContent({ locale = "ru" }: { locale?: Locale }) {
         </div>
       </section>
 
-      {/* STATS — clay cards */}
+      {/* STATS - clay cards */}
       <section className="bg-white px-5 py-14 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-6xl">
           <div className="max-w-2xl">

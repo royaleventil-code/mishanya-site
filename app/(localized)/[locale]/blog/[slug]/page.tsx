@@ -354,7 +354,7 @@ export default async function BlogPostPage({ params }: Props) {
             </a>
           </div>
 
-          {/* Программы из статьи — карточки как в каталоге */}
+          {/* Программы из статьи - карточки как в каталоге */}
           {programs.length > 0 && (
             <section className="mt-8">
               <h2 className="mb-3 text-base font-semibold">

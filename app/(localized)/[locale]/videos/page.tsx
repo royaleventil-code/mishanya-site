@@ -62,7 +62,7 @@ function videosJsonLd(locale: Locale) {
       uploadDate: cartoon.uploadDate,
       thumbnailUrl: `https://i.ytimg.com/vi/${cartoon.videoId}/hqdefault.jpg`,
       url: cartoonWatchUrl(cartoon.videoId),
-      // Ролики русскоязычные — честная разметка языка и на he-странице
+      // Ролики русскоязычные - честная разметка языка и на he-странице
       inLanguage: "ru",
     })),
   ];
@@ -72,7 +72,7 @@ export default async function VideosPage({ params }: Props) {
   const { locale: localeParam } = await params;
   const locale: Locale = isLocale(localeParam) ? localeParam : "ru";
   const copy = VIDEOS_PAGE_COPY[locale];
-  // Иврит ещё не прошёл контент-пайплайн — страница есть только на русском
+  // Иврит ещё не прошёл контент-пайплайн - страница есть только на русском
   if (!copy.h1) notFound();
 
   const dict = getDictionary(locale);
@@ -109,7 +109,7 @@ export default async function VideosPage({ params }: Props) {
             <BidiText locale={locale}>{copy.h1}</BidiText>
           </h1>
 
-          {/* Главный соц-капитал — цифры канала мультиков; he-пусто → скрыто до перевода */}
+          {/* Главный соц-капитал - цифры канала мультиков; he-пусто → скрыто до перевода */}
           {copy.heroStats && (
             <p className="mt-3 text-xl font-black tracking-tight sm:text-2xl">
               <BidiText locale={locale}>{copy.heroStats}</BidiText>
@@ -124,7 +124,7 @@ export default async function VideosPage({ params }: Props) {
             ))}
           </div>
 
-          {/* ТОП-21 мультиков: эмбед у канала запрещён (playableInEmbed:false) —
+          {/* ТОП-21 мультиков: эмбед у канала запрещён (playableInEmbed:false) - 
               вся карточка = внешняя ссылка на youtube.com/watch, БЕЗ iframe */}
           <section className="mt-8">
             {copy.cartoonsTitle && (
@@ -241,7 +241,7 @@ export default async function VideosPage({ params }: Props) {
               >
                 <BidiText locale={locale}>{copy.seeAlsoShows}</BidiText>
               </Link>
-              {/* Секция роликов @RoyalEvent убрана 10.07.2026 — канал остаётся текстовой ссылкой */}
+              {/* Секция роликов @RoyalEvent убрана 10.07.2026 - канал остаётся текстовой ссылкой */}
               <a
                 href={YOUTUBE_CHANNEL_URL}
                 target="_blank"
