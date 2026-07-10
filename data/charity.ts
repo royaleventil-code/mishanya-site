@@ -36,6 +36,10 @@ export type CharityPageCopy = {
   /** Виджет-«окно браузера» со скриншотом главной mdterra.org (клик → сайт фонда) */
   siteWidgetAlt: string;
   siteWidgetCta: string;
+  /** Благодарность фонда (3D-рендер реальной грамоты от 27.07.2023, текст 1:1 с оригиналом) */
+  gratitudeTitle: string;
+  gratitudeAlt: string;
+  gratitudeCaption: string;
 };
 
 export const CHARITY_PAGE_COPY: Record<Locale, CharityPageCopy> = {
@@ -81,6 +85,11 @@ export const CHARITY_PAGE_COPY: Record<Locale, CharityPageCopy> = {
     socialLabel: "Фонд в соцсетях:",
     siteWidgetAlt: "Главная страница сайта фонда «Страна чудесных снов» — mdterra.org",
     siteWidgetCta: "Открыть сайт фонда",
+    gratitudeTitle: "Благодарность фонда",
+    gratitudeAlt:
+      "Благодарность фонда «Страна чудесных снов» (MD Terra) — «Стране чудес» и лично Михаилу Царфину за постоянное участие и помощь, 27.07.2023",
+    gratitudeCaption:
+      "Благодарность от фонда — «Стране чудес» и лично Михаилу Царфину, 27 июля 2023",
   },
   he: {
     breadcrumb: "צדקה",
@@ -124,5 +133,9 @@ export const CHARITY_PAGE_COPY: Record<Locale, CharityPageCopy> = {
     socialLabel: "הקרן ברשתות החברתיות:",
     siteWidgetAlt: "עמוד הבית של אתר הקרן mdterra.org",
     siteWidgetCta: "לאתר הקרן",
+    gratitudeTitle: "תעודת הוקרה מהקרן",
+    gratitudeAlt:
+      "תעודת הוקרה מקרן \"ארץ החלומות הקסומים\" (MD Terra) ל\"ארץ הפלאות\" ולמיכאל צרפין אישית, 27.07.2023",
+    gratitudeCaption: "ל\"ארץ הפלאות\" ולמיכאל צרפין אישית, 27 ביולי 2023",
   },
 };

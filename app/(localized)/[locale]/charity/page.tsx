@@ -167,6 +167,34 @@ export default async function CharityPage({ params }: Props) {
             </div>
           </section>
 
+          {/* Благодарность фонда — 3D-рендер реальной грамоты (текст 1:1 с оригиналом от 27.07.2023) */}
+          <section className="mt-8">
+            <h2 className="mb-3 text-base font-semibold">
+              <BidiText locale={locale}>{copy.gratitudeTitle}</BidiText>
+            </h2>
+            <figure
+              className="overflow-hidden rounded-2xl p-3 sm:p-4"
+              style={{
+                background:
+                  "linear-gradient(160deg, rgba(255,240,244,0.9), rgba(244,242,238,0.75) 55%, rgba(255,255,255,0.9))",
+                border: "1px solid rgba(0,0,0,0.06)",
+              }}
+            >
+              <Image
+                src="/charity/mdterra-gratitude.webp"
+                alt={copy.gratitudeAlt}
+                width={1200}
+                height={800}
+                sizes="(max-width: 640px) 90vw, 640px"
+                className="w-full rounded-xl shadow-[0_20px_50px_rgba(15,15,20,0.18)] transition duration-300 hover:scale-[1.01]"
+                loading="lazy"
+              />
+              <figcaption className="mt-3 text-center text-sm text-[var(--color-muted)]">
+                <BidiText locale={locale}>{copy.gratitudeCaption}</BidiText>
+              </figcaption>
+            </figure>
+          </section>
+
           {/* Как помочь */}
           <section className="mt-8">
             <h2 className="mb-2 text-base font-semibold">
