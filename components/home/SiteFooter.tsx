@@ -35,23 +35,28 @@ export function SiteFooter({ locale = "ru" }: { locale?: Locale }) {
           </p>
         </div>
 
-        <div className="flex flex-col items-start gap-2 text-start text-sm">
-          <div className="font-black text-white/90">{dict.common.contacts}</div>
-          <a
-            href={whatsappLink(waMessages.default)}
-            target="_blank"
-            rel="noreferrer"
-            className="text-white/70 transition hover:text-white"
-          >
-            <BidiText locale={locale}>{dict.common.whatsapp}</BidiText> <span dir="ltr">{WA_DISPLAY}</span>
-          </a>
-          <a href="mailto:royal.eventil@gmail.com" className="text-white/70 transition hover:text-white">
-            royal.eventil@gmail.com
-          </a>
+        {/* Шапка колонки = высота логотипа (h-16): заголовок на линии лого,
+            ссылки после mt-3 начинаются на уровне текста-описания бренда */}
+        <div className="text-start text-sm">
+          <div className="font-black text-white/90 md:flex md:h-16 md:items-center">{dict.common.contacts}</div>
+          <div className="mt-2 flex flex-col items-start gap-2 md:mt-3">
+            <a
+              href={whatsappLink(waMessages.default)}
+              target="_blank"
+              rel="noreferrer"
+              className="text-white/70 transition hover:text-white"
+            >
+              <BidiText locale={locale}>{dict.common.whatsapp}</BidiText> <span dir="ltr">{WA_DISPLAY}</span>
+            </a>
+            <a href="mailto:royal.eventil@gmail.com" className="text-white/70 transition hover:text-white">
+              royal.eventil@gmail.com
+            </a>
+          </div>
         </div>
 
-        <div className="flex flex-col items-start gap-2 text-start text-sm">
-          <div className="font-black text-white/90">{dict.common.social}</div>
+        <div className="text-start text-sm">
+          <div className="font-black text-white/90 md:flex md:h-16 md:items-center">{dict.common.social}</div>
+          <div className="mt-2 flex flex-col items-start gap-2 md:mt-3">
           <a
             href="https://www.instagram.com/show.mishanya/"
             target="_blank"
@@ -76,34 +81,37 @@ export function SiteFooter({ locale = "ru" }: { locale?: Locale }) {
           >
             YouTube
           </a>
+          </div>
         </div>
 
-        <div className="flex flex-col items-start gap-2 text-start text-sm">
-          <div className="font-black text-white/90">{dict.common.site}</div>
-          <Link href={localePath(locale, "/all")} className="text-white/70 transition hover:text-white">
-            {dict.common.programs}
-          </Link>
-          <Link href={localePath(locale, "/formats")} className="text-white/70 transition hover:text-white">
-            {dict.common.formats}
-          </Link>
-          <Link href={localePath(locale, "/gallery")} className="text-white/70 transition hover:text-white">
-            {dict.common.gallery}
-          </Link>
-          <Link href={localePath(locale, "/faq")} className="text-white/70 transition hover:text-white">
-            {dict.common.faqShort}
-          </Link>
-          <Link href={localePath(locale, "/about")} className="text-white/70 transition hover:text-white">
-            {dict.common.about}
-          </Link>
-          <Link href={localePath(locale, "/contacts")} className="text-white/70 transition hover:text-white">
-            {dict.common.contacts}
-          </Link>
-          <Link
-            href={localePath(locale, "/accessibility")}
-            className="text-white/70 transition hover:text-white"
-          >
-            {dict.a11y.statementLink}
-          </Link>
+        <div className="text-start text-sm">
+          <div className="font-black text-white/90 md:flex md:h-16 md:items-center">{dict.common.site}</div>
+          <div className="mt-2 flex flex-col items-start gap-2 md:mt-3">
+            <Link href={localePath(locale, "/all")} className="text-white/70 transition hover:text-white">
+              {dict.common.programs}
+            </Link>
+            <Link href={localePath(locale, "/formats")} className="text-white/70 transition hover:text-white">
+              {dict.common.formats}
+            </Link>
+            <Link href={localePath(locale, "/gallery")} className="text-white/70 transition hover:text-white">
+              {dict.common.gallery}
+            </Link>
+            <Link href={localePath(locale, "/faq")} className="text-white/70 transition hover:text-white">
+              {dict.common.faqShort}
+            </Link>
+            <Link href={localePath(locale, "/about")} className="text-white/70 transition hover:text-white">
+              {dict.common.about}
+            </Link>
+            <Link href={localePath(locale, "/contacts")} className="text-white/70 transition hover:text-white">
+              {dict.common.contacts}
+            </Link>
+            <Link
+              href={localePath(locale, "/accessibility")}
+              className="text-white/70 transition hover:text-white"
+            >
+              {dict.a11y.statementLink}
+            </Link>
+          </div>
         </div>
       </div>
 
