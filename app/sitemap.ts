@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { BAR_MITZVAH_COPY } from "@/data/bar-mitzvah";
+import { BLOG_POSTS, hasBlogCopy } from "@/data/blog";
 import { MUNICIPALITIES_COPY, BUSINESS_COPY } from "@/data/b2b";
 import { CHARITY_PAGE_COPY } from "@/data/charity";
 import { CITIES, hasCityCopy } from "@/data/cities";
@@ -18,6 +19,7 @@ const staticRoutes: { path: string; priority: number }[] = [
   { path: "/", priority: 1 },
   { path: "/all", priority: 0.95 },
   { path: "/faq", priority: 0.8 },
+  { path: "/blog", priority: 0.8 },
   { path: "/about", priority: 0.7 },
   { path: "/formats", priority: 0.7 },
   { path: "/gallery", priority: 0.65 },
@@ -160,6 +162,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
       })),
   );
 
+  // Статьи блога: строятся только локали с готовой копией (иврит после QA)
+  const blogEntries = LOCALES.flatMap((locale) =>
+    BLOG_POSTS.filter((post) => hasBlogCopy(locale, post.slug)).map((post) => {
+      const path = `/blog/${post.slug}`;
+      return {
+        url: localizedUrl(locale, path),
+        lastModified,
+        changeFrequency: "weekly" as const,
+        priority: 0.8,
+        alternates: gatedAlternates(path, hasBlogCopy("he", post.slug)),
+      };
+    }),
+  );
+
   return [
     ...baseEntries,
     ...programEntries,
@@ -167,5 +183,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...venueEntries,
     ...holidayEntries,
     ...singleEntries,
+    ...blogEntries,
   ];
 }

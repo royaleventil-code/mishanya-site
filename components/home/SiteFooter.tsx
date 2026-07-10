@@ -8,6 +8,7 @@ import { SHOWS_PAGE_COPY } from "@/data/shows";
 import { VIDEOS_PAGE_COPY } from "@/data/videos";
 import { CHARITY_PAGE_COPY } from "@/data/charity";
 import { BAR_MITZVAH_COPY } from "@/data/bar-mitzvah";
+import { BLOG_UI } from "@/data/blog";
 import { BidiText } from "@/components/BidiText";
 import { getDictionary } from "@/lib/dictionaries";
 import { localePath, type Locale } from "@/lib/i18n";
@@ -98,6 +99,9 @@ export function SiteFooter({ locale = "ru" }: { locale?: Locale }) {
             </Link>
             <Link href={localePath(locale, "/faq")} className="text-white/70 transition hover:text-white">
               {dict.common.faqShort}
+            </Link>
+            <Link href={localePath(locale, "/blog")} className="text-white/70 transition hover:text-white">
+              {BLOG_UI[locale].navLabel}
             </Link>
             <Link href={localePath(locale, "/about")} className="text-white/70 transition hover:text-white">
               {dict.common.about}
