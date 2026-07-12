@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Script from "next/script";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   BadgePercent,
@@ -47,6 +46,7 @@ type GiftPayload = {
   children: GiftPayloadChild[];
   primaryChildIndex: number;
   turnstileToken?: string;
+  website?: string;
 };
 
 type GiftSubmitResponse = {
@@ -486,6 +486,7 @@ export function GiftPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [turnstileReady, setTurnstileReady] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
+  const [website, setWebsite] = useState("");
   const pageTrackedRef = useRef(false);
   const formStartedRef = useRef(false);
   const formRef = useRef<HTMLDivElement>(null);
@@ -530,6 +531,37 @@ export function GiftPage() {
   }, [language, pageContextReady, sourceCode]);
 
   useEffect(() => {
+    if (!TURNSTILE_SITE_KEY) return;
+
+    const markReady = () => {
+      if (window.turnstile) setTurnstileReady(true);
+    };
+    if (window.turnstile) {
+      markReady();
+      return;
+    }
+
+    const existingScript = document.querySelector<HTMLScriptElement>(
+      'script[src*="challenges.cloudflare.com/turnstile/v0/api.js"]',
+    );
+    const script = existingScript ?? document.createElement("script");
+    script.addEventListener("load", markReady);
+    script.addEventListener("error", () => setTurnstileReady(false));
+    if (!existingScript) {
+      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+
+    const fallbackCheck = window.setTimeout(markReady, 4000);
+    return () => {
+      window.clearTimeout(fallbackCheck);
+      script.removeEventListener("load", markReady);
+    };
+  }, []);
+
+  useEffect(() => {
     if (
       !TURNSTILE_SITE_KEY ||
       !turnstileReady ||
@@ -539,15 +571,19 @@ export function GiftPage() {
     ) {
       return;
     }
-    turnstileWidgetRef.current = window.turnstile.render(turnstileContainerRef.current, {
-      sitekey: TURNSTILE_SITE_KEY,
-      theme: "light",
-      language,
-      action: "gift_form",
-      callback: (token) => setTurnstileToken(token),
-      "expired-callback": () => setTurnstileToken(""),
-      "error-callback": () => setTurnstileToken(""),
-    });
+    try {
+      turnstileWidgetRef.current = window.turnstile.render(turnstileContainerRef.current, {
+        sitekey: TURNSTILE_SITE_KEY,
+        theme: "light",
+        language,
+        action: "gift_form",
+        callback: (token) => setTurnstileToken(token),
+        "expired-callback": () => setTurnstileToken(""),
+        "error-callback": () => setTurnstileToken(""),
+      });
+    } catch {
+      window.requestAnimationFrame(() => setTurnstileReady(false));
+    }
   }, [language, turnstileReady]);
 
   const formChildren = useMemo(
@@ -627,12 +663,6 @@ export function GiftPage() {
       setErrorMessage(copy.invalidBirthday);
       return;
     }
-    if (TURNSTILE_SITE_KEY && !turnstileToken) {
-      setSubmitState("error");
-      setErrorMessage(copy.verificationPending);
-      return;
-    }
-
     const primaryChildIndex = children.reduce(
       (nearestIndex, child, index, list) =>
         child.nextBirthday < list[nearestIndex].nextBirthday ? index : nearestIndex,
@@ -648,6 +678,7 @@ export function GiftPage() {
       children,
       primaryChildIndex,
       turnstileToken: turnstileToken || undefined,
+      website,
     };
 
     try {
@@ -704,14 +735,6 @@ export function GiftPage() {
       </div>
 
       <div className="relative mx-auto max-w-3xl">
-        {TURNSTILE_SITE_KEY ? (
-          <Script
-            id="gift-turnstile"
-            src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
-            strategy="afterInteractive"
-            onReady={() => setTurnstileReady(true)}
-          />
-        ) : null}
         <header className="flex items-center justify-between gap-4">
           <Image
             src={language === "he" ? "/logo-he.png" : "/logo-ru.png"}
@@ -842,6 +865,18 @@ export function GiftPage() {
                   onFocusCapture={markFormStarted}
                   className="mt-5 rounded-[28px] bg-white p-5 shadow-[var(--shadow-card)] ring-1 ring-black/[0.04] sm:mt-6 sm:p-8"
                 >
+                  <div className="absolute -start-[10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+                    <label htmlFor="gift-website">Website</label>
+                    <input
+                      id="gift-website"
+                      name="website"
+                      type="text"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={website}
+                      onChange={(event) => setWebsite(event.target.value)}
+                    />
+                  </div>
                   <div className="flex items-end justify-between gap-4">
                     <div>
                       <h2 className="text-2xl font-black tracking-tight sm:text-3xl">{copy.stepTwo}</h2>
@@ -977,7 +1012,7 @@ export function GiftPage() {
                     </p>
                   ) : null}
 
-                  {TURNSTILE_SITE_KEY ? (
+                  {TURNSTILE_SITE_KEY && turnstileReady ? (
                     <div className="mt-5 flex min-h-[70px] items-center justify-center overflow-hidden rounded-2xl bg-zinc-50 px-2 py-2">
                       <div ref={turnstileContainerRef} />
                     </div>
