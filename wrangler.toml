@@ -12,4 +12,11 @@ database_id = "895c9651-6854-47fe-aeb0-836e59864f38"
 binding = "GIFT_SYNC_QUEUE"
 queue = "mishanya-gift-sync"
 
-[env.production]
+[[env.production.d1_databases]]
+binding = "GIFT_DB"
+database_name = "mishanya-gift"
+database_id = "895c9651-6854-47fe-aeb0-836e59864f38"
+
+[[env.production.queues.producers]]
+binding = "GIFT_SYNC_QUEUE"
+queue = "mishanya-gift-sync"
