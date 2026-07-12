@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 import {
   BadgePercent,
   CalendarDays,
@@ -10,10 +11,10 @@ import {
   Gift,
   LoaderCircle,
   MapPin,
-  Phone,
   UserRound,
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
+import { InternationalPhoneField } from "@/components/gift/InternationalPhoneField";
 
 type Language = "ru" | "he";
 type GiftCode = "discount-200" | "confetti" | "bubbles";
@@ -110,9 +111,8 @@ const COPY = {
     stepTwoHint: "Все поля обязательны",
     clientName: "Имя клиента",
     clientNamePlaceholder: "Как к вам обращаться?",
-    phone: "Номер телефона",
-    phonePlaceholder: "05XXXXXXXX",
-    phoneHint: "Ровно 10 цифр, начиная с 05",
+    phone: "Номер телефона / WhatsApp",
+    phoneHint: "Выберите страну и укажите номер, по которому с вами можно связаться",
     city: "Город",
     cityPlaceholder: "Например, Хайфа",
     who: "Кого поздравляем?",
@@ -132,7 +132,7 @@ const COPY = {
       "Нажимая «Сохранить подарок», вы соглашаетесь на сохранение указанных данных и контакт с вами ближе ко дню рождения ребёнка. Мы используем данные только для этого обращения.",
     submit: "Сохранить подарок",
     submitting: "Сохраняем подарок…",
-    invalidPhone: "Введите 10 цифр номера, начиная с 05",
+    invalidPhone: "Проверьте номер телефона и выбранный код страны",
     invalidBirthday: "Выберите пол и проверьте данные каждого ребёнка",
     verificationPending: "Подтвердите, что форму заполняет человек",
     formError: "Не удалось сохранить подарок. Попробуйте ещё раз.",
@@ -174,9 +174,8 @@ const COPY = {
     stepTwoHint: "כל השדות הם חובה",
     clientName: "שם ההורה",
     clientNamePlaceholder: "איך לפנות אליכם?",
-    phone: "מספר טלפון",
-    phonePlaceholder: "05XXXXXXXX",
-    phoneHint: "10 ספרות בדיוק, החל מ־05",
+    phone: "מספר טלפון / WhatsApp",
+    phoneHint: "בחרו מדינה והזינו מספר טלפון שבו אפשר ליצור איתכם קשר",
     city: "עיר",
     cityPlaceholder: "לדוגמה, חיפה",
     who: "למי חוגגים?",
@@ -196,7 +195,7 @@ const COPY = {
       "בלחיצה על „שמירת המתנה“ אתם מסכימים לשמירת הפרטים שמסרתם וליצירת קשר לקראת יום ההולדת של הילד/ה. נשתמש בפרטים רק לצורך הפנייה הזו.",
     submit: "שמירת המתנה",
     submitting: "שומרים את המתנה…",
-    invalidPhone: "הזינו 10 ספרות, החל מ־05",
+    invalidPhone: "בדקו את מספר הטלפון ואת קידומת המדינה שנבחרה",
     invalidBirthday: "בחרו מין ובדקו את הפרטים של כל ילד או ילדה",
     verificationPending: "אשרו שהטופס נשלח על ידי אדם",
     formError: "לא הצלחנו לשמור את המתנה. נסו שוב.",
@@ -219,12 +218,9 @@ function sanitizeSource(value: string | null) {
   return /^[a-z0-9_-]{1,64}$/.test(clean) ? clean : "party-qr";
 }
 
-function normalizeIsraeliPhone(value: string) {
-  const digits = value.replace(/\D/g, "");
-  if (/^05\d{8}$/.test(digits)) return `+972${digits.slice(1)}`;
-  if (/^9725\d{8}$/.test(digits)) return `+${digits}`;
-  if (/^5\d{8}$/.test(digits)) return `+972${digits}`;
-  return null;
+function normalizeInternationalPhone(value: string) {
+  const phoneNumber = parsePhoneNumberFromString(value, "IL");
+  return phoneNumber?.isValid() ? String(phoneNumber.number) : null;
 }
 
 function daysInMonth(month: number) {
@@ -652,7 +648,7 @@ export function GiftPage() {
     setSubmitState("submitting");
     setErrorMessage("");
 
-    const normalizedPhone = normalizeIsraeliPhone(phone);
+    const normalizedPhone = normalizeInternationalPhone(phone);
     if (!normalizedPhone) {
       setSubmitState("error");
       setErrorMessage(copy.invalidPhone);
@@ -903,28 +899,13 @@ export function GiftPage() {
                         />
                       </span>
                     </label>
-                    <label>
-                      <FieldLabel>{copy.phone}</FieldLabel>
-                      <span className="relative block" dir="ltr">
-                        <Phone className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
-                        <input
-                          type="tel"
-                          inputMode="numeric"
-                          value={phone}
-                          onChange={(event) =>
-                            setPhone(event.target.value.replace(/\D/g, "").slice(0, 10))
-                          }
-                          autoComplete="tel-national"
-                          placeholder={copy.phonePlaceholder}
-                          minLength={10}
-                          maxLength={10}
-                          pattern="05[0-9]{8}"
-                          required
-                          className="h-13 w-full rounded-2xl border border-zinc-200 bg-white pl-12 pr-4 text-left text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-zinc-400 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10"
-                        />
-                      </span>
+                    <div>
+                      <label htmlFor="gift-phone">
+                        <FieldLabel>{copy.phone}</FieldLabel>
+                      </label>
+                      <InternationalPhoneField language={language} onChange={setPhone} />
                       <span className="mt-1.5 block text-xs font-medium text-zinc-500">{copy.phoneHint}</span>
-                    </label>
+                    </div>
                   </div>
 
                   <label className="mt-4 block">

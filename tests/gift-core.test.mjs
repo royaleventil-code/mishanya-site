@@ -6,18 +6,19 @@ import {
   buildLeadNote,
   decryptPayload,
   encryptPayload,
-  normalizeIsraeliPhone,
+  normalizeInternationalPhone,
   validateGiftPayload,
 } from "../shared/gift-core.js";
 
 const now = new Date("2026-07-12T12:00:00.000Z");
 
-test("phone accepts exactly one Israeli mobile number", () => {
-  assert.equal(normalizeIsraeliPhone("0501234567"), "+972501234567");
-  assert.equal(normalizeIsraeliPhone("+972501234567"), "+972501234567");
-  assert.equal(normalizeIsraeliPhone("050123456"), null);
-  assert.equal(normalizeIsraeliPhone("05012345678"), null);
-  assert.equal(normalizeIsraeliPhone("0401234567"), null);
+test("phone accepts valid Israeli and international numbers", () => {
+  assert.equal(normalizeInternationalPhone("0502345678"), "+972502345678");
+  assert.equal(normalizeInternationalPhone("+972502345678"), "+972502345678");
+  assert.equal(normalizeInternationalPhone("+380501234567"), "+380501234567");
+  assert.equal(normalizeInternationalPhone("+12015550123"), "+12015550123");
+  assert.equal(normalizeInternationalPhone("050123456"), null);
+  assert.equal(normalizeInternationalPhone("+38050123"), null);
 });
 
 test("two boys are accepted and the nearest birthday becomes primary", () => {
@@ -28,7 +29,7 @@ test("two boys are accepted and the nearest birthday becomes primary", () => {
       giftCode: "confetti",
       clientName: "Марина",
       city: "Хайфа",
-      phone: "0501234567",
+      phone: "0502345678",
       children: [
         { gender: "boy", ageTurning: 8, birthdayDay: 20, birthdayMonth: 12 },
         { gender: "boy", ageTurning: 5, birthdayDay: 20, birthdayMonth: 8 },
@@ -50,7 +51,7 @@ test("age dropdown range is accepted from 1 through 100", () => {
     giftCode: "confetti",
     clientName: "Тест",
     city: "Хайфа",
-    phone: "0501234567",
+    phone: "0502345678",
     children: [{ gender: "boy", ageTurning: 100, birthdayDay: 20, birthdayMonth: 8 }],
   };
 
@@ -72,7 +73,7 @@ test("Hebrew form produces a Russian Bitrix note", () => {
       giftCode: "bubbles",
       clientName: "נועה",
       city: "חיפה",
-      phone: "0501234567",
+      phone: "0502345678",
       children: [{ gender: "girl", ageTurning: 6, birthdayDay: 25, birthdayMonth: 9 }],
     },
     now,
@@ -99,7 +100,7 @@ test("lead is created in NEW with source and all event data in COMMENTS", () => 
       giftCode: "discount-200",
       clientName: "Ирина",
       city: "Ашдод",
-      phone: "0501234567",
+      phone: "0502345678",
       children: [{ gender: "boy", ageTurning: 7, birthdayDay: 15, birthdayMonth: 10 }],
     },
     now,
@@ -119,7 +120,7 @@ test("lead is created in NEW with source and all event data in COMMENTS", () => 
 });
 
 test("encrypted payload round-trips", async () => {
-  const payload = { phone: "+972501234567", city: "Хайфа" };
+  const payload = { phone: "+972502345678", city: "Хайфа" };
   const encrypted = await encryptPayload(payload, "test-secret-value");
   assert.notEqual(encrypted, JSON.stringify(payload));
   assert.deepEqual(await decryptPayload(encrypted, "test-secret-value"), payload);

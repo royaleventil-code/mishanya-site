@@ -1,3 +1,5 @@
+import { parsePhoneNumberFromString } from "libphonenumber-js/max";
+
 export const GIFT_CODES = new Set(["discount-200", "confetti", "bubbles"]);
 export const LANGUAGES = new Set(["ru", "he"]);
 export const CHILD_GENDERS = new Set(["boy", "girl"]);
@@ -16,13 +18,12 @@ const LANGUAGE_LABELS = {
   he: "Иврит",
 };
 
-export function normalizeIsraeliPhone(value) {
-  const digits = String(value || "").replace(/\D/g, "");
-  if (/^05\d{8}$/.test(digits)) return `+972${digits.slice(1)}`;
-  if (/^9725\d{8}$/.test(digits)) return `+${digits}`;
-  if (/^5\d{8}$/.test(digits)) return `+972${digits}`;
-  return null;
+export function normalizeInternationalPhone(value) {
+  const phoneNumber = parsePhoneNumberFromString(String(value || ""), "IL");
+  return phoneNumber?.isValid() ? String(phoneNumber.number) : null;
 }
+
+export const normalizeIsraeliPhone = normalizeInternationalPhone;
 
 export function sanitizeSource(value) {
   const clean = String(value || "party-qr").trim().toLowerCase();
@@ -62,7 +63,7 @@ export function validateGiftPayload(raw, now = new Date()) {
 
   const clientName = String(raw.clientName || "").trim();
   const city = String(raw.city || "").trim();
-  const phone = normalizeIsraeliPhone(raw.phone);
+  const phone = normalizeInternationalPhone(raw.phone);
   if (clientName.length < 2 || clientName.length > 120) return { error: "invalid_name" };
   if (city.length < 2 || city.length > 160) return { error: "invalid_city" };
   if (!phone) return { error: "invalid_phone" };
