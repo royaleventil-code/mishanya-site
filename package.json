@@ -2,11 +2,13 @@
   "name": "mishanya-site",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev -p 3003 --webpack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:gift": "node --test tests/gift-core.test.mjs"
   },
   "dependencies": {
     "framer-motion": "^12.39.0",

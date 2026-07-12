@@ -172,7 +172,14 @@ function rootJsonLd(locale: Locale) {
 export function RootDocument({
   children,
   locale,
-}: Readonly<{ children: React.ReactNode; locale: Locale }>) {
+  showFloatingWhatsApp = true,
+  showAccessibilityWidget = true,
+}: Readonly<{
+  children: React.ReactNode;
+  locale: Locale;
+  showFloatingWhatsApp?: boolean;
+  showAccessibilityWidget?: boolean;
+}>) {
   const localeConfig = LOCALE_CONFIG[locale];
   const dict = getDictionary(locale);
 
@@ -204,8 +211,8 @@ export function RootDocument({
           <MarketingEvents />
         </Suspense>
         <A11yProvider>{children}</A11yProvider>
-        <FloatingWhatsApp locale={locale} />
-        <AccessibilityWidget locale={locale} />
+        {showFloatingWhatsApp ? <FloatingWhatsApp locale={locale} /> : null}
+        {showAccessibilityWidget ? <AccessibilityWidget locale={locale} /> : null}
       </body>
     </html>
   );

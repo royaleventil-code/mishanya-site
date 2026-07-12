@@ -1,0 +1,23 @@
+name = "mishanya-gift-sync"
+main = "workers/gift-sync.js"
+account_id = "1171f931de9f44c2a0375a9684dd40c5"
+compatibility_date = "2026-05-21"
+
+[vars]
+BITRIX_QR_SOURCE_ID = "QR_PARTY_GIFT"
+
+[[d1_databases]]
+binding = "GIFT_DB"
+database_name = "mishanya-gift"
+database_id = "895c9651-6854-47fe-aeb0-836e59864f38"
+
+[[queues.consumers]]
+queue = "mishanya-gift-sync"
+max_batch_size = 1
+max_batch_timeout = 2
+max_retries = 10
+retry_delay = 60
+dead_letter_queue = "mishanya-gift-sync-dlq"
+
+[observability]
+enabled = true
