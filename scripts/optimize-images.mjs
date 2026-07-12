@@ -1,7 +1,7 @@
 // One-off image optimizer (resize + recompress IN PLACE, same path & format).
 // Safe: filenames/extensions unchanged → no code references break.
 import sharp from "sharp";
-import { readdirSync, statSync, readFileSync, writeFileSync } from "fs";
+import { readdirSync, readFileSync, writeFileSync } from "fs";
 import { join, extname, basename } from "path";
 import { fileURLToPath } from "url";
 

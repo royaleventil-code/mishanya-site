@@ -43,7 +43,10 @@ export function AccessibilityWidget({ locale = "ru" }: { locale?: Locale }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const frameId = window.requestAnimationFrame(() => setMounted(true));
+    return () => window.cancelAnimationFrame(frameId);
+  }, []);
 
   const close = useCallback(() => {
     setOpen(false);

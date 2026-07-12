@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, MessageCircle, X } from "lucide-react";
 import { BidiText } from "@/components/BidiText";
@@ -51,18 +51,18 @@ export function DevPriceMenu({ locale = "ru", theme = "light", trigger, autoOpen
   const summaryClass = isDark
     ? "border-white/25 bg-white/10 text-white hover:bg-white/16"
     : "border-[var(--color-line)] bg-white text-[var(--color-ink)] shadow-sm hover:bg-zinc-50";
-  const markAutoPopupSeen = () => {
+  const markAutoPopupSeen = useCallback(() => {
     if (!autoOpenDelayMs) return;
     setHomeProgramsPopupSeen();
-  };
-  const closeMenu = () => {
+  }, [autoOpenDelayMs]);
+  const closeMenu = useCallback(() => {
     markAutoPopupSeen();
     setOpen(false);
-  };
-  const toggleMenu = () => {
+  }, [markAutoPopupSeen]);
+  const toggleMenu = useCallback(() => {
     markAutoPopupSeen();
     setOpen((value) => !value);
-  };
+  }, [markAutoPopupSeen]);
   const canUsePortal = typeof document !== "undefined";
 
   useEffect(() => {
@@ -95,7 +95,7 @@ export function DevPriceMenu({ locale = "ru", theme = "light", trigger, autoOpen
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [open]);
+  }, [closeMenu, open]);
 
   const priceModal = (
     <div className="fixed inset-0 z-[160] bg-zinc-950/45 p-3 pt-[104px] text-[var(--color-ink)] backdrop-blur-sm sm:p-5 sm:pt-24">
