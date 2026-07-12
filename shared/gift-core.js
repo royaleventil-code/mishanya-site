@@ -77,7 +77,7 @@ export function validateGiftPayload(raw, now = new Date()) {
     const birthdayDay = Number(item?.birthdayDay);
     const birthdayMonth = Number(item?.birthdayMonth);
     if (!CHILD_GENDERS.has(gender)) return { error: "invalid_child_gender" };
-    if (!Number.isInteger(ageTurning) || ageTurning < 1 || ageTurning > 18) {
+    if (!Number.isInteger(ageTurning) || ageTurning < 1 || ageTurning > 100) {
       return { error: "invalid_child_age" };
     }
     if (

@@ -76,6 +76,7 @@ declare global {
 }
 
 const EMPTY_BIRTHDAY: BirthdayInput = { age: "", day: "", month: "" };
+const AGES = Array.from({ length: 100 }, (_, index) => index + 1);
 const MONTHS = Array.from({ length: 12 }, (_, index) => index + 1);
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim();
 
@@ -381,19 +382,22 @@ function BirthdayFields({
 
   return (
     <div className="grid gap-4 sm:grid-cols-[0.8fr_1.2fr]">
-      <label>
+      <label className="relative">
         <FieldLabel>{copy.age}</FieldLabel>
-        <input
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={18}
+        <select
           value={value.age}
           onChange={(event) => onChange({ ...value, age: event.target.value })}
-          placeholder={copy.agePlaceholder}
           required
-          className="h-13 w-full rounded-2xl border border-zinc-200 bg-white px-4 text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-zinc-400 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10"
-        />
+          className="h-13 w-full appearance-none rounded-2xl border border-zinc-200 bg-white px-4 pe-10 text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10"
+        >
+          <option value="">{copy.agePlaceholder}</option>
+          {AGES.map((age) => (
+            <option key={age} value={age}>
+              {age}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="pointer-events-none absolute end-3 bottom-[18px] h-4 w-4 text-zinc-400" />
       </label>
       <fieldset>
         <FieldLabel>{copy.birthday}</FieldLabel>

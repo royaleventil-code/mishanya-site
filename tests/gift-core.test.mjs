@@ -43,6 +43,27 @@ test("two boys are accepted and the nearest birthday becomes primary", () => {
   assert.equal(result.value.primaryChildIndex, 1);
 });
 
+test("age dropdown range is accepted from 1 through 100", () => {
+  const payload = {
+    language: "ru",
+    sourceCode: "banner-01",
+    giftCode: "confetti",
+    clientName: "Тест",
+    city: "Хайфа",
+    phone: "0501234567",
+    children: [{ gender: "boy", ageTurning: 100, birthdayDay: 20, birthdayMonth: 8 }],
+  };
+
+  assert.equal(validateGiftPayload(payload, now).error, undefined);
+  assert.equal(
+    validateGiftPayload(
+      { ...payload, children: [{ ...payload.children[0], ageTurning: 101 }] },
+      now,
+    ).error,
+    "invalid_child_age",
+  );
+});
+
 test("Hebrew form produces a Russian Bitrix note", () => {
   const result = validateGiftPayload(
     {
