@@ -495,7 +495,7 @@ export function GiftPage() {
   const copy = COPY[language];
 
   useEffect(() => {
-    const frameId = window.requestAnimationFrame(() => {
+    const timerId = window.setTimeout(() => {
       const storedLanguage = window.localStorage.getItem("mishanya-gift-language");
       const browserLanguage = window.navigator.language.toLowerCase();
       const nextLanguage: Language =
@@ -505,8 +505,8 @@ export function GiftPage() {
       setLanguage(nextLanguage);
       setSourceCode(sanitizeSource(new URLSearchParams(window.location.search).get("src")));
       setPageContextReady(true);
-    });
-    return () => window.cancelAnimationFrame(frameId);
+    }, 0);
+    return () => window.clearTimeout(timerId);
   }, []);
 
   useEffect(() => {
