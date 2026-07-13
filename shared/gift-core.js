@@ -3,6 +3,16 @@ import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 export const GIFT_CODES = new Set(["discount-200", "confetti", "bubbles"]);
 export const LANGUAGES = new Set(["ru", "he"]);
 export const CHILD_GENDERS = new Set(["boy", "girl"]);
+export const HOST_CODES = new Set([
+  "mishanya",
+  "artur-magician",
+  "artur-mad-professor",
+  "hanna",
+  "ira",
+  "zhenya",
+  "leon",
+  "unknown",
+]);
 
 const RESPONSIBLE_SERGEY = 3828;
 const NEW_LEAD_STAGE = "NEW";
@@ -12,6 +22,16 @@ const GIFT_LABELS = {
   "discount-200": "Скидка 200 ₪",
   confetti: "Бесплатное конфетти",
   bubbles: "Бесплатное шоу мыльных пузырей",
+};
+const HOST_LABELS = {
+  mishanya: "Мишаня",
+  "artur-magician": "Артур Фокусник",
+  "artur-mad-professor": "Артур Сумасшедший Профессор",
+  hanna: "Ханна",
+  ira: "Ира",
+  zhenya: "Женя",
+  leon: "Леон",
+  unknown: "Не знаю, кто ведущий",
 };
 export function normalizeInternationalPhone(value) {
   const phoneNumber = parsePhoneNumberFromString(String(value || ""), "IL");
@@ -58,9 +78,11 @@ export function validateGiftPayload(raw, now = new Date()) {
 
   const clientName = String(raw.clientName || "").trim();
   const city = String(raw.city || "").trim();
+  const hostCode = String(raw.hostCode || "").trim();
   const phone = normalizeInternationalPhone(raw.phone);
   if (clientName.length < 2 || clientName.length > 120) return { error: "invalid_name" };
   if (city.length < 2 || city.length > 160) return { error: "invalid_city" };
+  if (!HOST_CODES.has(hostCode)) return { error: "invalid_host" };
   if (!phone) return { error: "invalid_phone" };
   if (!Array.isArray(raw.children) || raw.children.length < 1 || raw.children.length > 2) {
     return { error: "invalid_children" };
@@ -110,6 +132,7 @@ export function validateGiftPayload(raw, now = new Date()) {
       giftCode: raw.giftCode,
       clientName,
       city,
+      hostCode,
       phone,
       children,
       primaryChildIndex,
@@ -243,7 +266,11 @@ function duplicateLines(duplicates) {
 export function buildLeadNote(payload, claim, duplicates = {}) {
   const sections = [
     [`Дата анкеты: ${dateTimeLabel(claim.submittedAt)}`],
-    [`Подарок: ${GIFT_LABELS[payload.giftCode]}`, `Действует до: ${dateLabel(claim.validUntil)}`],
+    [
+      `Подарок: ${GIFT_LABELS[payload.giftCode]}`,
+      `Действует до: ${dateLabel(claim.validUntil)}`,
+      `Ведущий на празднике: ${HOST_LABELS[payload.hostCode]}`,
+    ],
   ];
 
   if (payload.children.length > 1) {

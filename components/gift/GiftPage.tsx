@@ -20,6 +20,15 @@ type GiftCode = "discount-200" | "confetti" | "bubbles";
 type FamilyGender = "" | "boy" | "girl" | "two";
 type ChildGender = "boy" | "girl";
 type ChildGenderChoice = "" | ChildGender;
+type HostCode =
+  | "mishanya"
+  | "artur-magician"
+  | "artur-mad-professor"
+  | "hanna"
+  | "ira"
+  | "zhenya"
+  | "leon"
+  | "unknown";
 type SubmitState = "idle" | "submitting" | "success" | "existing" | "error";
 
 type BirthdayInput = {
@@ -43,6 +52,7 @@ type GiftPayload = {
   clientName: string;
   phone: string;
   city: string;
+  hostCode: HostCode;
   children: GiftPayloadChild[];
   primaryChildIndex: number;
   turnstileToken?: string;
@@ -114,6 +124,8 @@ const COPY = {
     phoneHint: "Код страны уже указан — если местный номер начинается с 0, вводите без него",
     city: "Город",
     cityPlaceholder: "Например, Хайфа",
+    host: "Кто был ведущим на празднике?",
+    hostPlaceholder: "Выберите ведущего",
     who: "Кого поздравляем?",
     genderBoy: "Мальчик",
     genderGirl: "Девочка",
@@ -132,6 +144,7 @@ const COPY = {
     submit: "Сохранить подарок",
     submitting: "Сохраняем подарок…",
     invalidPhone: "Проверьте номер телефона и выбранный код страны",
+    invalidHost: "Выберите, кто был ведущим на празднике",
     invalidBirthday: "Выберите пол и проверьте данные каждого ребёнка",
     verificationPending: "Подтвердите, что форму заполняет человек",
     formError: "Не удалось сохранить подарок. Попробуйте ещё раз.",
@@ -177,6 +190,8 @@ const COPY = {
     phoneHint: "קידומת המדינה כבר מופיעה — אם המספר המקומי מתחיל ב־0, הזינו אותו בלעדיו",
     city: "עיר",
     cityPlaceholder: "לדוגמה, חיפה",
+    host: "מי היה המפעיל או המפעילה באירוע?",
+    hostPlaceholder: "בחרו מפעיל או מפעילה",
     who: "למי חוגגים?",
     genderBoy: "בן",
     genderGirl: "בת",
@@ -195,6 +210,7 @@ const COPY = {
     submit: "שמירת המתנה",
     submitting: "שומרים את המתנה…",
     invalidPhone: "בדקו את מספר הטלפון ואת קידומת המדינה שנבחרה",
+    invalidHost: "בחרו מי היה המפעיל או המפעילה באירוע",
     invalidBirthday: "בחרו מין ובדקו את הפרטים של כל ילד או ילדה",
     verificationPending: "אשרו שהטופס נשלח על ידי אדם",
     formError: "לא הצלחנו לשמור את המתנה. נסו שוב.",
@@ -210,6 +226,22 @@ const COPY = {
 } as const;
 
 const GIFT_ORDER: GiftCode[] = ["discount-200", "confetti", "bubbles"];
+const HOST_OPTIONS: Array<{ code: HostCode; labels: Record<Language, string> }> = [
+  { code: "mishanya", labels: { ru: "Мишаня", he: "מישניה" } },
+  { code: "artur-magician", labels: { ru: "Артур Фокусник", he: "ארתור הקוסם" } },
+  {
+    code: "artur-mad-professor",
+    labels: { ru: "Артур Сумасшедший Профессор", he: "ארתור הפרופסור המשוגע" },
+  },
+  { code: "hanna", labels: { ru: "Ханна", he: "חנה" } },
+  { code: "ira", labels: { ru: "Ира", he: "אירה" } },
+  { code: "zhenya", labels: { ru: "Женя", he: "ז׳ניה" } },
+  { code: "leon", labels: { ru: "Леон", he: "ליאון" } },
+  {
+    code: "unknown",
+    labels: { ru: "Не знаю, кто ведущий", he: "לא יודע/ת מי היה המפעיל או המפעילה" },
+  },
+];
 const GIFT_IMAGES: Record<GiftCode, string> = {
   "discount-200": "/gift/gift-discount-200.webp",
   confetti: "/gift/gift-confetti.webp",
@@ -471,6 +503,7 @@ export function GiftPage() {
   const [clientName, setClientName] = useState("");
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
+  const [hostCode, setHostCode] = useState<HostCode | "">("");
   const [familyGender, setFamilyGender] = useState<FamilyGender>("");
   const [singleBirthday, setSingleBirthday] = useState<BirthdayInput>(EMPTY_BIRTHDAY);
   const [firstChildGender, setFirstChildGender] = useState<ChildGenderChoice>("");
@@ -650,6 +683,11 @@ export function GiftPage() {
       setErrorMessage(copy.invalidPhone);
       return;
     }
+    if (!hostCode) {
+      setSubmitState("error");
+      setErrorMessage(copy.invalidHost);
+      return;
+    }
 
     const children = formChildren
       .map(({ gender, input }) => childPayload(gender, input))
@@ -671,6 +709,7 @@ export function GiftPage() {
       clientName: clientName.trim(),
       phone: normalizedPhone,
       city: city.trim(),
+      hostCode,
       children,
       primaryChildIndex,
       turnstileToken: turnstileToken || undefined,
@@ -917,6 +956,27 @@ export function GiftPage() {
                         className="h-13 w-full rounded-2xl border border-zinc-200 bg-white ps-12 pe-4 text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-zinc-400 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10"
                       />
                     </span>
+                  </label>
+
+                  <label className="relative mt-4 block">
+                    <FieldLabel>{copy.host}</FieldLabel>
+                    <select
+                      value={hostCode}
+                      onChange={(event) => {
+                        setHostCode(event.target.value as HostCode | "");
+                        setErrorMessage("");
+                      }}
+                      required
+                      className="h-13 w-full appearance-none rounded-2xl border border-zinc-200 bg-white px-4 pe-10 text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10"
+                    >
+                      <option value="">{copy.hostPlaceholder}</option>
+                      {HOST_OPTIONS.map((host) => (
+                        <option key={host.code} value={host.code}>
+                          {host.labels[language]}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute end-3 bottom-[18px] h-4 w-4 text-zinc-400" />
                   </label>
 
                   <fieldset className="mt-6">
