@@ -44,6 +44,40 @@ test("two boys are accepted and the nearest birthday becomes primary", () => {
   assert.equal(result.value.primaryChildIndex, 1);
 });
 
+test("only the child outside the main lead fields is added to the note", () => {
+  const result = validateGiftPayload(
+    {
+      language: "ru",
+      sourceCode: "banner-01",
+      giftCode: "confetti",
+      clientName: "Марина",
+      city: "Хайфа",
+      phone: "0502345678",
+      children: [
+        { gender: "boy", ageTurning: 8, birthdayDay: 20, birthdayMonth: 12 },
+        { gender: "girl", ageTurning: 5, birthdayDay: 20, birthdayMonth: 8 },
+      ],
+    },
+    now,
+  );
+  const claim = {
+    id: "claim-two-children",
+    submittedAt: now.toISOString(),
+    validUntil: addOneYearIso(now.toISOString()),
+  };
+  const fields = buildLeadFields(result.value, claim, "QR_PARTY_GIFT", {});
+
+  assert.equal(result.value.primaryChildIndex, 1);
+  assert.equal(fields.BIRTHDATE, "2026-08-20");
+  assert.equal(fields.UF_CRM_1644327962757, 46);
+  assert.match(
+    fields.COMMENTS,
+    /Второй ребёнок: мальчик; исполнится 8 лет; ближайший день рождения: 20\.12\.2026/,
+  );
+  assert.doesNotMatch(fields.COMMENTS, /20\.08\.2026/);
+  assert.doesNotMatch(fields.COMMENTS, /исполнится 5 лет/);
+});
+
 test("age dropdown range is accepted from 1 through 100", () => {
   const payload = {
     language: "ru",
@@ -65,7 +99,7 @@ test("age dropdown range is accepted from 1 through 100", () => {
   );
 });
 
-test("Hebrew form produces a Russian Bitrix note", () => {
+test("Hebrew form produces a compact Russian Bitrix note without personal data", () => {
   const result = validateGiftPayload(
     {
       language: "he",
@@ -84,15 +118,27 @@ test("Hebrew form produces a Russian Bitrix note", () => {
     validUntil: addOneYearIso(now.toISOString()),
   };
   const note = buildLeadNote(result.value, claim, { LEAD: [12], CONTACT: [34] });
-  assert.match(note, /Интерфейс анкеты: Иврит/);
+  assert.match(note, /Дата анкеты:/);
   assert.match(note, /Подарок: Бесплатное шоу мыльных пузырей/);
-  assert.match(note, /Ребёнок 1 - ближайший день рождения: девочка/);
   assert.match(note, /Лиды: 12/);
   assert.match(note, /Контакты: 34/);
-  assert.match(note, /Имя клиента: נועה/);
+  for (const hiddenValue of [
+    "claim-test",
+    "Интерфейс анкеты",
+    "banner-01",
+    "נועה",
+    "חיפה",
+    "+972502345678",
+    "Ребёнок",
+    "девочка",
+    "Подарок предварительный",
+    "Подарок закреплён",
+  ]) {
+    assert.equal(note.includes(hiddenValue), false);
+  }
 });
 
-test("lead is created in NEW with source and all event data in COMMENTS", () => {
+test("lead is created in NEW while one child stays only in lead fields", () => {
   const result = validateGiftPayload(
     {
       language: "ru",
@@ -115,7 +161,17 @@ test("lead is created in NEW with source and all event data in COMMENTS", () => 
   assert.equal(fields.SOURCE_ID, "QR_PARTY_GIFT");
   assert.equal(fields.UF_CRM_1644327962757, 44);
   assert.equal(fields.UF_CRM_1644329391894, 7);
-  assert.match(fields.COMMENTS, /Скидка 200 ₪/);
+  assert.deepEqual(fields.COMMENTS.split("\n").slice(1), [
+    "",
+    "Подарок: Скидка 200 ₪",
+    "Действует до: 12.07.2027",
+  ]);
+  assert.equal(fields.COMMENTS.includes("Ирина"), false);
+  assert.equal(fields.COMMENTS.includes("Ашдод"), false);
+  assert.equal(fields.COMMENTS.includes("+972502345678"), false);
+  assert.equal(fields.COMMENTS.includes("Ребёнок"), false);
+  assert.equal(fields.COMMENTS.includes("мальчик"), false);
+  assert.equal(fields.COMMENTS.includes("Совпадения по телефону"), false);
   assert.equal("UF_CRM_1644332749977" in fields, false);
 });
 

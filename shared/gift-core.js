@@ -13,11 +13,6 @@ const GIFT_LABELS = {
   confetti: "Бесплатное конфетти",
   bubbles: "Бесплатное шоу мыльных пузырей",
 };
-const LANGUAGE_LABELS = {
-  ru: "Русский",
-  he: "Иврит",
-};
-
 export function normalizeInternationalPhone(value) {
   const phoneNumber = parsePhoneNumberFromString(String(value || ""), "IL");
   return phoneNumber?.isValid() ? String(phoneNumber.number) : null;
@@ -213,10 +208,18 @@ function dateTimeLabel(isoDate) {
   }).format(new Date(isoDate));
 }
 
-function childLabel(child, index, isPrimary) {
+function yearsLabel(age) {
+  const lastTwo = age % 100;
+  if (lastTwo >= 11 && lastTwo <= 14) return "лет";
+  const last = age % 10;
+  if (last === 1) return "год";
+  if (last >= 2 && last <= 4) return "года";
+  return "лет";
+}
+
+function secondaryChildLabel(child) {
   const gender = child.gender === "boy" ? "мальчик" : "девочка";
-  const primary = isPrimary ? " - ближайший день рождения" : "";
-  return `Ребёнок ${index + 1}${primary}: ${gender}; исполнится ${child.ageTurning}; дата ${dateLabel(child.nextBirthday)}`;
+  return `Второй ребёнок: ${gender}; исполнится ${child.ageTurning} ${yearsLabel(child.ageTurning)}; ближайший день рождения: ${dateLabel(child.nextBirthday)}`;
 }
 
 function duplicateLines(duplicates) {
@@ -228,7 +231,7 @@ function duplicateLines(duplicates) {
     ? duplicates.COMPANY.map(Number).filter(Boolean)
     : [];
   if (!leadIds.length && !contactIds.length && !companyIds.length) {
-    return ["Совпадения по телефону в CRM: не найдены."];
+    return [];
   }
   const lines = ["Совпадения по телефону в CRM найдены - решение принимает менеджер:"];
   if (leadIds.length) lines.push(`Лиды: ${leadIds.join(", ")}`);
@@ -238,29 +241,22 @@ function duplicateLines(duplicates) {
 }
 
 export function buildLeadNote(payload, claim, duplicates = {}) {
-  const lines = [
-    `Анкета «${SOURCE_NAME}»`,
-    `ID анкеты: ${claim.id}`,
-    `Дата анкеты: ${dateTimeLabel(claim.submittedAt)}`,
-    `Интерфейс анкеты: ${LANGUAGE_LABELS[payload.language]}`,
-    `Носитель QR: ${payload.sourceCode}`,
-    "",
-    `Подарок: ${GIFT_LABELS[payload.giftCode]}`,
-    `Действует до: ${dateLabel(claim.validUntil)}`,
-    "Подарок предварительный. При бронировании менеджер может изменить его по просьбе клиента.",
-    "",
-    `Имя клиента: ${payload.clientName}`,
-    `Телефон: ${payload.phone}`,
-    `Город: ${payload.city}`,
-    ...payload.children.map((child, index) =>
-      childLabel(child, index, index === payload.primaryChildIndex),
-    ),
-    "",
-    ...duplicateLines(duplicates),
-    "",
-    "Подарок закреплён за номером телефона на 12 месяцев.",
+  const sections = [
+    [`Дата анкеты: ${dateTimeLabel(claim.submittedAt)}`],
+    [`Подарок: ${GIFT_LABELS[payload.giftCode]}`, `Действует до: ${dateLabel(claim.validUntil)}`],
   ];
-  return lines.join("\n");
+
+  if (payload.children.length > 1) {
+    const secondaryChild = payload.children.find(
+      (_child, index) => index !== payload.primaryChildIndex,
+    );
+    if (secondaryChild) sections.push([secondaryChildLabel(secondaryChild)]);
+  }
+
+  const duplicatesSection = duplicateLines(duplicates);
+  if (duplicatesSection.length) sections.push(duplicatesSection);
+
+  return sections.map((section) => section.join("\n")).join("\n\n");
 }
 
 export function buildLeadFields(payload, claim, sourceId, duplicates = {}) {

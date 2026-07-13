@@ -4,7 +4,6 @@ import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 import {
-  BadgePercent,
   CalendarDays,
   Check,
   ChevronDown,
@@ -211,6 +210,11 @@ const COPY = {
 } as const;
 
 const GIFT_ORDER: GiftCode[] = ["discount-200", "confetti", "bubbles"];
+const GIFT_IMAGES: Record<GiftCode, string> = {
+  "discount-200": "/gift/gift-discount-200.webp",
+  confetti: "/gift/gift-confetti.webp",
+  bubbles: "/gift/gift-bubbles.webp",
+};
 
 function sanitizeSource(value: string | null) {
   if (!value) return "party-qr";
@@ -279,7 +283,7 @@ function childPayload(
   const ageTurning = Number(input.age);
   const day = Number(input.day);
   const month = Number(input.month);
-  if (!Number.isInteger(ageTurning) || ageTurning < 1 || ageTurning > 18) return null;
+  if (!Number.isInteger(ageTurning) || ageTurning < 1 || ageTurning > 100) return null;
   if (!Number.isInteger(day) || !Number.isInteger(month)) return null;
   if (month < 1 || month > 12 || day < 1 || day > daysInMonth(month)) return null;
   const birthday = nextBirthday(day, month);
@@ -294,22 +298,14 @@ function childPayload(
 }
 
 function GiftVisual({ code }: { code: GiftCode }) {
-  if (code === "discount-200") {
-    return (
-      <div className="flex h-28 w-full items-center justify-center rounded-2xl bg-[linear-gradient(145deg,#fff4cc,#ffe3a1)] text-[#b96b00]">
-        <BadgePercent className="h-14 w-14" strokeWidth={1.9} aria-hidden />
-      </div>
-    );
-  }
-
   return (
-    <div className="relative h-28 w-full overflow-hidden rounded-2xl bg-[#fff9ef]">
+    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-[#fff9ef]">
       <Image
-        src={code === "confetti" ? "/addons/confetti.png" : "/addons/bubbles-show.png"}
+        src={GIFT_IMAGES[code]}
         alt=""
         fill
-        sizes="(max-width: 640px) 35vw, 180px"
-        className="object-contain p-1"
+        sizes="(max-width: 640px) 30vw, 220px"
+        className="object-cover"
       />
     </div>
   );
