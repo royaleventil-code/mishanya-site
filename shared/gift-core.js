@@ -259,6 +259,15 @@ export function buildLeadNote(payload, claim, duplicates = {}) {
   return sections.map((section) => section.join("\n")).join("\n\n");
 }
 
+export function subtractDaysIso(isoDate, days) {
+  const date = new Date(`${isoDate}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime()) || !Number.isInteger(days) || days < 0) {
+    throw new Error("Invalid date offset");
+  }
+  date.setUTCDate(date.getUTCDate() - days);
+  return date.toISOString().slice(0, 10);
+}
+
 export function buildLeadFields(payload, claim, sourceId, duplicates = {}) {
   if (!sourceId) throw new Error("BITRIX_QR_SOURCE_ID is not configured");
   const primary = payload.children[payload.primaryChildIndex];
@@ -276,6 +285,7 @@ export function buildLeadFields(payload, claim, sourceId, duplicates = {}) {
     UTM_CAMPAIGN: payload.sourceCode,
     BIRTHDATE: primary.nextBirthday,
     UF_CRM_1649234588017: primary.nextBirthday,
+    UF_CRM_1644332749977: subtractDaysIso(primary.nextBirthday, 30),
     UF_CRM_1644328015350: payload.city,
     UF_CRM_1644327962757: primary.gender === "boy" ? 44 : 46,
     UF_CRM_1644329391894: primary.ageTurning,

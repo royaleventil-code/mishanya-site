@@ -6,7 +6,11 @@ import {
   type CountryCode,
   getCountries,
   getCountryCallingCode,
+  getExampleNumber,
+  parsePhoneNumberFromString,
+  validatePhoneNumberLength,
 } from "libphonenumber-js/max";
+import mobileExamples from "libphonenumber-js/examples.mobile.json";
 import { Check, ChevronDown, Phone, Search } from "lucide-react";
 
 type Language = "ru" | "he";
@@ -56,20 +60,99 @@ function cleanTypedPhone(value: string) {
   return digits;
 }
 
+function countryKeepsLeadingZero(country: CountryCode) {
+  const callingCode = getCountryCallingCode(country);
+  const formatter = new AsYouType();
+  formatter.input(`+${callingCode}0`);
+  return formatter.getNumber()?.nationalNumber.startsWith("0") ?? false;
+}
+
+function normalizeLocalDigits(value: string, country: CountryCode) {
+  let digits = value.replace(/\D/g, "");
+  if (!digits) return "";
+
+  const parsed = parsePhoneNumberFromString(digits, country);
+  if (parsed?.country === country && parsed.nationalNumber.length < digits.length) {
+    digits = String(parsed.nationalNumber);
+  } else if (digits.startsWith("0") && !countryKeepsLeadingZero(country)) {
+    digits = digits.replace(/^0+/, "");
+  }
+
+  return digits;
+}
+
+function limitNationalDigits(value: string, country: CountryCode) {
+  const callingCode = getCountryCallingCode(country);
+  const mobileExample = getExampleNumber(country, mobileExamples);
+  const countryLimit = mobileExample?.nationalNumber.length ?? Math.max(1, 15 - callingCode.length);
+  let digits = value.slice(0, countryLimit);
+  while (
+    digits &&
+    validatePhoneNumberLength(`+${callingCode}${digits}`) === "TOO_LONG"
+  ) {
+    digits = digits.slice(0, -1);
+  }
+  return digits;
+}
+
+function formatNationalDigits(value: string, country: CountryCode) {
+  if (!value) return "";
+  const callingCode = getCountryCallingCode(country);
+  const formatter = new AsYouType();
+  const international = formatter.input(`+${callingCode}${value}`);
+  const national = international.replace(new RegExp(`^\\+${callingCode}\\s*`), "");
+  return (national || value).replace(/\D+/g, "-").replace(/^-|-$/g, "");
+}
+
+function mobilePlaceholder(country: CountryCode, fallback: string) {
+  const example = getExampleNumber(country, mobileExamples);
+  return example ? formatNationalDigits(String(example.nationalNumber), country) : fallback;
+}
+
+function formattedPhone(country: CountryCode, nationalDigits: string) {
+  const limitedDigits = limitNationalDigits(nationalDigits, country);
+  const callingCode = getCountryCallingCode(country);
+  return {
+    country,
+    nationalDigits: limitedDigits,
+    displayValue: formatNationalDigits(limitedDigits, country),
+    internationalValue: limitedDigits ? `+${callingCode}${limitedDigits}` : "",
+  };
+}
+
 function formatPhoneInput(rawValue: string, fallbackCountry: CountryCode) {
   const clean = cleanTypedPhone(rawValue);
-  if (!clean) return { country: fallbackCountry, displayValue: "", internationalValue: "" };
+  if (!clean) return formattedPhone(fallbackCountry, "");
 
-  const formatter = clean.startsWith("+") ? new AsYouType() : new AsYouType(fallbackCountry);
-  const formatted = formatter.input(clean);
-  const detectedCountry = formatter.getCountry() ?? fallbackCountry;
-  const number = formatter.getNumber();
+  if (!clean.startsWith("+")) {
+    return formattedPhone(fallbackCountry, normalizeLocalDigits(clean, fallbackCountry));
+  }
 
-  return {
-    country: detectedCountry,
-    displayValue: clean.startsWith("+") && formatter.getCountry() && number ? number.formatNational() : formatted,
-    internationalValue: number ? String(number.number) : clean,
-  };
+  const formatter = new AsYouType();
+  let detectedCountry: CountryCode | undefined;
+  for (const character of clean) {
+    formatter.input(character);
+    detectedCountry = formatter.getCountry() ?? detectedCountry;
+  }
+  const callingCode =
+    formatter.getCallingCode() ?? getCountryCallingCode(detectedCountry ?? fallbackCountry);
+  if (!detectedCountry) {
+    const candidates = getCountries().filter(
+      (candidate) => getCountryCallingCode(candidate) === callingCode,
+    );
+    detectedCountry = candidates.includes(fallbackCountry)
+      ? fallbackCountry
+      : candidates.length === 1
+        ? candidates[0]
+        : fallbackCountry;
+  }
+  const digits = clean.slice(1);
+  const nationalDigits = normalizeLocalDigits(
+    digits.startsWith(callingCode) ? digits.slice(callingCode.length) : digits,
+    detectedCountry,
+  );
+
+  return formattedPhone(detectedCountry, nationalDigits);
 }
 
 export function InternationalPhoneField({
@@ -81,6 +164,7 @@ export function InternationalPhoneField({
 }) {
   const copy = TEXT[language];
   const [country, setCountry] = useState<CountryCode>("IL");
+  const [nationalDigits, setNationalDigits] = useState("");
   const [displayValue, setDisplayValue] = useState("");
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -146,8 +230,22 @@ export function InternationalPhoneField({
   }, [open]);
 
   const updatePhone = (rawValue: string, defaultCountry = country) => {
-    const formatted = formatPhoneInput(rawValue, defaultCountry);
+    let formatted = formatPhoneInput(rawValue, defaultCountry);
+    const currentNumber = nationalDigits
+      ? parsePhoneNumberFromString(
+          `+${getCountryCallingCode(country)}${nationalDigits}`,
+        )
+      : undefined;
+    const isAddingDigits =
+      formatted.country === country &&
+      formatted.nationalDigits.length > nationalDigits.length;
+
+    if (isAddingDigits && currentNumber?.isValid()) {
+      formatted = formattedPhone(country, nationalDigits);
+    }
+
     setCountry(formatted.country);
+    setNationalDigits(formatted.nationalDigits);
     setDisplayValue(formatted.displayValue);
     onChange(formatted.internationalValue);
   };
@@ -191,8 +289,8 @@ export function InternationalPhoneField({
             value={displayValue}
             onChange={(event) => updatePhone(event.target.value)}
             autoComplete="tel"
-            placeholder={country === "IL" ? "050 123 4567" : copy.phonePlaceholder}
-            maxLength={24}
+            placeholder={mobilePlaceholder(country, copy.phonePlaceholder)}
+            maxLength={20}
             required
             className="h-13 w-full min-w-0 bg-transparent ps-10 pe-3 text-left text-base font-semibold outline-none placeholder:text-zinc-400"
           />
