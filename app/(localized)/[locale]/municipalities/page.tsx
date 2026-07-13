@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Landmark } from "lucide-react";
-import { B2B_EMAIL, MUNICIPALITIES_COPY } from "@/data/b2b";
+import { Clock, Landmark } from "lucide-react";
+import { B2B_EMAIL, MUNICIPALITIES_COPY, type MunicipalityProgramAccent } from "@/data/b2b";
 import { BidiText } from "@/components/BidiText";
+import { LettersCarousel } from "@/components/municipalities/LettersCarousel";
 import { SiteFooter } from "@/components/home/SiteFooter";
 import { LiteYouTube } from "@/components/LiteYouTube";
 import { PublicHeader } from "@/components/PublicHeader";
@@ -16,7 +18,65 @@ type Props = {
   params: Promise<{ locale: string }>;
 };
 
-const MUNICIPALITIES_VIDEO_ID = "Q1-cb-06JnY";
+/**
+ * Акцентные цвета карточек программ - только из дизайн-токенов.
+ * `plaque` - фон цветной плашки, `deep` - тёмный вариант акцента для текста
+ * на белом (совпадает с high-contrast токенами, контраст AA), `chip*` - чипы.
+ */
+const PROGRAM_ACCENTS: Record<
+  MunicipalityProgramAccent,
+  { plaque: string; plaqueText: string; numberBg: string; deep: string; chipBorder: string; chipBg: string }
+> = {
+  boy: {
+    plaque: "var(--color-boy)",
+    plaqueText: "#ffffff",
+    numberBg: "rgba(255,255,255,0.22)",
+    deep: "#0053b8",
+    chipBorder: "rgba(10,132,255,0.35)",
+    chipBg: "rgba(10,132,255,0.06)",
+  },
+  allSeg: {
+    plaque: "var(--color-all-seg)",
+    plaqueText: "#ffffff",
+    numberBg: "rgba(255,255,255,0.22)",
+    deep: "#3a38c2",
+    chipBorder: "rgba(94,92,230,0.35)",
+    chipBg: "rgba(94,92,230,0.06)",
+  },
+  girl: {
+    plaque: "var(--color-girl)",
+    plaqueText: "#ffffff",
+    numberBg: "rgba(255,255,255,0.22)",
+    deep: "#c2003d",
+    chipBorder: "rgba(255,55,95,0.35)",
+    chipBg: "rgba(255,55,95,0.06)",
+  },
+  young: {
+    plaque: "var(--color-young)",
+    plaqueText: "var(--color-ink)",
+    numberBg: "rgba(15,15,20,0.12)",
+    deep: "#8f5a00",
+    chipBorder: "rgba(255,159,10,0.45)",
+    chipBg: "rgba(255,159,10,0.08)",
+  },
+  girlDeep: {
+    plaque: "#c2003d",
+    plaqueText: "#ffffff",
+    numberBg: "rgba(255,255,255,0.22)",
+    deep: "#c2003d",
+    chipBorder: "rgba(194,0,61,0.35)",
+    chipBg: "rgba(194,0,61,0.06)",
+  },
+  ink: {
+    // тёмная плашка TECHNOFAN с неоновым бликом в тон --color-all-seg
+    plaque: "linear-gradient(135deg, var(--color-ink) 0%, #1b1b2e 60%, #26244d 100%)",
+    plaqueText: "#ffffff",
+    numberBg: "rgba(94,92,230,0.45)",
+    deep: "var(--color-ink)",
+    chipBorder: "rgba(15,15,20,0.25)",
+    chipBg: "rgba(15,15,20,0.04)",
+  },
+};
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale: localeParam } = await params;
@@ -33,6 +93,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     path: `/${locale}/municipalities`,
     canonicalPath: `/${locale}/municipalities`,
     locale,
+    image: "/og/municipalities.jpg",
   });
 }
 
@@ -53,6 +114,18 @@ function municipalitiesJsonLd(locale: Locale) {
       url: pageUrl,
       provider: { "@id": siteUrl("/#organization") },
       areaServed: { "@type": "Country", name: locale === "he" ? "ישראל" : "Израиль" },
+      hasOfferCatalog: {
+        "@type": "OfferCatalog",
+        name: copy.programsTitle,
+        itemListElement: copy.programs.map((program) => ({
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Service",
+            name: program.title,
+            description: program.subtitle,
+          },
+        })),
+      },
     },
     {
       "@context": "https://schema.org",
@@ -78,7 +151,7 @@ export default async function MunicipalitiesPage({ params }: Props) {
   const { locale: localeParam } = await params;
   const locale: Locale = isLocale(localeParam) ? localeParam : "ru";
   const copy = MUNICIPALITIES_COPY[locale];
-  // Иврит ещё не прошёл контент-пайплайн - страница есть только на русском
+  // страховка: локаль без заполненного контента не рендерим
   if (!copy.h1) notFound();
 
   const dict = getDictionary(locale);
@@ -87,14 +160,17 @@ export default async function MunicipalitiesPage({ params }: Props) {
   // экранируем «<»: текст с "</script>" не должен ломать inline-скрипт
   const jsonLd = JSON.stringify(municipalitiesJsonLd(locale)).replace(/</g, "\\u003c");
 
+  const cardShellClass =
+    "mx-auto max-w-3xl overflow-hidden rounded-[var(--radius-card)] bg-white p-5 shadow-[var(--shadow-card)] sm:p-7";
+
   return (
     <main id="main" className="min-h-screen bg-[#fffaf4] text-[var(--color-ink)]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
       <PublicHeader locale={locale} />
 
-      <div className="mx-auto max-w-3xl px-5 pb-20 pt-6 sm:px-6">
+      <div className="mx-auto max-w-5xl px-5 pb-20 pt-6 sm:px-6">
         {/* Breadcrumbs */}
-        <nav aria-label="breadcrumbs" className="text-xs text-[var(--color-ink-soft)]">
+        <nav aria-label="breadcrumbs" className="mx-auto max-w-3xl text-xs text-[var(--color-ink-soft)]">
           <ol className="flex flex-wrap items-center gap-1.5">
             <li>
               <Link href={localePath(locale)} className="underline-offset-4 transition hover:underline">
@@ -108,12 +184,13 @@ export default async function MunicipalitiesPage({ params }: Props) {
           </ol>
         </nav>
 
-        <article className="mt-4 overflow-hidden rounded-[28px] bg-white p-5 shadow-[0_16px_40px_rgba(15,15,20,0.06)] sm:p-7">
+        {/* Интро, аудитории, форматы */}
+        <article className={`mt-4 ${cardShellClass}`}>
           <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-ink-soft)]">
             <Landmark className="h-4 w-4" strokeWidth={2.2} />
             <BidiText locale={locale}>{copy.breadcrumb}</BidiText>
           </div>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
+          <h1 className="mt-2 font-[family-name:var(--font-nunito)] text-2xl font-black tracking-tight sm:text-3xl">
             <BidiText locale={locale}>{copy.h1}</BidiText>
           </h1>
 
@@ -162,9 +239,98 @@ export default async function MunicipalitiesPage({ params }: Props) {
               ))}
             </ul>
           </section>
+        </article>
 
-          {/* Кейсы */}
-          <section className="mt-8">
+        {/* Программы - широкая секция с фирменными карточками */}
+        <section className="mt-12" aria-labelledby="municipal-programs-title">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2
+              id="municipal-programs-title"
+              className="font-[family-name:var(--font-nunito)] text-[28px] font-black leading-tight tracking-tight sm:text-4xl"
+            >
+              <BidiText locale={locale}>{copy.programsTitle}</BidiText>
+            </h2>
+            <p className="mt-3 text-[15px] leading-relaxed text-[var(--color-ink-soft)] sm:text-base">
+              <BidiText locale={locale}>{copy.programsIntro}</BidiText>
+            </p>
+          </div>
+
+          <ul className="mt-8 grid gap-5 sm:grid-cols-2 sm:gap-6">
+            {copy.programs.map((program, index) => {
+              const accent = PROGRAM_ACCENTS[program.accent];
+              return (
+                <li
+                  key={program.id}
+                  className="group flex flex-col overflow-hidden rounded-[var(--radius-card)] bg-white shadow-[var(--shadow-card)] ring-1 ring-black/[0.04] transition duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-card-hover)]"
+                >
+                  {/* Обложка 3:2 */}
+                  <div className="relative aspect-[3/2] overflow-hidden bg-[#f3f0ff]">
+                    <Image
+                      src={program.cover}
+                      alt={program.coverAlt}
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 480px"
+                      className="object-cover transition duration-300 group-hover:scale-105"
+                    />
+                    <span className="absolute end-3 top-3 rounded-full bg-white/92 px-3 py-1 text-xs font-black text-[var(--color-ink)] shadow-sm backdrop-blur">
+                      <BidiText locale={locale}>{program.tag}</BidiText>
+                    </span>
+                  </div>
+
+                  {/* Цветная плашка: номер + название */}
+                  <div
+                    className="flex items-center gap-3 px-5 py-3.5"
+                    style={{ background: accent.plaque, color: accent.plaqueText }}
+                  >
+                    <span
+                      aria-hidden
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-[family-name:var(--font-nunito)] text-base font-black"
+                      style={{ background: accent.numberBg }}
+                    >
+                      {index + 1}
+                    </span>
+                    {/* text-xl (20px) + font-black = «крупный текст» WCAG: белому на boy/girl хватает 3:1 */}
+                    <h3 className="font-[family-name:var(--font-nunito)] text-xl font-black leading-tight">
+                      <BidiText locale={locale}>{program.title}</BidiText>
+                    </h3>
+                  </div>
+
+                  <div className="flex flex-1 flex-col p-5">
+                    <p className="text-sm font-bold" style={{ color: accent.deep }}>
+                      <BidiText locale={locale}>{program.subtitle}</BidiText>
+                    </p>
+                    <p className="mt-2 text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
+                      <BidiText locale={locale}>{program.description}</BidiText>
+                    </p>
+
+                    {/* Чипы «что входит» */}
+                    <ul className="mt-4 flex flex-wrap gap-2">
+                      {program.includes.map((item) => (
+                        <li
+                          key={item}
+                          className="rounded-full border px-3 py-1 text-xs font-semibold leading-snug"
+                          style={{ borderColor: accent.chipBorder, background: accent.chipBg, color: accent.deep }}
+                        >
+                          <BidiText locale={locale}>{item}</BidiText>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* Формат */}
+                    <p className="mt-auto flex items-center gap-2 border-t border-black/5 pt-3 text-sm font-semibold text-[var(--color-ink-soft)]">
+                      <Clock aria-hidden className="h-4 w-4 shrink-0" strokeWidth={2.2} />
+                      <BidiText locale={locale}>{program.format}</BidiText>
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+
+        {/* Кейсы, масштаб, спектакли */}
+        <article className={`mt-12 ${cardShellClass}`}>
+          <section>
             <h2 className="mb-2 text-base font-semibold">
               <BidiText locale={locale}>{copy.casesTitle}</BidiText>
             </h2>
@@ -197,7 +363,7 @@ export default async function MunicipalitiesPage({ params }: Props) {
             </p>
           </section>
 
-          {/* Авторские спектакли + видео */}
+          {/* Авторские спектакли */}
           <section className="mt-8">
             <h2 className="mb-2 text-base font-semibold">
               <BidiText locale={locale}>{copy.showsTitle}</BidiText>
@@ -217,16 +383,59 @@ export default async function MunicipalitiesPage({ params }: Props) {
                 <BidiText locale={locale}>{copy.showsLinkLabel}</BidiText>
               </Link>
             </p>
-            <figure className="mt-4">
-              <LiteYouTube videoId={MUNICIPALITIES_VIDEO_ID} title={copy.videoTitle} />
-              <figcaption className="mt-2 text-sm text-[var(--color-muted)]">
-                <BidiText locale={locale}>{copy.videoCaption}</BidiText>
-              </figcaption>
-            </figure>
           </section>
+        </article>
 
+        {/* Видео с городских праздников - галерея */}
+        <section className="mt-12" aria-labelledby="municipal-videos-title">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2
+              id="municipal-videos-title"
+              className="font-[family-name:var(--font-nunito)] text-[28px] font-black leading-tight tracking-tight sm:text-4xl"
+            >
+              <BidiText locale={locale}>{copy.videosTitle}</BidiText>
+            </h2>
+          </div>
+          <div
+            className={
+              copy.videos.length === 1
+                ? "mx-auto mt-8 max-w-2xl"
+                : "mt-8 grid gap-5 sm:grid-cols-2 sm:gap-6"
+            }
+          >
+            {copy.videos.map((video) => (
+              <figure
+                key={video.id}
+                className="overflow-hidden rounded-[var(--radius-card)] bg-white p-3 shadow-[var(--shadow-card)] ring-1 ring-black/[0.04]"
+              >
+                <LiteYouTube videoId={video.id} title={video.title} />
+                <figcaption className="px-2 pb-1 pt-3 text-sm font-semibold text-[var(--color-ink-soft)]">
+                  <BidiText locale={locale}>{video.title}</BidiText>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </section>
+
+        {/* Рекомендательные письма - карусель */}
+        <section className="mt-12" aria-labelledby="municipal-letters-title">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2
+              id="municipal-letters-title"
+              className="font-[family-name:var(--font-nunito)] text-[28px] font-black leading-tight tracking-tight sm:text-4xl"
+            >
+              <BidiText locale={locale}>{copy.lettersTitle}</BidiText>
+            </h2>
+          </div>
+          <div className="mt-8">
+            <LettersCarousel locale={locale} letters={copy.letters} labels={copy.letterLabels} />
+          </div>
+        </section>
+
+        {/* Документы, FAQ, CTA */}
+        <article className={`mt-12 ${cardShellClass}`}>
           {/* Документы и надёжность */}
-          <section className="mt-8">
+          <section>
             <h2 className="mb-3 text-base font-semibold">
               <BidiText locale={locale}>{copy.docsTitle}</BidiText>
             </h2>
@@ -307,7 +516,7 @@ export default async function MunicipalitiesPage({ params }: Props) {
                 <BidiText locale={locale}>{copy.ctaEmail}</BidiText>
               </a>
             </div>
-            <p className="mt-3 text-sm text-[var(--color-muted)]" dir="ltr">
+            <p className="mt-3 text-sm text-[var(--color-ink-soft)]" dir="ltr">
               {B2B_EMAIL}
             </p>
           </div>
