@@ -4,7 +4,6 @@ import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 import {
-  BadgePercent,
   CalendarDays,
   Check,
   ChevronDown,
@@ -21,6 +20,15 @@ type GiftCode = "discount-200" | "confetti" | "bubbles";
 type FamilyGender = "" | "boy" | "girl" | "two";
 type ChildGender = "boy" | "girl";
 type ChildGenderChoice = "" | ChildGender;
+type HostCode =
+  | "mishanya"
+  | "artur-magician"
+  | "artur-mad-professor"
+  | "hanna"
+  | "ira"
+  | "zhenya"
+  | "leon"
+  | "unknown";
 type SubmitState = "idle" | "submitting" | "success" | "existing" | "error";
 
 type BirthdayInput = {
@@ -44,6 +52,7 @@ type GiftPayload = {
   clientName: string;
   phone: string;
   city: string;
+  hostCode: HostCode;
   children: GiftPayloadChild[];
   primaryChildIndex: number;
   turnstileToken?: string;
@@ -112,9 +121,11 @@ const COPY = {
     clientName: "Имя клиента",
     clientNamePlaceholder: "Как к вам обращаться?",
     phone: "Номер телефона / WhatsApp",
-    phoneHint: "Выберите страну и укажите номер, по которому с вами можно связаться",
+    phoneHint: "Код страны уже указан — если местный номер начинается с 0, вводите без него",
     city: "Город",
     cityPlaceholder: "Например, Хайфа",
+    host: "Кто был ведущим на празднике?",
+    hostPlaceholder: "Выберите ведущего",
     who: "Кого поздравляем?",
     genderBoy: "Мальчик",
     genderGirl: "Девочка",
@@ -133,6 +144,7 @@ const COPY = {
     submit: "Сохранить подарок",
     submitting: "Сохраняем подарок…",
     invalidPhone: "Проверьте номер телефона и выбранный код страны",
+    invalidHost: "Выберите, кто был ведущим на празднике",
     invalidBirthday: "Выберите пол и проверьте данные каждого ребёнка",
     verificationPending: "Подтвердите, что форму заполняет человек",
     formError: "Не удалось сохранить подарок. Попробуйте ещё раз.",
@@ -175,9 +187,11 @@ const COPY = {
     clientName: "שם ההורה",
     clientNamePlaceholder: "איך לפנות אליכם?",
     phone: "מספר טלפון / WhatsApp",
-    phoneHint: "בחרו מדינה והזינו מספר טלפון שבו אפשר ליצור איתכם קשר",
+    phoneHint: "קידומת המדינה כבר מופיעה — אם המספר המקומי מתחיל ב־0, הזינו אותו בלעדיו",
     city: "עיר",
     cityPlaceholder: "לדוגמה, חיפה",
+    host: "מי היה המפעיל או המפעילה באירוע?",
+    hostPlaceholder: "בחרו מפעיל או מפעילה",
     who: "למי חוגגים?",
     genderBoy: "בן",
     genderGirl: "בת",
@@ -196,6 +210,7 @@ const COPY = {
     submit: "שמירת המתנה",
     submitting: "שומרים את המתנה…",
     invalidPhone: "בדקו את מספר הטלפון ואת קידומת המדינה שנבחרה",
+    invalidHost: "בחרו מי היה המפעיל או המפעילה באירוע",
     invalidBirthday: "בחרו מין ובדקו את הפרטים של כל ילד או ילדה",
     verificationPending: "אשרו שהטופס נשלח על ידי אדם",
     formError: "לא הצלחנו לשמור את המתנה. נסו שוב.",
@@ -211,6 +226,27 @@ const COPY = {
 } as const;
 
 const GIFT_ORDER: GiftCode[] = ["discount-200", "confetti", "bubbles"];
+const HOST_OPTIONS: Array<{ code: HostCode; labels: Record<Language, string> }> = [
+  { code: "mishanya", labels: { ru: "Мишаня", he: "מישניה" } },
+  { code: "artur-magician", labels: { ru: "Артур Фокусник", he: "ארתור הקוסם" } },
+  {
+    code: "artur-mad-professor",
+    labels: { ru: "Артур Сумасшедший Профессор", he: "ארתור הפרופסור המשוגע" },
+  },
+  { code: "hanna", labels: { ru: "Ханна", he: "חנה" } },
+  { code: "ira", labels: { ru: "Ира", he: "אירה" } },
+  { code: "zhenya", labels: { ru: "Женя", he: "ז׳ניה" } },
+  { code: "leon", labels: { ru: "Леон", he: "ליאון" } },
+  {
+    code: "unknown",
+    labels: { ru: "Не знаю, кто ведущий", he: "לא יודע/ת מי היה המפעיל או המפעילה" },
+  },
+];
+const GIFT_IMAGES: Record<GiftCode, string> = {
+  "discount-200": "/gift/gift-discount-200.webp",
+  confetti: "/gift/gift-confetti.webp",
+  bubbles: "/gift/gift-bubbles.webp",
+};
 
 function sanitizeSource(value: string | null) {
   if (!value) return "party-qr";
@@ -279,7 +315,7 @@ function childPayload(
   const ageTurning = Number(input.age);
   const day = Number(input.day);
   const month = Number(input.month);
-  if (!Number.isInteger(ageTurning) || ageTurning < 1 || ageTurning > 18) return null;
+  if (!Number.isInteger(ageTurning) || ageTurning < 1 || ageTurning > 100) return null;
   if (!Number.isInteger(day) || !Number.isInteger(month)) return null;
   if (month < 1 || month > 12 || day < 1 || day > daysInMonth(month)) return null;
   const birthday = nextBirthday(day, month);
@@ -294,22 +330,14 @@ function childPayload(
 }
 
 function GiftVisual({ code }: { code: GiftCode }) {
-  if (code === "discount-200") {
-    return (
-      <div className="flex h-28 w-full items-center justify-center rounded-2xl bg-[linear-gradient(145deg,#fff4cc,#ffe3a1)] text-[#b96b00]">
-        <BadgePercent className="h-14 w-14" strokeWidth={1.9} aria-hidden />
-      </div>
-    );
-  }
-
   return (
-    <div className="relative h-28 w-full overflow-hidden rounded-2xl bg-[#fff9ef]">
+    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-[#fff9ef]">
       <Image
-        src={code === "confetti" ? "/addons/confetti.png" : "/addons/bubbles-show.png"}
+        src={GIFT_IMAGES[code]}
         alt=""
         fill
-        sizes="(max-width: 640px) 35vw, 180px"
-        className="object-contain p-1"
+        sizes="(max-width: 640px) 30vw, 220px"
+        className="object-cover"
       />
     </div>
   );
@@ -475,6 +503,7 @@ export function GiftPage() {
   const [clientName, setClientName] = useState("");
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
+  const [hostCode, setHostCode] = useState<HostCode | "">("");
   const [familyGender, setFamilyGender] = useState<FamilyGender>("");
   const [singleBirthday, setSingleBirthday] = useState<BirthdayInput>(EMPTY_BIRTHDAY);
   const [firstChildGender, setFirstChildGender] = useState<ChildGenderChoice>("");
@@ -654,6 +683,11 @@ export function GiftPage() {
       setErrorMessage(copy.invalidPhone);
       return;
     }
+    if (!hostCode) {
+      setSubmitState("error");
+      setErrorMessage(copy.invalidHost);
+      return;
+    }
 
     const children = formChildren
       .map(({ gender, input }) => childPayload(gender, input))
@@ -675,6 +709,7 @@ export function GiftPage() {
       clientName: clientName.trim(),
       phone: normalizedPhone,
       city: city.trim(),
+      hostCode,
       children,
       primaryChildIndex,
       turnstileToken: turnstileToken || undefined,
@@ -921,6 +956,27 @@ export function GiftPage() {
                         className="h-13 w-full rounded-2xl border border-zinc-200 bg-white ps-12 pe-4 text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-zinc-400 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10"
                       />
                     </span>
+                  </label>
+
+                  <label className="relative mt-4 block">
+                    <FieldLabel>{copy.host}</FieldLabel>
+                    <select
+                      value={hostCode}
+                      onChange={(event) => {
+                        setHostCode(event.target.value as HostCode | "");
+                        setErrorMessage("");
+                      }}
+                      required
+                      className="h-13 w-full appearance-none rounded-2xl border border-zinc-200 bg-white px-4 pe-10 text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10"
+                    >
+                      <option value="">{copy.hostPlaceholder}</option>
+                      {HOST_OPTIONS.map((host) => (
+                        <option key={host.code} value={host.code}>
+                          {host.labels[language]}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute end-3 bottom-[18px] h-4 w-4 text-zinc-400" />
                   </label>
 
                   <fieldset className="mt-6">

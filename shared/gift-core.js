@@ -3,6 +3,16 @@ import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 export const GIFT_CODES = new Set(["discount-200", "confetti", "bubbles"]);
 export const LANGUAGES = new Set(["ru", "he"]);
 export const CHILD_GENDERS = new Set(["boy", "girl"]);
+export const HOST_CODES = new Set([
+  "mishanya",
+  "artur-magician",
+  "artur-mad-professor",
+  "hanna",
+  "ira",
+  "zhenya",
+  "leon",
+  "unknown",
+]);
 
 const RESPONSIBLE_SERGEY = 3828;
 const NEW_LEAD_STAGE = "NEW";
@@ -13,11 +23,16 @@ const GIFT_LABELS = {
   confetti: "Бесплатное конфетти",
   bubbles: "Бесплатное шоу мыльных пузырей",
 };
-const LANGUAGE_LABELS = {
-  ru: "Русский",
-  he: "Иврит",
+const HOST_LABELS = {
+  mishanya: "Мишаня",
+  "artur-magician": "Артур Фокусник",
+  "artur-mad-professor": "Артур Сумасшедший Профессор",
+  hanna: "Ханна",
+  ira: "Ира",
+  zhenya: "Женя",
+  leon: "Леон",
+  unknown: "Не знаю, кто ведущий",
 };
-
 export function normalizeInternationalPhone(value) {
   const phoneNumber = parsePhoneNumberFromString(String(value || ""), "IL");
   return phoneNumber?.isValid() ? String(phoneNumber.number) : null;
@@ -63,9 +78,11 @@ export function validateGiftPayload(raw, now = new Date()) {
 
   const clientName = String(raw.clientName || "").trim();
   const city = String(raw.city || "").trim();
+  const hostCode = String(raw.hostCode || "").trim();
   const phone = normalizeInternationalPhone(raw.phone);
   if (clientName.length < 2 || clientName.length > 120) return { error: "invalid_name" };
   if (city.length < 2 || city.length > 160) return { error: "invalid_city" };
+  if (!HOST_CODES.has(hostCode)) return { error: "invalid_host" };
   if (!phone) return { error: "invalid_phone" };
   if (!Array.isArray(raw.children) || raw.children.length < 1 || raw.children.length > 2) {
     return { error: "invalid_children" };
@@ -115,6 +132,7 @@ export function validateGiftPayload(raw, now = new Date()) {
       giftCode: raw.giftCode,
       clientName,
       city,
+      hostCode,
       phone,
       children,
       primaryChildIndex,
@@ -213,10 +231,18 @@ function dateTimeLabel(isoDate) {
   }).format(new Date(isoDate));
 }
 
-function childLabel(child, index, isPrimary) {
+function yearsLabel(age) {
+  const lastTwo = age % 100;
+  if (lastTwo >= 11 && lastTwo <= 14) return "лет";
+  const last = age % 10;
+  if (last === 1) return "год";
+  if (last >= 2 && last <= 4) return "года";
+  return "лет";
+}
+
+function secondaryChildLabel(child) {
   const gender = child.gender === "boy" ? "мальчик" : "девочка";
-  const primary = isPrimary ? " - ближайший день рождения" : "";
-  return `Ребёнок ${index + 1}${primary}: ${gender}; исполнится ${child.ageTurning}; дата ${dateLabel(child.nextBirthday)}`;
+  return `Второй ребёнок: ${gender}; исполнится ${child.ageTurning} ${yearsLabel(child.ageTurning)}; ближайший день рождения: ${dateLabel(child.nextBirthday)}`;
 }
 
 function duplicateLines(duplicates) {
@@ -228,7 +254,7 @@ function duplicateLines(duplicates) {
     ? duplicates.COMPANY.map(Number).filter(Boolean)
     : [];
   if (!leadIds.length && !contactIds.length && !companyIds.length) {
-    return ["Совпадения по телефону в CRM: не найдены."];
+    return [];
   }
   const lines = ["Совпадения по телефону в CRM найдены - решение принимает менеджер:"];
   if (leadIds.length) lines.push(`Лиды: ${leadIds.join(", ")}`);
@@ -238,29 +264,35 @@ function duplicateLines(duplicates) {
 }
 
 export function buildLeadNote(payload, claim, duplicates = {}) {
-  const lines = [
-    `Анкета «${SOURCE_NAME}»`,
-    `ID анкеты: ${claim.id}`,
-    `Дата анкеты: ${dateTimeLabel(claim.submittedAt)}`,
-    `Интерфейс анкеты: ${LANGUAGE_LABELS[payload.language]}`,
-    `Носитель QR: ${payload.sourceCode}`,
-    "",
-    `Подарок: ${GIFT_LABELS[payload.giftCode]}`,
-    `Действует до: ${dateLabel(claim.validUntil)}`,
-    "Подарок предварительный. При бронировании менеджер может изменить его по просьбе клиента.",
-    "",
-    `Имя клиента: ${payload.clientName}`,
-    `Телефон: ${payload.phone}`,
-    `Город: ${payload.city}`,
-    ...payload.children.map((child, index) =>
-      childLabel(child, index, index === payload.primaryChildIndex),
-    ),
-    "",
-    ...duplicateLines(duplicates),
-    "",
-    "Подарок закреплён за номером телефона на 12 месяцев.",
+  const sections = [
+    [`Дата анкеты: ${dateTimeLabel(claim.submittedAt)}`],
+    [
+      `Подарок: ${GIFT_LABELS[payload.giftCode]}`,
+      `Действует до: ${dateLabel(claim.validUntil)}`,
+      `Ведущий на празднике: ${HOST_LABELS[payload.hostCode]}`,
+    ],
   ];
-  return lines.join("\n");
+
+  if (payload.children.length > 1) {
+    const secondaryChild = payload.children.find(
+      (_child, index) => index !== payload.primaryChildIndex,
+    );
+    if (secondaryChild) sections.push([secondaryChildLabel(secondaryChild)]);
+  }
+
+  const duplicatesSection = duplicateLines(duplicates);
+  if (duplicatesSection.length) sections.push(duplicatesSection);
+
+  return sections.map((section) => section.join("\n")).join("\n\n");
+}
+
+export function subtractDaysIso(isoDate, days) {
+  const date = new Date(`${isoDate}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime()) || !Number.isInteger(days) || days < 0) {
+    throw new Error("Invalid date offset");
+  }
+  date.setUTCDate(date.getUTCDate() - days);
+  return date.toISOString().slice(0, 10);
 }
 
 export function buildLeadFields(payload, claim, sourceId, duplicates = {}) {
@@ -280,6 +312,7 @@ export function buildLeadFields(payload, claim, sourceId, duplicates = {}) {
     UTM_CAMPAIGN: payload.sourceCode,
     BIRTHDATE: primary.nextBirthday,
     UF_CRM_1649234588017: primary.nextBirthday,
+    UF_CRM_1644332749977: subtractDaysIso(primary.nextBirthday, 30),
     UF_CRM_1644328015350: payload.city,
     UF_CRM_1644327962757: primary.gender === "boy" ? 44 : 46,
     UF_CRM_1644329391894: primary.ageTurning,
