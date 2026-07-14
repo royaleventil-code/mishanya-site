@@ -375,6 +375,10 @@ function checkedOlchatUrl(env) {
 }
 
 async function sendRsvpClientMessage(env, deal, contact, event, payload, manageUrl) {
+  const existingState = await readClientMessageState(env.GIFT_DB, deal.ID);
+  if (["accepted", "sent", "sending", "ambiguous", "failed"].includes(existingState?.status)) {
+    return { status: existingState.status, mode: clientMessageMode(env) };
+  }
   const eligibility = evaluateRsvpClientMessageEligibility(env, deal, contact, event);
   const clientName = cleanMessageValue(contact?.NAME) || payload.organizerName;
   const body = buildRsvpClientMessage(clientName, payload.childName, manageUrl);

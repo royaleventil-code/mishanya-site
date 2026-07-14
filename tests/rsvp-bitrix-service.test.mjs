@@ -256,6 +256,8 @@ test("processes a closed deal twice without creating a duplicate event", async (
     };
     const job = { dealId: "18123", eventTs: 1784012400, eventHandlerId: "201" };
     const first = await processRsvpDealUpdate(env, job, 1);
+    env.RSVP_CLIENT_MESSAGE_MODE = "live";
+    env.RSVP_CLIENT_MESSAGE_ENABLED_AFTER = "2030-01-01T00:00:00.000Z";
     const second = await processRsvpDealUpdate(env, job, 2);
     assert.equal(first.status, "synced");
     assert.equal(second.status, "synced");
