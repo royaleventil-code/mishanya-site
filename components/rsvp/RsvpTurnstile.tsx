@@ -19,6 +19,7 @@ declare global {
         },
       ) => string;
       reset: (widgetId?: string) => void;
+      remove: (widgetId: string) => void;
     };
   }
 }
@@ -82,6 +83,10 @@ export function RsvpTurnstile({
       "expired-callback": () => callbackRef.current(""),
       "error-callback": () => callbackRef.current(""),
     });
+    return () => {
+      if (widgetRef.current) window.turnstile?.remove(widgetRef.current);
+      widgetRef.current = null;
+    };
   }, [action, locale, ready]);
 
   useEffect(() => {

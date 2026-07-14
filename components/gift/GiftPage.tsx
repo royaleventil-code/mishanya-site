@@ -81,6 +81,7 @@ declare global {
         },
       ) => string;
       reset: (widgetId?: string) => void;
+      remove: (widgetId: string) => void;
     };
   }
 }

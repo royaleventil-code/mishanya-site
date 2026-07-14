@@ -27,7 +27,7 @@ jobs:
           NEXT_PUBLIC_GA_MEASUREMENT_ID: G-GLWN1HJVX9
           NEXT_PUBLIC_META_PIXEL_ID: "987879420515178"
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
-        run: npm run build
+        run: npm run build:pages
 
       - name: Publish to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3

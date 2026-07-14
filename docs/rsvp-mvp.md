@@ -26,8 +26,9 @@ API находится в `functions/api/rsvp.js`, схема — в `migrations
 
 1. Применить миграцию к базе `GIFT_DB`.
 2. Добавить секрет `RSVP_DATA_SECRET` или оставить резервное использование существующего `GIFT_DATA_SECRET`.
-3. Проверить `NEXT_PUBLIC_TURNSTILE_SITE_KEY` и `TURNSTILE_SECRET_KEY`.
-4. Пройти создание, ответ и повторное изменение ответа на production-like Pages preview.
+3. Выполнить `npm run build:pages`: команда останавливает production-сборку, если отсутствует `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
+4. Проверить, что в Cloudflare настроен соответствующий `TURNSTILE_SECRET_KEY`.
+5. Пройти создание, ответ и повторное изменение ответа на production-like Pages preview.
 
 При настроенном `TURNSTILE_SECRET_KEY` API отклоняет запросы без корректного Turnstile-токена.
 
