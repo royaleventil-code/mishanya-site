@@ -276,7 +276,7 @@ function clientMessageMode(env) {
   return RSVP_CLIENT_MESSAGE_MODES.has(mode) ? mode : "off";
 }
 
-export function evaluateRsvpClientMessageEligibility(env, deal, contact, event) {
+export function evaluateRsvpClientMessageEligibility(env, deal, contact) {
   const mode = clientMessageMode(env);
   if (mode === "off") return { allowed: false, status: "disabled", mode };
   if (mode === "dry-run") return { allowed: false, status: "dry_run", mode };
@@ -290,11 +290,11 @@ export function evaluateRsvpClientMessageEligibility(env, deal, contact, event) 
   }
 
   const enabledAfter = Date.parse(String(env.RSVP_CLIENT_MESSAGE_ENABLED_AFTER || ""));
-  const eventCreatedAt = Date.parse(String(event?.created_at || ""));
-  if (!Number.isFinite(enabledAfter) || !Number.isFinite(eventCreatedAt)) {
+  const movedToCurrentStageAt = Date.parse(String(deal?.MOVED_TIME || ""));
+  if (!Number.isFinite(enabledAfter) || !Number.isFinite(movedToCurrentStageAt)) {
     return { allowed: false, status: "live_blocked", mode };
   }
-  const allowed = eventCreatedAt >= enabledAfter;
+  const allowed = movedToCurrentStageAt >= enabledAfter;
   return { allowed, status: allowed ? "eligible" : "before_cutoff", mode };
 }
 
@@ -379,7 +379,7 @@ async function sendRsvpClientMessage(env, deal, contact, event, payload, manageU
   if (["accepted", "sent", "sending", "ambiguous", "failed"].includes(existingState?.status)) {
     return { status: existingState.status, mode: clientMessageMode(env) };
   }
-  const eligibility = evaluateRsvpClientMessageEligibility(env, deal, contact, event);
+  const eligibility = evaluateRsvpClientMessageEligibility(env, deal, contact);
   const clientName = cleanMessageValue(contact?.NAME) || payload.organizerName;
   const body = buildRsvpClientMessage(clientName, payload.childName, manageUrl);
   const templateVersion = cleanMessageValue(env.RSVP_CLIENT_MESSAGE_TEMPLATE_VERSION)

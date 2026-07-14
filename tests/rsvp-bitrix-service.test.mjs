@@ -23,20 +23,30 @@ test("builds the approved client message exactly", () => {
   );
 });
 
-test("live client messages only allow events created after the rollout cutoff", () => {
+test("live client messages only allow deals moved to the closed stage after the rollout cutoff", () => {
   const env = {
     RSVP_CLIENT_MESSAGE_MODE: "live",
     RSVP_CLIENT_MESSAGE_ENABLED_AFTER: "2026-07-14T12:00:00.000Z",
   };
-  const deal = { ID: "18123" };
   const contact = { ID: "4854" };
   assert.equal(
-    evaluateRsvpClientMessageEligibility(env, deal, contact, { created_at: "2026-07-14T11:59:59.999Z" }).status,
+    evaluateRsvpClientMessageEligibility(env, {
+      ID: "18123",
+      MOVED_TIME: "2026-07-01T21:20:18+03:00",
+      DATE_MODIFY: "2026-07-14T20:25:57+03:00",
+    }, contact).status,
     "before_cutoff",
   );
   assert.equal(
-    evaluateRsvpClientMessageEligibility(env, deal, contact, { created_at: "2026-07-14T12:00:00.000Z" }).status,
+    evaluateRsvpClientMessageEligibility(env, {
+      ID: "18124",
+      MOVED_TIME: "2026-07-14T15:00:00+03:00",
+    }, contact).status,
     "eligible",
+  );
+  assert.equal(
+    evaluateRsvpClientMessageEligibility(env, { ID: "18125" }, contact).status,
+    "live_blocked",
   );
 });
 
@@ -202,6 +212,7 @@ test("processes a closed deal twice without creating a duplicate event", async (
     ID: "18123",
     CATEGORY_ID: "0",
     STAGE_ID: "UC_HP4F3F",
+    MOVED_TIME: "2026-07-14T15:40:08+03:00",
     TITLE: "др 2026 Анна Девочка возраст 6 Haifa",
     CONTACT_ID: "4854",
     UF_CRM_1645710600299: "Маша",
