@@ -5,17 +5,16 @@ import {
   Check,
   CheckCircle2,
   ChevronRight,
-  Clock3,
   HelpCircle,
   LoaderCircle,
   MapPin,
   MessageCircle,
-  PartyPopper,
   Sparkles,
   UsersRound,
   XCircle,
 } from "lucide-react";
-import { FormEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { RsvpInvitationDetails } from "@/components/rsvp/RsvpInvitationDetails";
 import { RsvpLoading, RsvpShell } from "@/components/rsvp/RsvpShell";
 import { RSVP_TURNSTILE_ENABLED, RsvpTurnstile } from "@/components/rsvp/RsvpTurnstile";
 import {
@@ -26,11 +25,10 @@ import {
   type RsvpResponseInput,
   type RsvpStatus,
 } from "@/lib/rsvp";
+import { formatRsvpEventLocation } from "@/shared/rsvp-invitation.js";
 
 const COPY = {
   ru: {
-    invitation: "Приглашение на праздник",
-    turns: (age: number) => `исполняется ${age}!`,
     question: "Вы сможете прийти?",
     questionHint: "Ответ можно изменить позже с этого же устройства.",
     yes: "Будем",
@@ -58,8 +56,6 @@ const COPY = {
     verification: "Подтвердите, что ответ отправляет человек.",
   },
   he: {
-    invitation: "הזמנה לחגיגה",
-    turns: (age: number) => `חוגג/ת ${age}!`,
     question: "תוכלו להגיע?",
     questionHint: "אפשר לשנות את התשובה מאוחר יותר מאותו מכשיר.",
     yes: "נגיע",
@@ -87,17 +83,6 @@ const COPY = {
     verification: "אשרו שהתשובה נשלחת על ידי אדם.",
   },
 } as const;
-
-function formatEventDate(event: PublicRsvpEvent) {
-  return new Intl.DateTimeFormat(event.locale === "he" ? "he-IL" : "ru-RU", {
-    timeZone: "Asia/Jerusalem",
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(event.startsAt));
-}
 
 function googleCalendarUrl(event: PublicRsvpEvent) {
   const start = new Date(event.startsAt);
@@ -172,7 +157,6 @@ export function GuestInvitePage() {
   }, []);
 
   const copy = COPY[event?.locale || "ru"];
-  const eventDate = useMemo(() => event ? formatEventDate(event) : "", [event]);
 
   useLayoutEffect(() => {
     if (!saved) return;
@@ -227,42 +211,14 @@ export function GuestInvitePage() {
   const contactHref = event.contactPhone
     ? `https://wa.me/${event.contactPhone.replace(/\D/g, "")}?text=${encodeURIComponent(event.locale === "he" ? `שלום! יש לי שאלה לגבי יום ההולדת של ${event.childName}` : `Здравствуйте! У меня вопрос по поводу дня рождения ${event.childName}`)}`
     : null;
-  const sameLocation = event.city.trim().toLocaleLowerCase() === event.address.trim().toLocaleLowerCase();
-  const location = sameLocation ? event.address : `${event.city}, ${event.address}`;
+  const location = formatRsvpEventLocation(event);
   const wazeHref = `https://www.waze.com/ul?${new URLSearchParams({ q: location, navigate: "yes" }).toString()}`;
   const inputClass = "h-13 w-full rounded-2xl border border-zinc-200 bg-white px-4 text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-zinc-400 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10";
 
   return (
     <RsvpShell locale={event.locale} compact>
       <article className="overflow-hidden rounded-[34px] border border-black/[0.06] bg-white/92 shadow-[0_30px_90px_rgba(30,20,60,0.14)] backdrop-blur">
-        <header className="relative overflow-hidden bg-[linear-gradient(135deg,#fff0f4_0%,#f2efff_58%,#edf7ff_100%)] px-5 py-9 text-center sm:px-9 sm:py-12">
-          <div aria-hidden className="absolute -start-10 -top-12 h-36 w-36 rounded-full bg-[#ff375f]/15 blur-2xl" />
-          <div aria-hidden className="absolute -end-8 top-12 h-40 w-40 rounded-full bg-[#5e5ce6]/15 blur-2xl" />
-          <div className="relative">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-3xl bg-white text-[#ff375f] shadow-sm">
-              <PartyPopper className="h-7 w-7" />
-            </div>
-            <p className="mt-4 text-xs font-black uppercase tracking-[0.18em] text-[#d91f4d]">{copy.invitation}</p>
-            <h1 className="mt-3 text-4xl font-black leading-tight sm:text-5xl">
-              {event.childName} {copy.turns(event.childAge)}
-            </h1>
-            {event.message ? <p className="mx-auto mt-4 max-w-lg whitespace-pre-line text-base leading-7 text-zinc-650">{event.message}</p> : null}
-          </div>
-        </header>
-
-        <div className="grid gap-3 border-y border-black/[0.05] bg-white p-5 sm:grid-cols-2 sm:p-7">
-          <div className="flex items-start gap-3 rounded-2xl bg-zinc-50 p-4">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-[#5e5ce6]"><Clock3 className="h-5 w-5" /></span>
-            <p className="self-center text-sm font-black capitalize">{eventDate}</p>
-          </div>
-          <div className="flex items-start gap-3 rounded-2xl bg-zinc-50 p-4">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-600"><MapPin className="h-5 w-5" /></span>
-            <div>
-              <p className="text-sm font-black">{sameLocation ? event.address : event.city}</p>
-              {!sameLocation ? <p className="mt-1 text-xs leading-5 text-zinc-500">{event.address}</p> : null}
-            </div>
-          </div>
-        </div>
+        <RsvpInvitationDetails event={event} />
 
         {saved ? (
           <section ref={successRef} role="status" aria-live="polite" tabIndex={-1} className="scroll-mt-3 p-6 text-center outline-none sm:p-9">

@@ -3,6 +3,7 @@
 import {
   Check,
   Copy,
+  Eye,
   HelpCircle,
   Link2,
   MessageCircle,
@@ -14,6 +15,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { RsvpInvitationDetails } from "@/components/rsvp/RsvpInvitationDetails";
 import { RsvpLoading, RsvpShell } from "@/components/rsvp/RsvpShell";
 import {
   getManagedRsvpEvent,
@@ -22,6 +24,7 @@ import {
   type RsvpResponse,
   type RsvpStatus,
 } from "@/lib/rsvp";
+import { buildRsvpGuestShareText } from "@/shared/rsvp-invitation.js";
 
 const COPY = {
   ru: {
@@ -34,6 +37,10 @@ const COPY = {
       "Гости подтвердят участие по ссылке",
       "Ответы и количество гостей появятся здесь",
     ],
+    invitationTitle: "Ваше приглашение для гостей",
+    invitationHint: "Так гости увидят информацию о празднике. Проверьте дату, время и место перед отправкой.",
+    messagePreview: "Готовый текст сообщения",
+    openGuestView: "Посмотреть глазами гостя",
     attending: "Придут",
     adults: "взрослых",
     children: "детей",
@@ -44,7 +51,7 @@ const COPY = {
     guestLink: "Ссылка для гостей",
     copy: "Копировать",
     copied: "Скопировано",
-    share: "Отправить в WhatsApp",
+    share: "Отправить приглашение гостям",
     refresh: "Обновить",
     listTitle: "Список ответов",
     emptyTitle: "Пока никто не ответил",
@@ -67,6 +74,10 @@ const COPY = {
       "האורחים יאשרו הגעה דרך הקישור",
       "התשובות ומספר האורחים יופיעו כאן",
     ],
+    invitationTitle: "ההזמנה שלכם לאורחים",
+    invitationHint: "כך האורחים יראו את פרטי המסיבה. בדקו את התאריך, השעה והמקום לפני השליחה.",
+    messagePreview: "טקסט מוכן להודעה",
+    openGuestView: "לצפייה כמו אורח",
     attending: "מגיעים",
     adults: "מבוגרים",
     children: "ילדים",
@@ -77,7 +88,7 @@ const COPY = {
     guestLink: "קישור לאורחים",
     copy: "העתקה",
     copied: "הועתק",
-    share: "שליחה ב־WhatsApp",
+    share: "שליחת ההזמנה לאורחים",
     refresh: "רענון",
     listTitle: "רשימת תשובות",
     emptyTitle: "עדיין אין תשובות",
@@ -221,9 +232,7 @@ export function EventDashboardPage() {
   }
 
   const publicUrl = `${window.location.origin}/invite?event=${encodeURIComponent(data.event.slug)}`;
-  const shareText = locale === "he"
-    ? `נשמח לראות אתכם ביום ההולדת של ${data.event.childName}! אשרו הגעה כאן: ${publicUrl}`
-    : `Будем рады видеть вас на дне рождения ${data.event.childName}! Подтвердите участие: ${publicUrl}`;
+  const shareText = buildRsvpGuestShareText(data.event, publicUrl);
   const copyLink = async () => {
     await navigator.clipboard.writeText(publicUrl);
     setCopied(true);
@@ -252,6 +261,30 @@ export function EventDashboardPage() {
         ))}
       </section>
 
+      <section className="mt-7 rounded-[30px] border border-black/[0.06] bg-white/90 p-5 shadow-[var(--shadow-card)] sm:p-7">
+        <div className="flex items-start gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-[#5e5ce6]"><PartyPopper className="h-5 w-5" /></span>
+          <div>
+            <h2 className="text-2xl font-black">{copy.invitationTitle}</h2>
+            <p className="mt-1 text-sm leading-6 text-zinc-500">{copy.invitationHint}</p>
+          </div>
+        </div>
+
+        <article className="mt-5 overflow-hidden rounded-[28px] border border-black/[0.06] bg-white shadow-sm">
+          <RsvpInvitationDetails event={data.event} headingLevel="h3" />
+        </article>
+
+        <div className="mt-5 rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4 sm:p-5">
+          <div className="flex items-center gap-2 text-sm font-black text-emerald-900"><MessageCircle className="h-4 w-4" />{copy.messagePreview}</div>
+          <p className="mt-3 whitespace-pre-line text-sm font-semibold leading-6 text-zinc-700">{shareText}</p>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <a href={publicUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-white px-4 text-sm font-black shadow-sm transition-colors duration-150 hover:bg-zinc-50"><Eye className="h-4 w-4" />{copy.openGuestView}</a>
+          <a href={`https://wa.me/?text=${encodeURIComponent(shareText)}`} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--color-whatsapp)] px-4 text-sm font-black text-white transition-transform duration-150 active:scale-[0.98]"><MessageCircle className="h-4 w-4" />{copy.share}</a>
+        </div>
+      </section>
+
       <section className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label={copy.attending} value={summary.total} detail={`${summary.adults} ${copy.adults} · ${summary.children} ${copy.children}`} tone="green" />
         <StatCard label={copy.declined} value={summary.no} detail={copy.families} tone="red" />
@@ -267,7 +300,6 @@ export function EventDashboardPage() {
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}<span className="hidden sm:inline">{copied ? copy.copied : copy.copy}</span>
           </button>
         </div>
-        <a href={`https://wa.me/?text=${encodeURIComponent(shareText)}`} target="_blank" rel="noreferrer" className="mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--color-whatsapp)] px-4 text-sm font-black text-white transition-transform duration-150 active:scale-[0.98]"><MessageCircle className="h-4 w-4" />{copy.share}</a>
       </section>
 
       <section className="mt-5 rounded-[30px] border border-black/[0.06] bg-white/90 p-5 shadow-[var(--shadow-card)] sm:p-7">
