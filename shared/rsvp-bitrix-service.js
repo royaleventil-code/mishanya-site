@@ -411,17 +411,17 @@ async function sendRsvpClientMessage(env, deal, contact, event, payload, manageU
 
   let response;
   try {
-    response = await fetch(checkedOlchatUrl(env), {
-      method: "POST",
+    const requestUrl = new URL(checkedOlchatUrl(env));
+    requestUrl.search = new URLSearchParams({
+      phone_number: phoneNumber,
+      body,
+      send_to_imol: "Y",
+    }).toString();
+    response = await fetch(requestUrl.toString(), {
+      method: "GET",
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
         Accept: "application/json, text/plain",
       },
-      body: new URLSearchParams({
-        phone_number: phoneNumber,
-        body,
-        send_to_imol: "Y",
-      }).toString(),
       signal: AbortSignal.timeout(15000),
     });
   } catch {

@@ -220,7 +220,10 @@ test("processes a closed deal twice without creating a duplicate event", async (
   const olchatCalls = [];
   globalThis.fetch = async (url, init) => {
     if (String(url).startsWith("https://olchat.example.test/")) {
-      olchatCalls.push(new URLSearchParams(String(init?.body || "")));
+      olchatCalls.push({
+        method: init?.method,
+        params: new URL(String(url)).searchParams,
+      });
       return new Response("OK", { status: 200 });
     }
     const params = JSON.parse(String(init?.body || "{}"));
@@ -279,11 +282,12 @@ test("processes a closed deal twice without creating a duplicate event", async (
     assert.equal(db.messages.get("18123:rsvp_client_invitation").status, "accepted");
     assert.equal(db.messages.get("18123:rsvp_client_invitation").attempts, 1);
     assert.equal(olchatCalls.length, 1);
-    assert.equal(olchatCalls[0].get("phone_number"), "972548000000");
-    assert.equal(olchatCalls[0].get("send_to_imol"), "Y");
+    assert.equal(olchatCalls[0].method, "GET");
+    assert.equal(olchatCalls[0].params.get("phone_number"), "972548000000");
+    assert.equal(olchatCalls[0].params.get("send_to_imol"), "Y");
     const manageUrl = activities[0].DESCRIPTION.match(/Личный кабинет клиента: (https:\/\/\S+)/)?.[1];
     assert.equal(
-      olchatCalls[0].get("body"),
+      olchatCalls[0].params.get("body"),
       buildRsvpClientMessage("Анна", "Маша", manageUrl),
     );
   } finally {

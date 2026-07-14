@@ -67,7 +67,7 @@ Production handler события `ONCRMDEALUPDATE`:
 - управление отправкой Worker: `RSVP_CLIENT_MESSAGE_MODE`, `RSVP_CLIENT_MESSAGE_ENABLED_AFTER`;
 - только для безопасной проверки режима `test`: `RSVP_CLIENT_MESSAGE_TEST_DEAL_ID`, `RSVP_CLIENT_MESSAGE_TEST_CONTACT_ID`.
 
-Режимы отправки: `off`, `dry-run`, `test`, `live`. Production включается в `live` только после проверки на выделенной тестовой сделке. Полный OLChat URL с токеном хранится только в Cloudflare Secret и не записывается в D1, очередь или логи.
+Режимы отправки: `off`, `dry-run`, `test`, `live`. Production включается в `live` только после проверки на выделенной тестовой сделке. OLChat `sendText` вызывается поддерживаемым провайдером методом `GET`; полный URL с токеном, телефон и текст не записываются в D1, очередь или логи приложения.
 
 Значения секретов нельзя добавлять в репозиторий, URL, ответы endpoint или логи.
 
