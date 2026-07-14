@@ -103,13 +103,16 @@ function googleCalendarUrl(event: PublicRsvpEvent) {
   const start = new Date(event.startsAt);
   const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
   const stamp = (date: Date) => date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-  const details = event.message || `${event.city}, ${event.address}`;
+  const location = event.city.trim().toLocaleLowerCase() === event.address.trim().toLocaleLowerCase()
+    ? event.address
+    : `${event.city}, ${event.address}`;
+  const details = event.message || location;
   const params = new URLSearchParams({
     action: "TEMPLATE",
     text: event.locale === "he" ? `יום ההולדת של ${event.childName}` : `День рождения ${event.childName}`,
     dates: `${stamp(start)}/${stamp(end)}`,
     details,
-    location: `${event.city}, ${event.address}`,
+    location,
   });
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
@@ -224,7 +227,9 @@ export function GuestInvitePage() {
   const contactHref = event.contactPhone
     ? `https://wa.me/${event.contactPhone.replace(/\D/g, "")}?text=${encodeURIComponent(event.locale === "he" ? `שלום! יש לי שאלה לגבי יום ההולדת של ${event.childName}` : `Здравствуйте! У меня вопрос по поводу дня рождения ${event.childName}`)}`
     : null;
-  const wazeHref = `https://www.waze.com/ul?${new URLSearchParams({ q: `${event.city}, ${event.address}`, navigate: "yes" }).toString()}`;
+  const sameLocation = event.city.trim().toLocaleLowerCase() === event.address.trim().toLocaleLowerCase();
+  const location = sameLocation ? event.address : `${event.city}, ${event.address}`;
+  const wazeHref = `https://www.waze.com/ul?${new URLSearchParams({ q: location, navigate: "yes" }).toString()}`;
   const inputClass = "h-13 w-full rounded-2xl border border-zinc-200 bg-white px-4 text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-zinc-400 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10";
 
   return (
@@ -252,7 +257,10 @@ export function GuestInvitePage() {
           </div>
           <div className="flex items-start gap-3 rounded-2xl bg-zinc-50 p-4">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-600"><MapPin className="h-5 w-5" /></span>
-            <div><p className="text-sm font-black">{event.city}</p><p className="mt-1 text-xs leading-5 text-zinc-500">{event.address}</p></div>
+            <div>
+              <p className="text-sm font-black">{sameLocation ? event.address : event.city}</p>
+              {!sameLocation ? <p className="mt-1 text-xs leading-5 text-zinc-500">{event.address}</p> : null}
+            </div>
           </div>
         </div>
 

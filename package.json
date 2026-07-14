@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:gift": "node --test tests/gift-core.test.mjs",
-    "test:rsvp": "node --test tests/rsvp-core.test.mjs"
+    "test:rsvp": "node --test tests/rsvp-core.test.mjs tests/rsvp-bitrix-core.test.mjs tests/rsvp-bitrix-endpoint.test.mjs tests/rsvp-bitrix-service.test.mjs"
   },
   "dependencies": {
     "framer-motion": "^12.39.0",

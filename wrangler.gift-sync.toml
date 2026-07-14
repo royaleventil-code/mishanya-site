@@ -5,6 +5,7 @@ compatibility_date = "2026-05-21"
 
 [vars]
 BITRIX_QR_SOURCE_ID = "QR_PARTY_GIFT"
+RSVP_PUBLIC_ORIGIN = "https://mishanya-show.com"
 
 [[d1_databases]]
 binding = "GIFT_DB"

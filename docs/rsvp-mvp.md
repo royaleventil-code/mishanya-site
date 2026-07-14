@@ -31,6 +31,41 @@ API находится в `functions/api/rsvp.js`, схема — в `migrations
 
 При настроенном `TURNSTILE_SECRET_KEY` API отклоняет запросы без корректного Turnstile-токена.
 
+## Автоматическое создание из Bitrix24
+
+Production handler события `ONCRMDEALUPDATE`:
+
+`POST https://mishanya-show.com/api/bitrix/deal-update`
+
+Поток обработки:
+
+1. Pages Function принимает только `application/x-www-form-urlencoded` и событие `ONCRMDEALUPDATE`.
+2. `auth[application_token]` и `auth[domain]` сравниваются с Cloudflare Secrets.
+3. Повторная доставка одного события отсекается по fingerprint без повторной постановки в очередь.
+4. Job отправляется в `GIFT_SYNC_QUEUE` с задержкой 10 секунд.
+5. Worker заново читает сделку и контакт через `crm.deal.get` / `crm.contact.get`.
+6. При стадии `Работа закрыта` создаётся или обновляется одно RSVP-событие с `source_id = ID сделки`.
+7. Публичная и личная ссылки записываются одной внутренней записью в таймлайн сделки; клиенту ничего не отправляется.
+8. Повторные обновления сохраняют публичную ссылку, приватный токен и ответы гостей, а существующая внутренняя CRM-активность обновляется без дублей.
+
+Допустимые закрытые стадии:
+
+- общая воронка: `CATEGORY_ID=0`, `STAGE_ID=UC_HP4F3F`;
+- повторные продажи: `CATEGORY_ID=2`, `STAGE_ID=C2:UC_AWENHX`.
+
+Шаблоны регулярных сделок с заголовком `РС ...` игнорируются.
+
+Обязательные данные сделки: одинаково заполненная пара полей имени ребёнка, возраст, дата/время, адрес и связанный контакт с именем и валидным телефоном. Адрес копируется целиком; для автоматического события `city` и `address` одинаковы, а гостевая страница показывает такую локацию одной строкой.
+
+Служебные Cloudflare Secrets:
+
+- Pages: `BITRIX_EVENT_TOKEN`, `BITRIX_EVENT_DOMAIN`;
+- queue Worker: `BITRIX_WEBHOOK_URL`, `GIFT_DATA_SECRET`.
+
+Значения секретов нельзя добавлять в репозиторий, URL, ответы endpoint или логи.
+
+Порядок production-релиза обязателен: D1 migrations → queue Worker → Pages.
+
 ## Приватность
 
 - Страницы RSVP имеют `noindex` и `nofollow`.
