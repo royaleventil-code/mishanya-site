@@ -42,6 +42,7 @@ const COPY = {
     childAge: "Сколько лет исполняется?",
     childAgePlaceholder: "Выберите возраст",
     date: "Дата и время",
+    datePlaceholder: "Выберите дату и время",
     city: "Город",
     cityPlaceholder: "Например, Хайфа",
     address: "Адрес или название места",
@@ -86,6 +87,7 @@ const COPY = {
     childAge: "בן או בת כמה יהיו?",
     childAgePlaceholder: "בחרו גיל",
     date: "תאריך ושעה",
+    datePlaceholder: "בחרו תאריך ושעה",
     city: "עיר",
     cityPlaceholder: "לדוגמה, חיפה",
     address: "כתובת או שם המקום",
@@ -124,6 +126,17 @@ const DEFAULT_MESSAGES = {
 function localDateTimeValue(date: Date) {
   const offset = date.getTimezoneOffset() * 60_000;
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+
+function formatLocalDateTime(value: string, locale: RsvpEventInput["locale"]) {
+  if (!value) return "";
+  return new Intl.DateTimeFormat(locale === "he" ? "he-IL" : "ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
 }
 
 function initialForm(locale: RsvpEventInput["locale"] = "ru"): RsvpEventInput {
@@ -381,7 +394,22 @@ export function CreateEventPage() {
           <div className="grid gap-5 sm:grid-cols-2">
             <label className="min-w-0">
               <FieldLabel>{copy.date}</FieldLabel>
-              <input className={inputClass} type="datetime-local" min={minDate} value={form.startsAt.slice(0, 16)} onChange={(event) => update("startsAt", event.target.value)} required />
+              <div className="relative h-13 min-w-0 w-full max-w-full overflow-hidden rounded-2xl border border-zinc-200 bg-white transition-[border-color,box-shadow] duration-150 focus-within:border-[#5e5ce6] focus-within:ring-4 focus-within:ring-[#5e5ce6]/10">
+                <div aria-hidden="true" className="pointer-events-none flex h-full min-w-0 items-center gap-3 px-4">
+                  <span className={`min-w-0 flex-1 truncate text-base font-semibold ${form.startsAt ? "text-zinc-950" : "text-zinc-400"}`}>
+                    {form.startsAt ? formatLocalDateTime(form.startsAt, form.locale) : copy.datePlaceholder}
+                  </span>
+                  <CalendarDays className="h-5 w-5 shrink-0 text-zinc-400" />
+                </div>
+                <input
+                  className="absolute inset-0 z-10 block h-full min-w-0 w-full max-w-full cursor-pointer opacity-0"
+                  type="datetime-local"
+                  min={minDate}
+                  value={form.startsAt.slice(0, 16)}
+                  onChange={(event) => update("startsAt", event.target.value)}
+                  required
+                />
+              </div>
             </label>
             <label>
               <FieldLabel>{copy.city}</FieldLabel>

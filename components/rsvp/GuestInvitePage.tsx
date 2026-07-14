@@ -15,7 +15,7 @@ import {
   UsersRound,
   XCircle,
 } from "lucide-react";
-import { FormEvent, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { RsvpLoading, RsvpShell } from "@/components/rsvp/RsvpShell";
 import { RSVP_TURNSTILE_ENABLED, RsvpTurnstile } from "@/components/rsvp/RsvpTurnstile";
 import {
@@ -158,6 +158,7 @@ export function GuestInvitePage() {
   const [error, setError] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileReset, setTurnstileReset] = useState(0);
+  const successRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const slug = new URLSearchParams(window.location.search).get("event") || "";
@@ -172,9 +173,10 @@ export function GuestInvitePage() {
 
   useLayoutEffect(() => {
     if (!saved) return;
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-    window.scrollTo(0, 0);
+    const success = successRef.current;
+    if (!success) return;
+    success.focus({ preventScroll: true });
+    success.scrollIntoView({ block: "start", behavior: "auto" });
   }, [saved]);
 
   const submit = async (formEvent: FormEvent<HTMLFormElement>) => {
@@ -255,7 +257,7 @@ export function GuestInvitePage() {
         </div>
 
         {saved ? (
-          <section className="p-6 text-center sm:p-9">
+          <section ref={successRef} role="status" aria-live="polite" tabIndex={-1} className="scroll-mt-3 p-6 text-center outline-none sm:p-9">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-100 text-emerald-700"><Check className="h-8 w-8" /></div>
             <h2 className="mt-5 text-3xl font-black">{copy.successTitle}</h2>
             <p className="mt-3 leading-7 text-zinc-600">{copy.successText}</p>
