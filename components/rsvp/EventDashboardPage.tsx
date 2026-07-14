@@ -25,9 +25,15 @@ import {
 
 const COPY = {
   ru: {
-    tag: "Приватный кабинет родителя",
+    tag: "Ваше приглашение и ответы гостей",
     title: "Ответы гостей",
-    subtitle: "Сводка обновляется автоматически, пока страница открыта.",
+    subtitle: "Это ваш личный кабинет для приглашения гостей на праздник. Отправьте гостям ссылку ниже — здесь вы увидите, кто придёт, кто не сможет, кто ещё думает и сколько будет взрослых и детей. Ответы обновляются автоматически.",
+    howItWorks: "Как это работает",
+    steps: [
+      "Отправьте приглашение гостям",
+      "Гости подтвердят участие по ссылке",
+      "Ответы и количество гостей появятся здесь",
+    ],
     attending: "Придут",
     adults: "взрослых",
     children: "детей",
@@ -52,9 +58,15 @@ const COPY = {
     updated: "Обновлено",
   },
   he: {
-    tag: "האזור הפרטי של ההורה",
+    tag: "ההזמנה שלכם ותשובות האורחים",
     title: "תשובות האורחים",
-    subtitle: "הסיכום מתעדכן אוטומטית כל עוד העמוד פתוח.",
+    subtitle: "זהו האזור האישי שלכם להזמנת אורחים למסיבה. שלחו לאורחים את הקישור שבהמשך — כאן תוכלו לראות מי מגיע, מי לא יוכל להגיע, מי עדיין מתלבט וכמה מבוגרים וילדים יגיעו. התשובות מתעדכנות אוטומטית.",
+    howItWorks: "איך זה עובד",
+    steps: [
+      "שלחו את ההזמנה לאורחים",
+      "האורחים יאשרו הגעה דרך הקישור",
+      "התשובות ומספר האורחים יופיעו כאן",
+    ],
     attending: "מגיעים",
     adults: "מבוגרים",
     children: "ילדים",
@@ -222,14 +234,23 @@ export function EventDashboardPage() {
     <RsvpShell locale={locale}>
       <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-violet-800"><PartyPopper className="h-4 w-4" />{copy.tag}</div>
+          <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-center text-xs font-black uppercase leading-5 tracking-[0.12em] text-violet-800"><PartyPopper className="h-4 w-4 shrink-0" />{copy.tag}</div>
           <h1 className="mt-4 text-4xl font-black sm:text-5xl">{copy.title}: {data.event.childName}</h1>
-          <p className="mt-3 text-sm leading-6 text-zinc-600">{copy.subtitle}</p>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-600">{copy.subtitle}</p>
         </div>
         <button type="button" onClick={() => void load(tokenRef.current)} disabled={refreshing} className="inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-full border border-zinc-200 bg-white px-4 text-sm font-black shadow-sm transition-colors duration-150 hover:bg-zinc-50 disabled:opacity-60">
           <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin motion-reduce:animate-none" : ""}`} />{copy.refresh}
         </button>
       </div>
+
+      <section aria-label={copy.howItWorks} className="mt-6 grid gap-3 sm:grid-cols-3">
+        {copy.steps.map((step, index) => (
+          <div key={step} className="flex items-center gap-3 rounded-2xl border border-violet-100 bg-violet-50/70 p-4 text-start">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#5e5ce6] text-sm font-black text-white">{index + 1}</span>
+            <p className="text-sm font-black leading-5 text-zinc-800">{step}</p>
+          </div>
+        ))}
+      </section>
 
       <section className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label={copy.attending} value={summary.total} detail={`${summary.adults} ${copy.adults} · ${summary.children} ${copy.children}`} tone="green" />

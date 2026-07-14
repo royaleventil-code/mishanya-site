@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "next dev -p 3003 --webpack",
     "build": "next build",
+    "build:pages": "node scripts/require-turnstile-site-key.mjs && next build",
     "start": "next start",
     "lint": "eslint",
     "test:gift": "node --test tests/gift-core.test.mjs",
-    "test:rsvp": "node --test tests/rsvp-core.test.mjs"
+    "test:rsvp": "node --test tests/rsvp-core.test.mjs tests/rsvp-bitrix-core.test.mjs tests/rsvp-bitrix-endpoint.test.mjs tests/rsvp-bitrix-service.test.mjs"
   },
   "dependencies": {
     "framer-motion": "^12.39.0",

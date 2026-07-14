@@ -26,10 +26,52 @@ API находится в `functions/api/rsvp.js`, схема — в `migrations
 
 1. Применить миграцию к базе `GIFT_DB`.
 2. Добавить секрет `RSVP_DATA_SECRET` или оставить резервное использование существующего `GIFT_DATA_SECRET`.
-3. Проверить `NEXT_PUBLIC_TURNSTILE_SITE_KEY` и `TURNSTILE_SECRET_KEY`.
-4. Пройти создание, ответ и повторное изменение ответа на production-like Pages preview.
+3. Выполнить `npm run build:pages`: команда останавливает production-сборку, если отсутствует `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
+4. Проверить, что в Cloudflare настроен соответствующий `TURNSTILE_SECRET_KEY`.
+5. Пройти создание, ответ и повторное изменение ответа на production-like Pages preview.
 
 При настроенном `TURNSTILE_SECRET_KEY` API отклоняет запросы без корректного Turnstile-токена.
+
+## Автоматическое создание из Bitrix24
+
+Production handler события `ONCRMDEALUPDATE`:
+
+`POST https://mishanya-show.com/api/bitrix/deal-update`
+
+Поток обработки:
+
+1. Pages Function принимает только `application/x-www-form-urlencoded` и событие `ONCRMDEALUPDATE`.
+2. `auth[application_token]` и `auth[domain]` сравниваются с Cloudflare Secrets.
+3. Повторная доставка одного события отсекается по fingerprint без повторной постановки в очередь.
+4. Job отправляется в `GIFT_SYNC_QUEUE` с задержкой 10 секунд.
+5. Worker заново читает сделку и контакт через `crm.deal.get` / `crm.contact.get`.
+6. При стадии `Работа закрыта` создаётся или обновляется одно RSVP-событие с `source_id = ID сделки`.
+7. Публичная и личная ссылки записываются одной внутренней записью в таймлайн сделки.
+8. Для RSVP, впервые созданных после даты включения рассылки, OLChat автоматически отправляет клиенту согласованный текст с личной ссылкой. Старые RSVP не получают сообщения задним числом.
+9. Повторные обновления сохраняют публичную ссылку, приватный токен и ответы гостей, а существующая внутренняя CRM-активность обновляется без дублей.
+10. Уникальная D1-запись `(deal_id, message_kind)` блокирует повторную отправку. При сетевом или серверном результате с неясным статусом автоматический повтор не выполняется.
+
+Допустимые закрытые стадии:
+
+- общая воронка: `CATEGORY_ID=0`, `STAGE_ID=UC_HP4F3F`;
+- повторные продажи: `CATEGORY_ID=2`, `STAGE_ID=C2:UC_AWENHX`.
+
+Шаблоны регулярных сделок с заголовком `РС ...` игнорируются.
+
+Обязательные данные сделки: одинаково заполненная пара полей имени ребёнка, возраст, дата/время, адрес и связанный контакт с именем и валидным телефоном. Адрес копируется целиком; для автоматического события `city` и `address` одинаковы, а гостевая страница показывает такую локацию одной строкой.
+
+Служебные Cloudflare Secrets:
+
+- Pages: `BITRIX_EVENT_TOKEN`, `BITRIX_EVENT_DOMAIN`;
+- queue Worker: `BITRIX_WEBHOOK_URL`, `GIFT_DATA_SECRET`, `OLCHAT_SEND_TEXT_URL`;
+- управление отправкой Worker: `RSVP_CLIENT_MESSAGE_MODE`, `RSVP_CLIENT_MESSAGE_ENABLED_AFTER`;
+- только для безопасной проверки режима `test`: `RSVP_CLIENT_MESSAGE_TEST_DEAL_ID`, `RSVP_CLIENT_MESSAGE_TEST_CONTACT_ID`.
+
+Режимы отправки: `off`, `dry-run`, `test`, `live`. Production включается в `live` только после проверки на выделенной тестовой сделке. OLChat `sendText` вызывается поддерживаемым провайдером методом `GET`; полный URL с токеном, телефон и текст не записываются в D1, очередь или логи приложения.
+
+Значения секретов нельзя добавлять в репозиторий, URL, ответы endpoint или логи.
+
+Порядок production-релиза обязателен: D1 migrations → queue Worker → Pages.
 
 ## Приватность
 

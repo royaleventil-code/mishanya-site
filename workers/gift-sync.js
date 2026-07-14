@@ -1,4 +1,8 @@
 import { decryptPayload, readClaimById, syncBitrix } from "../shared/gift-core.js";
+import {
+  processRsvpDealUpdate,
+  updateRsvpBitrixSyncState,
+} from "../shared/rsvp-bitrix-service.js";
 
 function errorMessage(error) {
   return (error instanceof Error ? error.message : "bitrix_sync_failed").slice(0, 1000);
@@ -7,6 +11,33 @@ function errorMessage(error) {
 const giftSyncWorker = {
   async queue(batch, env) {
     for (const message of batch.messages) {
+      if (message.body?.type === "rsvp_deal_update") {
+        const dealId = String(message.body?.dealId || "");
+        if (!/^\d+$/.test(dealId)) {
+          message.ack();
+          continue;
+        }
+        try {
+          await processRsvpDealUpdate(env, message.body, Number(message.attempts || 0) + 1);
+          message.ack();
+        } catch (error) {
+          await updateRsvpBitrixSyncState(env.GIFT_DB, dealId, {
+            status: "retrying",
+            attempts: Number(message.attempts || 0) + 1,
+            eventTs: message.body?.eventTs,
+            eventHandlerId: message.body?.eventHandlerId,
+            lastAttemptAt: new Date().toISOString(),
+            lastError: errorMessage(error),
+          }).catch(() => undefined);
+          const requestedDelay = Number(error?.retryAfterSeconds || 0);
+          const delaySeconds = Number.isFinite(requestedDelay) && requestedDelay > 0
+            ? Math.min(3600, Math.ceil(requestedDelay))
+            : Math.min(3600, 30 * 2 ** Math.min(message.attempts, 6));
+          message.retry({ delaySeconds });
+        }
+        continue;
+      }
+
       const claimId = String(message.body?.claimId || "");
       if (!claimId) {
         message.ack();
