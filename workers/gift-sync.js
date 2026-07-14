@@ -29,7 +29,11 @@ const giftSyncWorker = {
             lastAttemptAt: new Date().toISOString(),
             lastError: errorMessage(error),
           }).catch(() => undefined);
-          message.retry({ delaySeconds: Math.min(3600, 30 * 2 ** Math.min(message.attempts, 6)) });
+          const requestedDelay = Number(error?.retryAfterSeconds || 0);
+          const delaySeconds = Number.isFinite(requestedDelay) && requestedDelay > 0
+            ? Math.min(3600, Math.ceil(requestedDelay))
+            : Math.min(3600, 30 * 2 ** Math.min(message.attempts, 6));
+          message.retry({ delaySeconds });
         }
         continue;
       }

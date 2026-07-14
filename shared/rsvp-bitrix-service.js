@@ -12,6 +12,9 @@ import { decryptPayload, encryptPayload, phoneHash } from "./gift-core.js";
 const MAX_TOKEN_ATTEMPTS = 5;
 const WRITEBACK_LEASE_MS = 2 * 60 * 1000;
 const RSVP_ACTIVITY_MARKER_PREFIX = "[MISHANYA_RSVP_DEAL:";
+const RSVP_CLIENT_MESSAGE_KIND = "rsvp_client_invitation";
+const RSVP_CLIENT_MESSAGE_TEMPLATE_VERSION = "rsvp-client-ru-v1";
+const RSVP_CLIENT_MESSAGE_MODES = new Set(["off", "dry-run", "test", "live"]);
 
 function cleanErrorCode(value, fallback = "bitrix_sync_failed") {
   const code = String(value || fallback).trim().slice(0, 160);
@@ -66,14 +69,26 @@ function rsvpActivityMarker(dealId) {
   return `${RSVP_ACTIVITY_MARKER_PREFIX}${dealId}]`;
 }
 
-function rsvpActivityDescription(dealId, publicUrl, manageUrl) {
+function clientMessageStatusLabel(status) {
+  if (status === "accepted" || status === "sent") {
+    return "Сообщение клиенту автоматически принято WhatsApp-сервисом.";
+  }
+  if (status === "ambiguous" || status === "sending") {
+    return "Статус отправки сообщения клиенту требует проверки; автоматический повтор заблокирован.";
+  }
+  if (status === "retryable") return "Отправка сообщения клиенту ожидает безопасного повтора.";
+  if (status === "failed") return "Сообщение клиенту не отправлено; автоматический повтор заблокирован.";
+  return "Сообщение клиенту автоматически ещё не отправлялось.";
+}
+
+function rsvpActivityDescription(dealId, publicUrl, manageUrl, messageStatus) {
   return [
     "RSVP-приглашение создано автоматически.",
     "",
     `Ссылка для гостей: ${publicUrl}`,
     `Личный кабинет клиента: ${manageUrl}`,
     "",
-    "Это внутренняя запись. Сообщение клиенту автоматически не отправлялось.",
+    clientMessageStatusLabel(messageStatus),
     rsvpActivityMarker(dealId),
   ].join("\n");
 }
@@ -114,7 +129,7 @@ export async function updateRsvpBitrixSyncState(db, dealId, patch = {}) {
 
 async function findSourceEvent(db, dealId) {
   return db.prepare(
-    `SELECT id, public_slug, manage_token_ciphertext, source_payload_hash
+    `SELECT id, public_slug, manage_token_ciphertext, source_payload_hash, created_at
      FROM rsvp_events
      WHERE source_type = ? AND source_id = ?
      LIMIT 1`,
@@ -168,6 +183,7 @@ async function createSourceEvent(db, dealId, payload, payloadHash, secret) {
         public_slug: slug,
         manage_token_ciphertext: encryptedManageToken,
         source_payload_hash: payloadHash,
+        created_at: createdAt,
       };
     }
     const concurrent = await findSourceEvent(db, dealId);
@@ -217,6 +233,233 @@ async function saveSyncActivityId(db, dealId, activityId) {
          writeback_started_at = NULL, updated_at = ?
      WHERE deal_id = ?`,
   ).bind(String(activityId), now, String(dealId)).run();
+}
+
+async function readClientMessageState(db, dealId) {
+  return db.prepare(
+    `SELECT status, message_fingerprint, next_attempt_at
+     FROM rsvp_client_messages
+     WHERE deal_id = ? AND message_kind = ?
+     LIMIT 1`,
+  ).bind(String(dealId), RSVP_CLIENT_MESSAGE_KIND).first();
+}
+
+function cleanMessageValue(value) {
+  return String(value || "").trim().replace(/\s+/g, " ");
+}
+
+export function buildRsvpClientMessage(clientName, childName, manageUrl) {
+  const safeClientName = cleanMessageValue(clientName);
+  const safeChildName = cleanMessageValue(childName);
+  const safeManageUrl = String(manageUrl || "").trim();
+  if (!safeClientName || !safeChildName || !/^https:\/\//i.test(safeManageUrl)) {
+    throw new Error("invalid_client_message_data");
+  }
+  return [
+    `${safeClientName}, я также для вашего удобства подготовил текстовое приглашение на праздник ${safeChildName} 🎉`,
+    "",
+    "В нём уже указаны дата, время и место праздника. По ссылке вы сможете проверить информацию, отправить приглашение гостям и видеть ответы гостей в своём кабинете.",
+    "",
+    safeManageUrl,
+    "",
+    "Если приглашение вам неактуально, просто не обращайте внимания на это сообщение.",
+  ].join("\n");
+}
+
+async function sha256Hex(value) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(value)));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function clientMessageMode(env) {
+  const mode = String(env.RSVP_CLIENT_MESSAGE_MODE || "off").trim().toLowerCase();
+  return RSVP_CLIENT_MESSAGE_MODES.has(mode) ? mode : "off";
+}
+
+export function evaluateRsvpClientMessageEligibility(env, deal, contact, event) {
+  const mode = clientMessageMode(env);
+  if (mode === "off") return { allowed: false, status: "disabled", mode };
+  if (mode === "dry-run") return { allowed: false, status: "dry_run", mode };
+  if (mode === "test") {
+    const allowedDealId = String(env.RSVP_CLIENT_MESSAGE_TEST_DEAL_ID || "");
+    const allowedContactId = String(env.RSVP_CLIENT_MESSAGE_TEST_CONTACT_ID || "");
+    const matches = allowedDealId && allowedContactId
+      && String(deal?.ID || "") === allowedDealId
+      && String(contact?.ID || "") === allowedContactId;
+    return { allowed: Boolean(matches), status: matches ? "eligible" : "test_blocked", mode };
+  }
+
+  const enabledAfter = Date.parse(String(env.RSVP_CLIENT_MESSAGE_ENABLED_AFTER || ""));
+  const eventCreatedAt = Date.parse(String(event?.created_at || ""));
+  if (!Number.isFinite(enabledAfter) || !Number.isFinite(eventCreatedAt)) {
+    return { allowed: false, status: "live_blocked", mode };
+  }
+  const allowed = eventCreatedAt >= enabledAfter;
+  return { allowed, status: allowed ? "eligible" : "before_cutoff", mode };
+}
+
+async function acquireClientMessage(db, data) {
+  const now = new Date().toISOString();
+  await db.prepare(
+    `INSERT OR IGNORE INTO rsvp_client_messages
+      (deal_id, message_kind, contact_id, template_version, message_fingerprint,
+       status, attempts, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, 'pending', 0, ?, ?)`,
+  ).bind(
+    data.dealId,
+    RSVP_CLIENT_MESSAGE_KIND,
+    data.contactId,
+    data.templateVersion,
+    data.fingerprint,
+    now,
+    now,
+  ).run();
+
+  const claimed = await db.prepare(
+    `UPDATE rsvp_client_messages
+     SET status = 'sending', attempts = attempts + 1, claimed_at = ?,
+         last_error = NULL, updated_at = ?
+     WHERE deal_id = ? AND message_kind = ?
+       AND message_fingerprint = ?
+       AND status IN ('pending', 'retryable')`,
+  ).bind(
+    now,
+    now,
+    data.dealId,
+    RSVP_CLIENT_MESSAGE_KIND,
+    data.fingerprint,
+  ).run();
+  if (Number(claimed?.meta?.changes || 0) > 0) return { acquired: true, status: "sending" };
+  const existing = await readClientMessageState(db, data.dealId);
+  return { acquired: false, status: String(existing?.status || "message_conflict") };
+}
+
+async function saveClientMessageOutcome(db, dealId, outcome) {
+  const now = new Date().toISOString();
+  await db.prepare(
+    `UPDATE rsvp_client_messages
+     SET status = ?, accepted_at = ?, next_attempt_at = ?,
+         provider_message_id = ?, last_http_status = ?, last_error = ?, updated_at = ?
+     WHERE deal_id = ? AND message_kind = ? AND status = 'sending'`,
+  ).bind(
+    outcome.status,
+    outcome.status === "accepted" ? now : null,
+    outcome.nextAttemptAt || null,
+    outcome.providerMessageId || null,
+    Number.isInteger(outcome.httpStatus) ? outcome.httpStatus : null,
+    outcome.errorCode ? cleanErrorCode(outcome.errorCode, "client_message_failed") : null,
+    now,
+    String(dealId),
+    RSVP_CLIENT_MESSAGE_KIND,
+  ).run();
+}
+
+function retryAfterSeconds(response) {
+  const raw = Number(response.headers.get("Retry-After"));
+  if (!Number.isFinite(raw) || raw < 1) return 60;
+  return Math.min(3600, Math.ceil(raw));
+}
+
+function checkedOlchatUrl(env) {
+  const raw = String(env.OLCHAT_SEND_TEXT_URL || "").trim();
+  let url;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new Error("olchat_not_configured");
+  }
+  if (url.protocol !== "https:" || !/\/sendText\/?$/i.test(url.pathname)) {
+    throw new Error("olchat_not_configured");
+  }
+  return url.toString();
+}
+
+async function sendRsvpClientMessage(env, deal, contact, event, payload, manageUrl) {
+  const eligibility = evaluateRsvpClientMessageEligibility(env, deal, contact, event);
+  const clientName = cleanMessageValue(contact?.NAME) || payload.organizerName;
+  const body = buildRsvpClientMessage(clientName, payload.childName, manageUrl);
+  const templateVersion = cleanMessageValue(env.RSVP_CLIENT_MESSAGE_TEMPLATE_VERSION)
+    || RSVP_CLIENT_MESSAGE_TEMPLATE_VERSION;
+  const fingerprint = await sha256Hex([
+    templateVersion,
+    String(deal.ID),
+    String(contact.ID),
+    manageUrl,
+    body,
+  ].join("|"));
+
+  if (!eligibility.allowed) {
+    return { status: eligibility.status, mode: eligibility.mode, fingerprint };
+  }
+
+  const claim = await acquireClientMessage(env.GIFT_DB, {
+    dealId: String(deal.ID),
+    contactId: String(contact.ID),
+    templateVersion,
+    fingerprint,
+  });
+  if (!claim.acquired) return { status: claim.status, mode: eligibility.mode, fingerprint };
+
+  const phoneNumber = String(payload.organizerPhone || "").replace(/^\+/, "");
+  if (!/^\d{8,15}$/.test(phoneNumber)) {
+    await saveClientMessageOutcome(env.GIFT_DB, deal.ID, {
+      status: "failed",
+      errorCode: "invalid_message_phone",
+    });
+    return { status: "failed", mode: eligibility.mode, fingerprint };
+  }
+
+  let response;
+  try {
+    response = await fetch(checkedOlchatUrl(env), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        Accept: "application/json, text/plain",
+      },
+      body: new URLSearchParams({
+        phone_number: phoneNumber,
+        body,
+        send_to_imol: "Y",
+      }).toString(),
+      signal: AbortSignal.timeout(15000),
+    });
+  } catch {
+    await saveClientMessageOutcome(env.GIFT_DB, deal.ID, {
+      status: "ambiguous",
+      errorCode: "olchat_network_error",
+    }).catch(() => undefined);
+    return { status: "ambiguous", mode: eligibility.mode, fingerprint };
+  }
+
+  if (response.status === 200) {
+    await saveClientMessageOutcome(env.GIFT_DB, deal.ID, {
+      status: "accepted",
+      httpStatus: response.status,
+    });
+    return { status: "accepted", mode: eligibility.mode, fingerprint };
+  }
+
+  if (response.status === 429) {
+    const delaySeconds = retryAfterSeconds(response);
+    await saveClientMessageOutcome(env.GIFT_DB, deal.ID, {
+      status: "retryable",
+      httpStatus: response.status,
+      errorCode: "olchat_rate_limited",
+      nextAttemptAt: new Date(Date.now() + delaySeconds * 1000).toISOString(),
+    });
+    const error = new Error("olchat_rate_limited");
+    error.retryAfterSeconds = delaySeconds;
+    throw error;
+  }
+
+  const ambiguous = response.status >= 500 || response.status === 408;
+  await saveClientMessageOutcome(env.GIFT_DB, deal.ID, {
+    status: ambiguous ? "ambiguous" : "failed",
+    httpStatus: response.status,
+    errorCode: ambiguous ? "olchat_ambiguous_response" : "olchat_rejected",
+  });
+  return { status: ambiguous ? "ambiguous" : "failed", mode: eligibility.mode, fingerprint };
 }
 
 async function findExistingRsvpActivity(env, dealId) {
@@ -274,7 +517,8 @@ async function writeRsvpLinksToDeal(env, deal, contact, event, secret) {
   const origin = publicOrigin(env);
   const publicUrl = `${origin}/invite?event=${encodeURIComponent(event.public_slug)}`;
   const manageUrl = `${origin}/my-event#token=${encodeURIComponent(manageToken)}`;
-  const description = rsvpActivityDescription(dealId, publicUrl, manageUrl);
+  const messageState = await readClientMessageState(env.GIFT_DB, dealId);
+  const description = rsvpActivityDescription(dealId, publicUrl, manageUrl, messageState?.status);
   const fields = rsvpActivityFields(dealId, description, deal.ASSIGNED_BY_ID, contact);
 
   let activityId = await readSyncActivityId(env.GIFT_DB, dealId);
@@ -305,6 +549,20 @@ async function writeRsvpLinksToDeal(env, deal, contact, event, secret) {
 
   await saveSyncActivityId(env.GIFT_DB, dealId, activityId);
   return { activityId, publicUrl, manageUrl };
+}
+
+async function refreshRsvpActivityMessageStatus(env, deal, contact, writeback, messageStatus) {
+  const description = rsvpActivityDescription(
+    String(deal.ID),
+    writeback.publicUrl,
+    writeback.manageUrl,
+    messageStatus,
+  );
+  const fields = rsvpActivityFields(deal.ID, description, deal.ASSIGNED_BY_ID, contact);
+  await bitrixCall(env, "crm.activity.update", {
+    id: Number(writeback.activityId),
+    fields,
+  });
 }
 
 export async function processRsvpDealUpdate(env, job, attempts = 1) {
@@ -374,9 +632,19 @@ export async function processRsvpDealUpdate(env, job, attempts = 1) {
     lastAttemptAt: attemptedAt,
     syncedAt,
   });
+  const clientMessage = await sendRsvpClientMessage(
+    env,
+    deal,
+    contact,
+    event,
+    checked.value,
+    writeback.manageUrl,
+  );
+  await refreshRsvpActivityMessageStatus(env, deal, contact, writeback, clientMessage.status);
   return {
     status: "synced",
     publicSlug: event.public_slug,
     bitrixActivityId: writeback.activityId,
+    clientMessageStatus: clientMessage.status,
   };
 }

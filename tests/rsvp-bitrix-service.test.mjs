@@ -2,21 +2,60 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  buildRsvpClientMessage,
+  evaluateRsvpClientMessageEligibility,
   processRsvpDealUpdate,
   upsertSourceEvent,
 } from "../shared/rsvp-bitrix-service.js";
 
+test("builds the approved client message exactly", () => {
+  assert.equal(
+    buildRsvpClientMessage("Анна", "Маша", "https://mishanya-show.com/my-event#token=safe"),
+    [
+      "Анна, я также для вашего удобства подготовил текстовое приглашение на праздник Маша 🎉",
+      "",
+      "В нём уже указаны дата, время и место праздника. По ссылке вы сможете проверить информацию, отправить приглашение гостям и видеть ответы гостей в своём кабинете.",
+      "",
+      "https://mishanya-show.com/my-event#token=safe",
+      "",
+      "Если приглашение вам неактуально, просто не обращайте внимания на это сообщение.",
+    ].join("\n"),
+  );
+});
+
+test("live client messages only allow events created after the rollout cutoff", () => {
+  const env = {
+    RSVP_CLIENT_MESSAGE_MODE: "live",
+    RSVP_CLIENT_MESSAGE_ENABLED_AFTER: "2026-07-14T12:00:00.000Z",
+  };
+  const deal = { ID: "18123" };
+  const contact = { ID: "4854" };
+  assert.equal(
+    evaluateRsvpClientMessageEligibility(env, deal, contact, { created_at: "2026-07-14T11:59:59.999Z" }).status,
+    "before_cutoff",
+  );
+  assert.equal(
+    evaluateRsvpClientMessageEligibility(env, deal, contact, { created_at: "2026-07-14T12:00:00.000Z" }).status,
+    "eligible",
+  );
+});
+
 function sourceEventDb() {
   const events = new Map();
   const sync = new Map();
+  const messages = new Map();
   return {
     events,
     sync,
+    messages,
     prepare(sql) {
       return {
         bind(...args) {
           return {
             async first() {
+              if (sql.includes("FROM rsvp_client_messages")) {
+                return messages.get(`${args[0]}:${args[1]}`) || null;
+              }
               if (sql.includes("SELECT bitrix_activity_id FROM rsvp_bitrix_sync")) {
                 return sync.get(String(args[0])) || null;
               }
@@ -27,9 +66,47 @@ function sourceEventDb() {
                 public_slug: row.public_slug,
                 manage_token_ciphertext: row.manage_token_ciphertext,
                 source_payload_hash: row.source_payload_hash,
+                created_at: row.created_at,
               } : null;
             },
             async run() {
+              if (sql.includes("INSERT OR IGNORE INTO rsvp_client_messages")) {
+                const key = `${args[0]}:${args[1]}`;
+                if (messages.has(key)) return { meta: { changes: 0 } };
+                messages.set(key, {
+                  deal_id: String(args[0]),
+                  message_kind: args[1],
+                  contact_id: String(args[2]),
+                  template_version: args[3],
+                  message_fingerprint: args[4],
+                  status: "pending",
+                  attempts: 0,
+                });
+                return { meta: { changes: 1 } };
+              }
+              if (sql.includes("SET status = 'sending'")) {
+                const key = `${args[2]}:${args[3]}`;
+                const row = messages.get(key);
+                if (!row || row.message_fingerprint !== args[4]
+                  || !["pending", "retryable"].includes(row.status)) {
+                  return { meta: { changes: 0 } };
+                }
+                row.status = "sending";
+                row.attempts += 1;
+                return { meta: { changes: 1 } };
+              }
+              if (sql.includes("SET status = ?, accepted_at = ?")) {
+                const key = `${args[7]}:${args[8]}`;
+                const row = messages.get(key);
+                if (!row || row.status !== "sending") return { meta: { changes: 0 } };
+                row.status = args[0];
+                row.accepted_at = args[1];
+                row.next_attempt_at = args[2];
+                row.provider_message_id = args[3];
+                row.last_http_status = args[4];
+                row.last_error = args[5];
+                return { meta: { changes: 1 } };
+              }
               if (sql.includes("INSERT INTO rsvp_bitrix_sync")) {
                 const previous = sync.get(String(args[0])) || {};
                 sync.set(String(args[0]), {
@@ -66,6 +143,7 @@ function sourceEventDb() {
                   source_id: args[7],
                   manage_token_ciphertext: args[8],
                   source_payload_hash: args[9],
+                  created_at: args[4],
                 });
                 return { meta: { changes: 1 } };
               }
@@ -139,7 +217,12 @@ test("processes a closed deal twice without creating a duplicate event", async (
     PHONE: [{ VALUE: "+972548000000" }],
   };
   const activities = [];
+  const olchatCalls = [];
   globalThis.fetch = async (url, init) => {
+    if (String(url).startsWith("https://olchat.example.test/")) {
+      olchatCalls.push(new URLSearchParams(String(init?.body || "")));
+      return new Response("OK", { status: 200 });
+    }
     const params = JSON.parse(String(init?.body || "{}"));
     if (String(url).includes("crm.deal.get.json")) return Response.json({ result: deal });
     if (String(url).includes("crm.contact.get.json")) return Response.json({ result: contact });
@@ -163,12 +246,18 @@ test("processes a closed deal twice without creating a duplicate event", async (
       GIFT_DB: db,
       GIFT_DATA_SECRET: "test-secret-that-is-long-enough-for-encryption",
       BITRIX_WEBHOOK_URL: "https://example.bitrix24.com/rest/1/hidden",
+      OLCHAT_SEND_TEXT_URL: "https://olchat.example.test/rest/webhook/wa/hidden/sendText",
+      RSVP_CLIENT_MESSAGE_MODE: "test",
+      RSVP_CLIENT_MESSAGE_TEST_DEAL_ID: "18123",
+      RSVP_CLIENT_MESSAGE_TEST_CONTACT_ID: "4854",
     };
     const job = { dealId: "18123", eventTs: 1784012400, eventHandlerId: "201" };
     const first = await processRsvpDealUpdate(env, job, 1);
     const second = await processRsvpDealUpdate(env, job, 2);
     assert.equal(first.status, "synced");
     assert.equal(second.status, "synced");
+    assert.equal(first.clientMessageStatus, "accepted");
+    assert.equal(second.clientMessageStatus, "accepted");
     assert.equal(first.publicSlug, second.publicSlug);
     assert.equal(db.events.size, 1);
     assert.equal(activities.length, 1);
@@ -184,8 +273,19 @@ test("processes a closed deal twice without creating a duplicate event", async (
     }]);
     assert.match(activities[0].DESCRIPTION, /Ссылка для гостей: https:\/\/mishanya-show\.com\/invite\?event=/);
     assert.match(activities[0].DESCRIPTION, /Личный кабинет клиента: https:\/\/mishanya-show\.com\/my-event#token=/);
+    assert.match(activities[0].DESCRIPTION, /автоматически принято WhatsApp-сервисом/);
     assert.equal(db.sync.get("18123").status, "synced");
     assert.equal(db.sync.get("18123").bitrix_activity_id, "9001");
+    assert.equal(db.messages.get("18123:rsvp_client_invitation").status, "accepted");
+    assert.equal(db.messages.get("18123:rsvp_client_invitation").attempts, 1);
+    assert.equal(olchatCalls.length, 1);
+    assert.equal(olchatCalls[0].get("phone_number"), "972548000000");
+    assert.equal(olchatCalls[0].get("send_to_imol"), "Y");
+    const manageUrl = activities[0].DESCRIPTION.match(/Личный кабинет клиента: (https:\/\/\S+)/)?.[1];
+    assert.equal(
+      olchatCalls[0].get("body"),
+      buildRsvpClientMessage("Анна", "Маша", manageUrl),
+    );
   } finally {
     globalThis.fetch = originalFetch;
   }
