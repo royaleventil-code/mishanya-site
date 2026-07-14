@@ -3,7 +3,6 @@
 import {
   Check,
   Copy,
-  Eye,
   HelpCircle,
   Link2,
   MessageCircle,
@@ -40,7 +39,6 @@ const COPY = {
     invitationTitle: "Ваше приглашение для гостей",
     invitationHint: "Так гости увидят информацию о празднике. Проверьте дату, время и место перед отправкой.",
     messagePreview: "Готовый текст сообщения",
-    openGuestView: "Посмотреть глазами гостя",
     attending: "Придут",
     adults: "взрослых",
     children: "детей",
@@ -77,7 +75,6 @@ const COPY = {
     invitationTitle: "ההזמנה שלכם לאורחים",
     invitationHint: "כך האורחים יראו את פרטי המסיבה. בדקו את התאריך, השעה והמקום לפני השליחה.",
     messagePreview: "טקסט מוכן להודעה",
-    openGuestView: "לצפייה כמו אורח",
     attending: "מגיעים",
     adults: "מבוגרים",
     children: "ילדים",
@@ -279,10 +276,7 @@ export function EventDashboardPage() {
           <p className="mt-3 whitespace-pre-line text-sm font-semibold leading-6 text-zinc-700">{shareText}</p>
         </div>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <a href={publicUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-white px-4 text-sm font-black shadow-sm transition-colors duration-150 hover:bg-zinc-50"><Eye className="h-4 w-4" />{copy.openGuestView}</a>
-          <a href={`https://wa.me/?text=${encodeURIComponent(shareText)}`} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--color-whatsapp)] px-4 text-sm font-black text-white transition-transform duration-150 active:scale-[0.98]"><MessageCircle className="h-4 w-4" />{copy.share}</a>
-        </div>
+        <a href={`https://wa.me/?text=${encodeURIComponent(shareText)}`} target="_blank" rel="noreferrer" className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--color-whatsapp)] px-4 text-sm font-black text-white transition-transform duration-150 active:scale-[0.98]"><MessageCircle className="h-4 w-4" />{copy.share}</a>
       </section>
 
       <section className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
