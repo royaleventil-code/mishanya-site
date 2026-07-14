@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:gift": "node --test tests/gift-core.test.mjs"
+    "test:gift": "node --test tests/gift-core.test.mjs",
+    "test:rsvp": "node --test tests/rsvp-core.test.mjs"
   },
   "dependencies": {
     "framer-motion": "^12.39.0",

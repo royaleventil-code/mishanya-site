@@ -109,6 +109,9 @@ export function SiteFooter({ locale = "ru" }: { locale?: Locale }) {
             <Link href={localePath(locale, "/contacts")} className="text-white/70 transition hover:text-white">
               {dict.common.contacts}
             </Link>
+            <Link href={`/invite/create?lang=${locale}`} className="text-white/70 transition hover:text-white">
+              {locale === "he" ? "יצירת הזמנה לאירוע" : "Создать приглашение на праздник"}
+            </Link>
             <Link
               href={localePath(locale, "/accessibility")}
               className="text-white/70 transition hover:text-white"
