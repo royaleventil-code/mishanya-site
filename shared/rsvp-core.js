@@ -26,6 +26,11 @@ export function sanitizeManageToken(value) {
   return /^[A-Za-z0-9_-]{32,160}$/.test(token) ? token : null;
 }
 
+export function sanitizeRespondentKey(value) {
+  const key = String(value || "").trim();
+  return /^[A-Za-z0-9_-]{20,128}$/.test(key) ? key : null;
+}
+
 export function createOpaqueToken(byteLength = 24) {
   const bytes = crypto.getRandomValues(new Uint8Array(byteLength));
   let binary = "";
@@ -81,7 +86,7 @@ export function validateRsvpResponsePayload(raw) {
   if (!raw || typeof raw !== "object") return { error: "invalid_payload" };
   const eventSlug = sanitizeRsvpSlug(raw.eventSlug);
   const respondentName = cleanText(raw.respondentName);
-  const phone = normalizeRsvpPhone(raw.phone);
+  const respondentKey = sanitizeRespondentKey(raw.respondentKey);
   const status = String(raw.status || "");
   const comment = cleanMultiline(raw.comment);
   let adults = Number(raw.adults);
@@ -89,7 +94,7 @@ export function validateRsvpResponsePayload(raw) {
 
   if (!eventSlug) return { error: "invalid_event" };
   if (respondentName.length < 2 || respondentName.length > 80) return { error: "invalid_name" };
-  if (!phone) return { error: "invalid_phone" };
+  if (!respondentKey) return { error: "invalid_respondent_key" };
   if (!RSVP_STATUSES.has(status)) return { error: "invalid_status" };
   if (!Number.isInteger(adults) || adults < 0 || adults > 10) return { error: "invalid_adults" };
   if (!Number.isInteger(children) || children < 0 || children > 10) return { error: "invalid_children" };
@@ -105,7 +110,7 @@ export function validateRsvpResponsePayload(raw) {
     value: {
       eventSlug,
       respondentName,
-      phone,
+      respondentKey,
       status,
       adults,
       children,

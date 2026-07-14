@@ -16,7 +16,7 @@ import {
   Sparkles,
   UserRound,
 } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { RsvpShell } from "@/components/rsvp/RsvpShell";
 import { RSVP_TURNSTILE_ENABLED, RsvpTurnstile } from "@/components/rsvp/RsvpTurnstile";
 import {
@@ -208,6 +208,13 @@ export function CreateEventPage() {
   const copy = COPY[form.locale];
   const minDate = useMemo(() => localDateTimeValue(new Date()), []);
 
+  useLayoutEffect(() => {
+    if (!created) return;
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, [created]);
+
   useEffect(() => {
     const requestedLocale = new URLSearchParams(window.location.search).get("lang");
     if (requestedLocale !== "he") return;
@@ -247,7 +254,6 @@ export function CreateEventPage() {
     try {
       const startsAt = new Date(form.startsAt).toISOString();
       setCreated(await createRsvpEvent({ ...form, startsAt }, turnstileToken));
-      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch {
       setError(true);
     } finally {
@@ -329,7 +335,7 @@ export function CreateEventPage() {
     );
   }
 
-  const inputClass = "h-13 w-full rounded-2xl border border-zinc-200 bg-white px-4 text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-zinc-400 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10";
+  const inputClass = "block h-13 min-w-0 w-full max-w-full rounded-2xl border border-zinc-200 bg-white px-4 text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-zinc-400 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10";
 
   return (
     <RsvpShell locale={form.locale} headerAction={languageToggle}>
@@ -373,7 +379,7 @@ export function CreateEventPage() {
         <section className="rounded-[28px] border border-black/[0.06] bg-white/88 p-5 shadow-[var(--shadow-card)] backdrop-blur sm:p-8">
           <StepTitle icon={<CalendarDays className="h-5 w-5" />}>{copy.stepTwo}</StepTitle>
           <div className="grid gap-5 sm:grid-cols-2">
-            <label>
+            <label className="min-w-0">
               <FieldLabel>{copy.date}</FieldLabel>
               <input className={inputClass} type="datetime-local" min={minDate} value={form.startsAt.slice(0, 16)} onChange={(event) => update("startsAt", event.target.value)} required />
             </label>

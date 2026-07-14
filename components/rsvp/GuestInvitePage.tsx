@@ -15,11 +15,12 @@ import {
   UsersRound,
   XCircle,
 } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { RsvpLoading, RsvpShell } from "@/components/rsvp/RsvpShell";
 import { RSVP_TURNSTILE_ENABLED, RsvpTurnstile } from "@/components/rsvp/RsvpTurnstile";
 import {
   getPublicRsvpEvent,
+  getRsvpRespondentKey,
   submitRsvpResponse,
   type PublicRsvpEvent,
   type RsvpResponseInput,
@@ -31,13 +32,12 @@ const COPY = {
     invitation: "Приглашение на праздник",
     turns: (age: number) => `исполняется ${age}!`,
     question: "Вы сможете прийти?",
-    questionHint: "Ответ можно изменить позже с этого же номера телефона.",
+    questionHint: "Ответ можно изменить позже с этого же устройства.",
     yes: "Будем",
     no: "Не сможем",
     maybe: "Пока не знаем",
-    name: "Ваше имя или фамилия семьи",
-    namePlaceholder: "Например, семья Ивановых",
-    phone: "Телефон / WhatsApp",
+    name: "Как вас зовут?",
+    namePlaceholder: "Например, Анна",
     adults: "Взрослых",
     children: "Детей",
     comment: "Комментарий для родителей",
@@ -61,13 +61,12 @@ const COPY = {
     invitation: "הזמנה לחגיגה",
     turns: (age: number) => `חוגג/ת ${age}!`,
     question: "תוכלו להגיע?",
-    questionHint: "אפשר לשנות את התשובה מאוחר יותר עם אותו מספר טלפון.",
+    questionHint: "אפשר לשנות את התשובה מאוחר יותר מאותו מכשיר.",
     yes: "נגיע",
     no: "לא נוכל להגיע",
     maybe: "עדיין לא יודעים",
-    name: "השם שלכם או שם המשפחה",
-    namePlaceholder: "לדוגמה, משפחת כהן",
-    phone: "טלפון / WhatsApp",
+    name: "איך קוראים לכם?",
+    namePlaceholder: "לדוגמה, אנה",
     adults: "מבוגרים",
     children: "ילדים",
     comment: "הערה להורים",
@@ -151,7 +150,6 @@ export function GuestInvitePage() {
   const [notFound, setNotFound] = useState(false);
   const [status, setStatus] = useState<RsvpStatus>("yes");
   const [respondentName, setRespondentName] = useState("");
-  const [phone, setPhone] = useState("+972");
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(1);
   const [comment, setComment] = useState("");
@@ -172,6 +170,13 @@ export function GuestInvitePage() {
   const copy = COPY[event?.locale || "ru"];
   const eventDate = useMemo(() => event ? formatEventDate(event) : "", [event]);
 
+  useLayoutEffect(() => {
+    if (!saved) return;
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, [saved]);
+
   const submit = async (formEvent: FormEvent<HTMLFormElement>) => {
     formEvent.preventDefault();
     if (!event) return;
@@ -184,7 +189,7 @@ export function GuestInvitePage() {
     const payload: RsvpResponseInput = {
       eventSlug: event.slug,
       respondentName,
-      phone,
+      respondentKey: getRsvpRespondentKey(event.slug),
       status,
       adults,
       children,
@@ -194,7 +199,6 @@ export function GuestInvitePage() {
       await submitRsvpResponse(payload, turnstileToken);
       setSaved(true);
       setTurnstileReset((value) => value + 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch {
       setError(true);
     } finally {
@@ -242,7 +246,7 @@ export function GuestInvitePage() {
         <div className="grid gap-3 border-y border-black/[0.05] bg-white p-5 sm:grid-cols-2 sm:p-7">
           <div className="flex items-start gap-3 rounded-2xl bg-zinc-50 p-4">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-[#5e5ce6]"><Clock3 className="h-5 w-5" /></span>
-            <div><p className="text-sm font-black capitalize">{eventDate}</p><p className="mt-1 text-xs text-zinc-500">Asia/Jerusalem</p></div>
+            <p className="self-center text-sm font-black capitalize">{eventDate}</p>
           </div>
           <div className="flex items-start gap-3 rounded-2xl bg-zinc-50 p-4">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-600"><MapPin className="h-5 w-5" /></span>
@@ -278,14 +282,10 @@ export function GuestInvitePage() {
               <StatusButton active={status === "maybe"} label={copy.maybe} icon={<HelpCircle className="h-6 w-6" />} tone="maybe" onClick={() => setStatus("maybe")} />
             </div>
 
-            <div className="mt-6 grid gap-5 sm:grid-cols-2">
+            <div className="mt-6">
               <label>
                 <span className="mb-2 block text-sm font-black">{copy.name}</span>
                 <input className={inputClass} value={respondentName} onChange={(input) => setRespondentName(input.target.value)} placeholder={copy.namePlaceholder} minLength={2} maxLength={80} required />
-              </label>
-              <label>
-                <span className="mb-2 block text-sm font-black">{copy.phone}</span>
-                <input className={inputClass} type="tel" dir="ltr" value={phone} onChange={(input) => setPhone(input.target.value)} placeholder="+972 54 123 4567" required />
               </label>
             </div>
 

@@ -48,8 +48,8 @@ test("rejects a past event", () => {
 test("requires at least one attendee for yes response", () => {
   const result = validateRsvpResponsePayload({
     eventSlug: "AbCdEfGhIjKl",
-    respondentName: "Семья Коэн",
-    phone: "+972548000000",
+    respondentName: "Анна",
+    respondentKey: "guest_response_key_1234567890",
     status: "yes",
     adults: 0,
     children: 0,
@@ -61,8 +61,8 @@ test("requires at least one attendee for yes response", () => {
 test("clears headcount for a declined response", () => {
   const result = validateRsvpResponsePayload({
     eventSlug: "AbCdEfGhIjKl",
-    respondentName: "Семья Коэн",
-    phone: "+972548000000",
+    respondentName: "Анна",
+    respondentKey: "guest_response_key_1234567890",
     status: "no",
     adults: 2,
     children: 3,
@@ -71,6 +71,31 @@ test("clears headcount for a declined response", () => {
   assert.equal(result.error, undefined);
   assert.equal(result.value.adults, 0);
   assert.equal(result.value.children, 0);
+});
+
+test("uses an anonymous respondent key instead of a guest phone", () => {
+  const valid = validateRsvpResponsePayload({
+    eventSlug: "AbCdEfGhIjKl",
+    respondentName: "Анна",
+    respondentKey: "guest_response_key_1234567890",
+    status: "maybe",
+    adults: 0,
+    children: 0,
+    comment: "",
+  });
+  assert.equal(valid.error, undefined);
+  assert.equal(valid.value.respondentKey, "guest_response_key_1234567890");
+  assert.equal("phone" in valid.value, false);
+
+  const missingKey = validateRsvpResponsePayload({
+    eventSlug: "AbCdEfGhIjKl",
+    respondentName: "Анна",
+    status: "maybe",
+    adults: 0,
+    children: 0,
+    comment: "",
+  });
+  assert.equal(missingKey.error, "invalid_respondent_key");
 });
 
 test("creates URL-safe public and management tokens", () => {

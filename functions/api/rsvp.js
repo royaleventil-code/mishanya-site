@@ -106,11 +106,13 @@ async function saveResponse(env, request, raw, secret) {
   if (!event || event.status !== "open") return json({ error: "event_not_found" }, 404);
 
   const now = new Date().toISOString();
-  const scopedPhoneHash = await phoneHash(`${event.id}:${checked.value.phone}`, secret);
+  const scopedResponseHash = await phoneHash(
+    `rsvp-response:${event.id}:${checked.value.respondentKey}`,
+    secret,
+  );
   const encrypted = await encryptPayload(
     {
       respondentName: checked.value.respondentName,
-      phone: checked.value.phone,
       comment: checked.value.comment,
     },
     secret,
@@ -127,7 +129,7 @@ async function saveResponse(env, request, raw, secret) {
   ).bind(
     crypto.randomUUID(),
     event.id,
-    scopedPhoneHash,
+    scopedResponseHash,
     checked.value.status,
     checked.value.adults,
     checked.value.children,
@@ -195,7 +197,6 @@ export async function onRequestGet(context) {
         adults: Number(row.adults),
         children: Number(row.children),
         respondentName: privatePayload.respondentName,
-        phone: privatePayload.phone,
         comment: privatePayload.comment,
         updatedAt: row.updated_at,
       };

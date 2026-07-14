@@ -105,10 +105,7 @@ function ResponseRow({ response, locale }: { response: RsvpResponse; locale: Rsv
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-600"><UserRound className="h-4 w-4" /></span>
-            <div className="min-w-0">
-              <p className="truncate font-black">{response.respondentName}</p>
-              <a href={`tel:${response.phone}`} className="mt-0.5 block text-xs font-semibold text-zinc-500" dir="ltr">{response.phone}</a>
-            </div>
+            <p className="min-w-0 truncate font-black">{response.respondentName}</p>
           </div>
         </div>
         <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-black ${status.className}`}>{status.icon}{status.label}</span>

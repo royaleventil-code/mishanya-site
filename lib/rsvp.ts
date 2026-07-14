@@ -24,14 +24,14 @@ export type PublicRsvpEvent = RsvpEventInput & {
 export type RsvpResponseInput = {
   eventSlug: string;
   respondentName: string;
-  phone: string;
+  respondentKey: string;
   status: RsvpStatus;
   adults: number;
   children: number;
   comment: string;
 };
 
-export type RsvpResponse = Omit<RsvpResponseInput, "eventSlug"> & {
+export type RsvpResponse = Omit<RsvpResponseInput, "eventSlug" | "respondentKey"> & {
   id: string;
   updatedAt: string;
 };
@@ -58,6 +58,7 @@ type LocalEventRecord = {
 
 type LocalResponseRecord = RsvpResponse & {
   eventId: string;
+  respondentKey: string;
 };
 
 type LocalRsvpStore = {
@@ -66,6 +67,7 @@ type LocalRsvpStore = {
 };
 
 const STORAGE_KEY = "mishanya-rsvp:v1";
+const RESPONDENT_KEY_PREFIX = "mishanya-rsvp:respondent:v1";
 
 function isLocalMode() {
   if (typeof window === "undefined") return false;
@@ -77,6 +79,19 @@ function randomToken(bytes = 18) {
   let binary = "";
   for (const value of values) binary += String.fromCharCode(value);
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+export function getRsvpRespondentKey(eventSlug: string) {
+  const storageKey = `${RESPONDENT_KEY_PREFIX}:${eventSlug}`;
+  try {
+    const existing = window.localStorage.getItem(storageKey) || "";
+    if (/^[A-Za-z0-9_-]{20,128}$/.test(existing)) return existing;
+    const created = randomToken(18);
+    window.localStorage.setItem(storageKey, created);
+    return created;
+  } catch {
+    return randomToken(18);
+  }
 }
 
 function loadStore(): LocalRsvpStore {
@@ -103,10 +118,6 @@ function publicEvent(record: LocalEventRecord): PublicRsvpEvent {
     slug: record.slug,
     contactPhone: record.data.contactEnabled ? record.data.organizerPhone : undefined,
   };
-}
-
-function normalizePhoneKey(phone: string) {
-  return phone.replace(/\D/g, "").replace(/^0+/, "");
 }
 
 function normalizedPhone(phone: string) {
@@ -176,7 +187,6 @@ export async function submitRsvpResponse(input: RsvpResponseInput, turnstileToke
   if (input.status === "yes" && input.adults + input.children < 1) throw new Error("invalid_headcount");
   const normalizedInput = {
     ...input,
-    phone: normalizedPhone(input.phone),
     adults: input.status === "yes" ? input.adults : 0,
     children: input.status === "yes" ? input.children : 0,
   };
@@ -184,9 +194,8 @@ export async function submitRsvpResponse(input: RsvpResponseInput, turnstileToke
     const store = loadStore();
     const event = store.events.find((item) => item.slug === normalizedInput.eventSlug);
     if (!event) throw new Error("event_not_found");
-    const phoneKey = normalizePhoneKey(normalizedInput.phone);
     const existing = store.responses.find(
-      (item) => item.eventId === event.id && normalizePhoneKey(item.phone) === phoneKey,
+      (item) => item.eventId === event.id && item.respondentKey === normalizedInput.respondentKey,
     );
     const updatedAt = new Date().toISOString();
     if (existing) {
@@ -224,7 +233,6 @@ export async function getManagedRsvpEvent(token: string): Promise<ManagedRsvpEve
         .map((response) => ({
           id: response.id,
           respondentName: response.respondentName,
-          phone: response.phone,
           status: response.status,
           adults: response.adults,
           children: response.children,
