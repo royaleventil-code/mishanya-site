@@ -388,7 +388,7 @@ async function storeClientMessageSchedule(db, data) {
        updated_at = excluded.updated_at
      WHERE rsvp_client_messages.status NOT IN ('accepted', 'sent', 'sending', 'ambiguous', 'failed')
        AND NOT (
-         rsvp_client_messages.status = 'claimed'
+         rsvp_client_messages.status IN ('scheduled', 'claimed', 'retryable')
          AND rsvp_client_messages.schedule_token = excluded.schedule_token
        )`,
   ).bind(
@@ -567,23 +567,40 @@ async function scheduleRsvpClientMessage(
     return { status: schedule.status, mode: draft.eligibility.mode, fingerprint: draft.fingerprint };
   }
 
+  const queueJob = {
+    type: "rsvp_send_initial_message",
+    dealId: String(deal.ID),
+    scheduleToken,
+    scheduledFor,
+  };
+  const queuedAt = new Date().toISOString();
+  await env.GIFT_DB.prepare(
+    `INSERT OR IGNORE INTO rsvp_message_outbox
+      (schedule_token, deal_id, job_json, status, attempts, next_attempt_at, created_at, updated_at)
+     VALUES (?, ?, ?, 'pending', 0, ?, ?, ?)`,
+  ).bind(
+    scheduleToken,
+    String(deal.ID),
+    JSON.stringify(queueJob),
+    queuedAt,
+    queuedAt,
+    queuedAt,
+  ).run();
+
   try {
     const remainingSeconds = Math.ceil((Date.parse(scheduledFor) - Date.now()) / 1000);
-    await env.GIFT_SYNC_QUEUE.send({
-      type: "rsvp_send_initial_message",
-      dealId: String(deal.ID),
-      scheduleToken,
-      scheduledFor,
-    }, { delaySeconds: Math.max(1, Math.min(RSVP_CLIENT_MESSAGE_DELAY_SECONDS, remainingSeconds)) });
-  } catch {
-    const now = new Date().toISOString();
+    await env.GIFT_SYNC_QUEUE.send(
+      queueJob,
+      { delaySeconds: Math.max(1, Math.min(RSVP_CLIENT_MESSAGE_DELAY_SECONDS, remainingSeconds)) },
+    );
+    const deliveredAt = new Date().toISOString();
     await env.GIFT_DB.prepare(
-      `UPDATE rsvp_client_messages
-       SET status = 'retryable', schedule_token = NULL, scheduled_for = NULL,
-           last_error = 'queue_unavailable', updated_at = ?
-       WHERE deal_id = ? AND message_kind = ? AND schedule_token = ? AND status = 'scheduled'`,
-    ).bind(now, String(deal.ID), RSVP_CLIENT_MESSAGE_KIND, scheduleToken).run().catch(() => undefined);
-    throw new Error("rsvp_message_queue_unavailable");
+      `UPDATE rsvp_message_outbox
+       SET status = 'delivered', delivered_at = ?, last_error = NULL, updated_at = ?
+       WHERE schedule_token = ? AND status = 'pending'`,
+    ).bind(deliveredAt, deliveredAt, scheduleToken).run();
+  } catch {
+    // The durable message outbox is retried by the gift-sync Worker's scheduled handler.
   }
   return {
     status: "scheduled",
@@ -836,6 +853,15 @@ export async function processRsvpClientMessageSend(env, job) {
     if (Number.isFinite(claimedAt) && leaseRemaining > 0) {
       const error = new Error("rsvp_message_claim_busy");
       error.retryAfterSeconds = Math.min(Math.ceil(WRITEBACK_LEASE_MS / 1000), leaseRemaining);
+      throw error;
+    }
+  }
+  if (state.status === "retryable") {
+    const nextAttemptAt = Date.parse(String(state.next_attempt_at || ""));
+    const retryRemaining = Math.ceil((nextAttemptAt - Date.now()) / 1000);
+    if (Number.isFinite(nextAttemptAt) && retryRemaining > 0) {
+      const error = new Error("rsvp_message_retry_not_due");
+      error.retryAfterSeconds = Math.min(3600, retryRemaining);
       throw error;
     }
   }

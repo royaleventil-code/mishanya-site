@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { drainRsvpWebhookOutbox } from "../workers/gift-sync.js";
+import {
+  drainRsvpMessageOutbox,
+  drainRsvpWebhookOutbox,
+} from "../workers/gift-sync.js";
 
 function outboxDb(row) {
   return {
@@ -13,7 +16,8 @@ function outboxDb(row) {
               return { results: row.status === "pending" ? [{ ...row }] : [] };
             },
             async run() {
-              if (sql.includes("UPDATE rsvp_webhook_outbox") && args[6] === row.generation) {
+              const key = row.generation || row.schedule_token;
+              if (sql.includes("UPDATE rsvp_") && args[6] === key) {
                 row.status = args[0];
                 row.attempts += Number(args[1] || 0);
                 row.next_attempt_at = args[2];
@@ -72,4 +76,46 @@ test("retries a durable RSVP webhook outbox job and marks it delivered", async (
   assert.deepEqual(sent[0].body, job);
   assert.ok(sent[0].options.delaySeconds >= 1);
   assert.ok(sent[0].options.delaySeconds <= 10);
+});
+
+test("retries a durable client-message outbox job without losing the ten-minute deadline", async () => {
+  const scheduleToken = "f".repeat(64);
+  const scheduledFor = new Date(Date.now() + 600_000).toISOString();
+  const job = {
+    type: "rsvp_send_initial_message",
+    dealId: "18123",
+    scheduleToken,
+    scheduledFor,
+  };
+  const row = {
+    schedule_token: scheduleToken,
+    job_json: JSON.stringify(job),
+    status: "pending",
+    attempts: 0,
+  };
+  let fail = true;
+  const sent = [];
+  const env = {
+    GIFT_DB: outboxDb(row),
+    GIFT_SYNC_QUEUE: {
+      async send(body, options) {
+        if (fail) {
+          fail = false;
+          throw new Error("temporary queue failure");
+        }
+        sent.push({ body, options });
+      },
+    },
+  };
+
+  await drainRsvpMessageOutbox(env);
+  assert.equal(row.status, "pending");
+  assert.equal(row.attempts, 1);
+
+  await drainRsvpMessageOutbox(env);
+  assert.equal(row.status, "delivered");
+  assert.equal(sent.length, 1);
+  assert.deepEqual(sent[0].body, job);
+  assert.ok(sent[0].options.delaySeconds >= 599);
+  assert.ok(sent[0].options.delaySeconds <= 600);
 });

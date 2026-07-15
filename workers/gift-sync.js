@@ -85,9 +85,80 @@ export async function drainRsvpWebhookOutbox(env) {
   }
 }
 
+async function saveMessageOutboxState(db, scheduleToken, patch) {
+  const now = new Date().toISOString();
+  await db.prepare(
+    `UPDATE rsvp_message_outbox
+     SET status = ?, attempts = attempts + ?, next_attempt_at = ?, delivered_at = ?,
+         last_error = ?, updated_at = ?
+     WHERE schedule_token = ? AND status = 'pending'`,
+  ).bind(
+    patch.status,
+    Number(patch.incrementAttempts || 0),
+    patch.nextAttemptAt || now,
+    patch.deliveredAt || null,
+    patch.lastError || null,
+    now,
+    scheduleToken,
+  ).run();
+}
+
+export async function drainRsvpMessageOutbox(env) {
+  if (!env.GIFT_DB || !env.GIFT_SYNC_QUEUE) throw new Error("rsvp_outbox_not_configured");
+  const pending = await env.GIFT_DB.prepare(
+    `SELECT schedule_token, job_json, attempts
+     FROM rsvp_message_outbox
+     WHERE status = 'pending' AND next_attempt_at <= ?
+     ORDER BY next_attempt_at ASC
+     LIMIT 25`,
+  ).bind(new Date().toISOString()).all();
+
+  for (const row of pending?.results || []) {
+    let job;
+    try {
+      job = JSON.parse(String(row?.job_json || ""));
+    } catch {
+      job = null;
+    }
+    const scheduleToken = String(row?.schedule_token || "");
+    if (!job || job.type !== "rsvp_send_initial_message" || job.scheduleToken !== scheduleToken) {
+      await saveMessageOutboxState(env.GIFT_DB, scheduleToken, {
+        status: "failed",
+        incrementAttempts: 1,
+        lastError: "invalid_outbox_job",
+      });
+      continue;
+    }
+
+    try {
+      const scheduledFor = Date.parse(String(job.scheduledFor || ""));
+      const delaySeconds = Number.isFinite(scheduledFor)
+        ? Math.max(1, Math.min(600, Math.ceil((scheduledFor - Date.now()) / 1000)))
+        : 1;
+      await env.GIFT_SYNC_QUEUE.send(job, { delaySeconds });
+      await saveMessageOutboxState(env.GIFT_DB, scheduleToken, {
+        status: "delivered",
+        deliveredAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      const attempts = Number(row?.attempts || 0) + 1;
+      const retrySeconds = Math.min(300, 30 * 2 ** Math.min(attempts, 4));
+      await saveMessageOutboxState(env.GIFT_DB, scheduleToken, {
+        status: "pending",
+        incrementAttempts: 1,
+        nextAttemptAt: new Date(Date.now() + retrySeconds * 1000).toISOString(),
+        lastError: errorMessage(error),
+      });
+    }
+  }
+}
+
 const giftSyncWorker = {
   async scheduled(_controller, env, context) {
-    context.waitUntil(drainRsvpWebhookOutbox(env));
+    context.waitUntil(Promise.all([
+      drainRsvpWebhookOutbox(env),
+      drainRsvpMessageOutbox(env),
+    ]));
   },
 
   async queue(batch, env) {

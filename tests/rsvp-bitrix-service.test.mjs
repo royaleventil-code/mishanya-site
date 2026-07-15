@@ -106,7 +106,8 @@ function sourceEventDb() {
                 if (row && ["accepted", "sent", "sending", "ambiguous", "failed"].includes(row.status)) {
                   return { meta: { changes: 0 } };
                 }
-                if (row?.status === "claimed" && row.schedule_token === args[5]) {
+                if (["scheduled", "claimed", "retryable"].includes(row?.status)
+                  && row.schedule_token === args[5]) {
                   return { meta: { changes: 0 } };
                 }
                 messages.set(key, {
@@ -293,14 +294,17 @@ test("processes a closed deal twice without creating a duplicate event", async (
   const activities = [];
   const olchatCalls = [];
   const queuedMessages = [];
-  let failNextQueue = true;
+  let olchatStatus = 429;
   globalThis.fetch = async (url, init) => {
     if (String(url).startsWith("https://olchat.example.test/")) {
       olchatCalls.push({
         method: init?.method,
         params: new URL(String(url)).searchParams,
       });
-      return new Response("OK", { status: 200 });
+      return new Response("OK", {
+        status: olchatStatus,
+        headers: olchatStatus === 429 ? { "Retry-After": "60" } : undefined,
+      });
     }
     const params = JSON.parse(String(init?.body || "{}"));
     if (String(url).includes("crm.deal.get.json")) return Response.json({ result: deal });
@@ -339,10 +343,6 @@ test("processes a closed deal twice without creating a duplicate event", async (
       RSVP_CLIENT_MESSAGE_TEST_CONTACT_ID: "4854",
       GIFT_SYNC_QUEUE: {
         async send(body, options) {
-          if (failNextQueue) {
-            failNextQueue = false;
-            throw new Error("queue unavailable");
-          }
           queuedMessages.push({ body, options });
         },
       },
@@ -354,13 +354,7 @@ test("processes a closed deal twice without creating a duplicate event", async (
       messageGeneration: firstGeneration,
       messageScheduledFor: firstScheduledFor,
     };
-    await assert.rejects(
-      processRsvpDealUpdate(env, firstJob, 1),
-      /rsvp_message_queue_unavailable/,
-    );
-    assert.equal(db.messages.get("18123:rsvp_client_invitation").status, "retryable");
-    assert.equal(db.messages.get("18123:rsvp_client_invitation").schedule_token, null);
-    const first = await processRsvpDealUpdate(env, firstJob, 2);
+    const first = await processRsvpDealUpdate(env, firstJob, 1);
     db.sync.set("18123", {
       ...db.sync.get("18123"),
       message_generation: secondGeneration,
@@ -372,7 +366,7 @@ test("processes a closed deal twice without creating a duplicate event", async (
       messageGeneration: secondGeneration,
       messageScheduledFor: secondScheduledFor,
     };
-    const second = await processRsvpDealUpdate(env, secondJob, 3);
+    const second = await processRsvpDealUpdate(env, secondJob, 2);
     assert.equal(first.status, "synced");
     assert.equal(second.status, "synced");
     assert.equal(first.clientMessageStatus, "scheduled");
@@ -403,7 +397,7 @@ test("processes a closed deal twice without creating a duplicate event", async (
     assert.equal(queuedMessages[0].body.type, "rsvp_send_initial_message");
     assert.notEqual(queuedMessages[0].body.scheduleToken, queuedMessages[1].body.scheduleToken);
 
-    const outOfOrder = await processRsvpDealUpdate(env, firstJob, 4);
+    const outOfOrder = await processRsvpDealUpdate(env, firstJob, 3);
     assert.equal(outOfOrder.clientMessageStatus, "stale");
     assert.equal(queuedMessages.length, 2);
     assert.match(activities[0].DESCRIPTION, /через 10 минут после последнего изменения сделки/);
@@ -428,11 +422,30 @@ test("processes a closed deal twice without creating a duplicate event", async (
     );
     assert.equal(olchatCalls.length, 0);
     db.messages.get("18123:rsvp_client_invitation").claimed_at = "2020-01-01T00:00:00.000Z";
+    await assert.rejects(
+      processRsvpClientMessageSend(env, queuedMessages[1].body),
+      (error) => error?.message === "olchat_rate_limited" && error.retryAfterSeconds === 60,
+    );
+    assert.equal(db.messages.get("18123:rsvp_client_invitation").status, "retryable");
+    assert.equal(olchatCalls.length, 1);
+
+    const duplicateWhileLimited = await processRsvpDealUpdate(env, secondJob, 4);
+    assert.equal(duplicateWhileLimited.clientMessageStatus, "retryable");
+    assert.equal(queuedMessages.length, 2);
+    await assert.rejects(
+      processRsvpClientMessageSend(env, queuedMessages[1].body),
+      (error) => error?.message === "rsvp_message_retry_not_due"
+        && error.retryAfterSeconds > 0,
+    );
+    assert.equal(olchatCalls.length, 1);
+
+    db.messages.get("18123:rsvp_client_invitation").next_attempt_at = "2020-01-01T00:00:00.000Z";
+    olchatStatus = 200;
     const sent = await processRsvpClientMessageSend(env, queuedMessages[1].body);
     assert.equal(sent.status, "accepted");
     assert.equal(db.messages.get("18123:rsvp_client_invitation").status, "accepted");
-    assert.equal(db.messages.get("18123:rsvp_client_invitation").attempts, 1);
-    assert.equal(olchatCalls.length, 1);
+    assert.equal(db.messages.get("18123:rsvp_client_invitation").attempts, 2);
+    assert.equal(olchatCalls.length, 2);
     assert.equal(olchatCalls[0].method, "GET");
     assert.equal(olchatCalls[0].params.get("phone_number"), "972548000000");
     assert.equal(olchatCalls[0].params.get("send_to_imol"), "Y");
@@ -445,7 +458,7 @@ test("processes a closed deal twice without creating a duplicate event", async (
     const afterAccepted = await processRsvpDealUpdate(env, secondJob, 5);
     assert.equal(afterAccepted.clientMessageStatus, "accepted");
     assert.equal(queuedMessages.length, 2);
-    assert.equal(olchatCalls.length, 1);
+    assert.equal(olchatCalls.length, 2);
   } finally {
     globalThis.fetch = originalFetch;
   }
