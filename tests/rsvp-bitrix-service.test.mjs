@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   buildRsvpClientMessage,
   evaluateRsvpClientMessageEligibility,
+  processRsvpClientMessageSend,
   processRsvpDealUpdate,
   upsertSourceEvent,
 } from "../shared/rsvp-bitrix-service.js";
@@ -66,6 +67,9 @@ function sourceEventDb() {
               if (sql.includes("FROM rsvp_client_messages")) {
                 return messages.get(`${args[0]}:${args[1]}`) || null;
               }
+              if (sql.includes("SELECT message_generation, message_scheduled_for")) {
+                return sync.get(String(args[0])) || null;
+              }
               if (sql.includes("SELECT bitrix_activity_id FROM rsvp_bitrix_sync")) {
                 return sync.get(String(args[0])) || null;
               }
@@ -80,29 +84,89 @@ function sourceEventDb() {
               } : null;
             },
             async run() {
-              if (sql.includes("INSERT OR IGNORE INTO rsvp_client_messages")) {
+              if (sql.includes("SET status = 'retryable', schedule_token = NULL")) {
+                const key = `${args[1]}:${args[2]}`;
+                const row = messages.get(key);
+                if (!row || row.schedule_token !== args[3] || row.status !== "scheduled") {
+                  return { meta: { changes: 0 } };
+                }
+                row.status = "retryable";
+                row.schedule_token = null;
+                row.scheduled_for = null;
+                row.last_error = "queue_unavailable";
+                return { meta: { changes: 1 } };
+              }
+              if (sql.includes("INSERT INTO rsvp_client_messages")) {
                 const key = `${args[0]}:${args[1]}`;
-                if (messages.has(key)) return { meta: { changes: 0 } };
+                const row = messages.get(key);
+                const syncRow = sync.get(String(args[9]));
+                if (!syncRow || syncRow.message_generation !== args[10]) {
+                  return { meta: { changes: 0 } };
+                }
+                if (row && ["accepted", "sent", "sending", "ambiguous", "failed"].includes(row.status)) {
+                  return { meta: { changes: 0 } };
+                }
+                if (["scheduled", "claimed", "retryable"].includes(row?.status)
+                  && row.schedule_token === args[5]) {
+                  return { meta: { changes: 0 } };
+                }
                 messages.set(key, {
+                  ...row,
                   deal_id: String(args[0]),
                   message_kind: args[1],
                   contact_id: String(args[2]),
                   template_version: args[3],
                   message_fingerprint: args[4],
-                  status: "pending",
-                  attempts: 0,
+                  status: "scheduled",
+                  attempts: Number(row?.attempts || 0),
+                  schedule_token: args[5],
+                  scheduled_for: args[6],
                 });
                 return { meta: { changes: 1 } };
               }
-              if (sql.includes("SET status = 'sending'")) {
+              if (sql.includes("SET status = ?, schedule_token = NULL")) {
                 const key = `${args[2]}:${args[3]}`;
                 const row = messages.get(key);
-                if (!row || row.message_fingerprint !== args[4]
-                  || !["pending", "retryable"].includes(row.status)) {
+                const hasTokenCheck = sql.includes("AND schedule_token = ?");
+                const hasGenerationCheck = sql.includes("message_generation = ?");
+                const generationDealIndex = hasTokenCheck ? 5 : 4;
+                const generationIndex = hasTokenCheck ? 6 : 5;
+                if (!row || !["scheduled", "rescheduling", "retryable"].includes(row.status)
+                  || (hasTokenCheck && row.schedule_token !== args[4])
+                  || (hasGenerationCheck
+                    && sync.get(String(args[generationDealIndex]))?.message_generation !== args[generationIndex])) {
+                  return { meta: { changes: 0 } };
+                }
+                row.status = args[0];
+                row.schedule_token = null;
+                row.scheduled_for = null;
+                return { meta: { changes: 1 } };
+              }
+              if (sql.includes("SET status = 'claimed', contact_id = ?")) {
+                const key = `${args[5]}:${args[6]}`;
+                const row = messages.get(key);
+                if (!row || row.schedule_token !== args[7]
+                  || sync.get(String(args[9]))?.message_generation !== args[10]
+                  || (!["scheduled", "retryable"].includes(row.status)
+                    && !(row.status === "claimed" && (!row.claimed_at || row.claimed_at < args[8])))) {
+                  return { meta: { changes: 0 } };
+                }
+                row.status = "claimed";
+                row.contact_id = String(args[0]);
+                row.template_version = args[1];
+                row.message_fingerprint = args[2];
+                row.claimed_at = args[3];
+                row.attempts += 1;
+                return { meta: { changes: 1 } };
+              }
+              if (sql.includes("SET status = 'sending', updated_at = ?")) {
+                const key = `${args[1]}:${args[2]}`;
+                const row = messages.get(key);
+                if (!row || row.status !== "claimed" || row.schedule_token !== args[3]
+                  || sync.get(String(args[4]))?.message_generation !== args[5]) {
                   return { meta: { changes: 0 } };
                 }
                 row.status = "sending";
-                row.attempts += 1;
                 return { meta: { changes: 1 } };
               }
               if (sql.includes("SET status = ?, accepted_at = ?")) {
@@ -229,13 +293,18 @@ test("processes a closed deal twice without creating a duplicate event", async (
   };
   const activities = [];
   const olchatCalls = [];
+  const queuedMessages = [];
+  let olchatStatus = 429;
   globalThis.fetch = async (url, init) => {
     if (String(url).startsWith("https://olchat.example.test/")) {
       olchatCalls.push({
         method: init?.method,
         params: new URL(String(url)).searchParams,
       });
-      return new Response("OK", { status: 200 });
+      return new Response("OK", {
+        status: olchatStatus,
+        headers: olchatStatus === 429 ? { "Retry-After": "60" } : undefined,
+      });
     }
     const params = JSON.parse(String(init?.body || "{}"));
     if (String(url).includes("crm.deal.get.json")) return Response.json({ result: deal });
@@ -256,6 +325,14 @@ test("processes a closed deal twice without creating a duplicate event", async (
   };
 
   try {
+    const firstGeneration = "a".repeat(64);
+    const secondGeneration = "b".repeat(64);
+    const firstScheduledFor = new Date(Date.now() + 600_000).toISOString();
+    const secondScheduledFor = new Date(Date.now() + 600_000).toISOString();
+    db.sync.set("18123", {
+      message_generation: firstGeneration,
+      message_scheduled_for: firstScheduledFor,
+    });
     const env = {
       GIFT_DB: db,
       GIFT_DATA_SECRET: "test-secret-that-is-long-enough-for-encryption",
@@ -264,16 +341,36 @@ test("processes a closed deal twice without creating a duplicate event", async (
       RSVP_CLIENT_MESSAGE_MODE: "test",
       RSVP_CLIENT_MESSAGE_TEST_DEAL_ID: "18123",
       RSVP_CLIENT_MESSAGE_TEST_CONTACT_ID: "4854",
+      GIFT_SYNC_QUEUE: {
+        async send(body, options) {
+          queuedMessages.push({ body, options });
+        },
+      },
     };
-    const job = { dealId: "18123", eventTs: 1784012400, eventHandlerId: "201" };
-    const first = await processRsvpDealUpdate(env, job, 1);
-    env.RSVP_CLIENT_MESSAGE_MODE = "live";
-    env.RSVP_CLIENT_MESSAGE_ENABLED_AFTER = "2030-01-01T00:00:00.000Z";
-    const second = await processRsvpDealUpdate(env, job, 2);
+    const firstJob = {
+      dealId: "18123",
+      eventTs: 1784012400,
+      eventHandlerId: "201",
+      messageGeneration: firstGeneration,
+      messageScheduledFor: firstScheduledFor,
+    };
+    const first = await processRsvpDealUpdate(env, firstJob, 1);
+    db.sync.set("18123", {
+      ...db.sync.get("18123"),
+      message_generation: secondGeneration,
+      message_scheduled_for: secondScheduledFor,
+    });
+    const secondJob = {
+      ...firstJob,
+      eventTs: 1784012401,
+      messageGeneration: secondGeneration,
+      messageScheduledFor: secondScheduledFor,
+    };
+    const second = await processRsvpDealUpdate(env, secondJob, 2);
     assert.equal(first.status, "synced");
     assert.equal(second.status, "synced");
-    assert.equal(first.clientMessageStatus, "accepted");
-    assert.equal(second.clientMessageStatus, "accepted");
+    assert.equal(first.clientMessageStatus, "scheduled");
+    assert.equal(second.clientMessageStatus, "scheduled");
     assert.equal(first.publicSlug, second.publicSlug);
     assert.equal(db.events.size, 1);
     assert.equal(activities.length, 1);
@@ -289,12 +386,66 @@ test("processes a closed deal twice without creating a duplicate event", async (
     }]);
     assert.match(activities[0].DESCRIPTION, /Ссылка для гостей: https:\/\/mishanya-show\.com\/invite\?event=/);
     assert.match(activities[0].DESCRIPTION, /Личный кабинет клиента: https:\/\/mishanya-show\.com\/my-event#token=/);
-    assert.match(activities[0].DESCRIPTION, /автоматически принято WhatsApp-сервисом/);
+    assert.match(activities[0].DESCRIPTION, /через 10 минут после последнего изменения сделки/);
     assert.equal(db.sync.get("18123").status, "synced");
     assert.equal(db.sync.get("18123").bitrix_activity_id, "9001");
-    assert.equal(db.messages.get("18123:rsvp_client_invitation").status, "accepted");
-    assert.equal(db.messages.get("18123:rsvp_client_invitation").attempts, 1);
+    assert.equal(db.messages.get("18123:rsvp_client_invitation").status, "scheduled");
+    assert.equal(db.messages.get("18123:rsvp_client_invitation").attempts, 0);
+    assert.equal(queuedMessages.length, 2);
+    assert.ok(queuedMessages[0].options.delaySeconds >= 599);
+    assert.ok(queuedMessages[0].options.delaySeconds <= 600);
+    assert.equal(queuedMessages[0].body.type, "rsvp_send_initial_message");
+    assert.notEqual(queuedMessages[0].body.scheduleToken, queuedMessages[1].body.scheduleToken);
+
+    const outOfOrder = await processRsvpDealUpdate(env, firstJob, 3);
+    assert.equal(outOfOrder.clientMessageStatus, "stale");
+    assert.equal(queuedMessages.length, 2);
+    assert.match(activities[0].DESCRIPTION, /через 10 минут после последнего изменения сделки/);
+
+    const stale = await processRsvpClientMessageSend(env, queuedMessages[0].body);
+    assert.equal(stale.status, "stale");
+    assert.equal(olchatCalls.length, 0);
+
+    await assert.rejects(
+      processRsvpClientMessageSend(env, queuedMessages[1].body),
+      (error) => error?.message === "rsvp_message_not_due" && error.retryAfterSeconds > 0,
+    );
+    assert.equal(olchatCalls.length, 0);
+
+    db.messages.get("18123:rsvp_client_invitation").scheduled_for = "2020-01-01T00:00:00.000Z";
+    db.sync.get("18123").message_scheduled_for = "2020-01-01T00:00:00.000Z";
+    db.messages.get("18123:rsvp_client_invitation").status = "claimed";
+    db.messages.get("18123:rsvp_client_invitation").claimed_at = new Date().toISOString();
+    await assert.rejects(
+      processRsvpClientMessageSend(env, queuedMessages[1].body),
+      (error) => error?.message === "rsvp_message_claim_busy" && error.retryAfterSeconds > 0,
+    );
+    assert.equal(olchatCalls.length, 0);
+    db.messages.get("18123:rsvp_client_invitation").claimed_at = "2020-01-01T00:00:00.000Z";
+    await assert.rejects(
+      processRsvpClientMessageSend(env, queuedMessages[1].body),
+      (error) => error?.message === "olchat_rate_limited" && error.retryAfterSeconds === 60,
+    );
+    assert.equal(db.messages.get("18123:rsvp_client_invitation").status, "retryable");
     assert.equal(olchatCalls.length, 1);
+
+    const duplicateWhileLimited = await processRsvpDealUpdate(env, secondJob, 4);
+    assert.equal(duplicateWhileLimited.clientMessageStatus, "retryable");
+    assert.equal(queuedMessages.length, 2);
+    await assert.rejects(
+      processRsvpClientMessageSend(env, queuedMessages[1].body),
+      (error) => error?.message === "rsvp_message_retry_not_due"
+        && error.retryAfterSeconds > 0,
+    );
+    assert.equal(olchatCalls.length, 1);
+
+    db.messages.get("18123:rsvp_client_invitation").next_attempt_at = "2020-01-01T00:00:00.000Z";
+    olchatStatus = 200;
+    const sent = await processRsvpClientMessageSend(env, queuedMessages[1].body);
+    assert.equal(sent.status, "accepted");
+    assert.equal(db.messages.get("18123:rsvp_client_invitation").status, "accepted");
+    assert.equal(db.messages.get("18123:rsvp_client_invitation").attempts, 2);
+    assert.equal(olchatCalls.length, 2);
     assert.equal(olchatCalls[0].method, "GET");
     assert.equal(olchatCalls[0].params.get("phone_number"), "972548000000");
     assert.equal(olchatCalls[0].params.get("send_to_imol"), "Y");
@@ -303,6 +454,58 @@ test("processes a closed deal twice without creating a duplicate event", async (
       olchatCalls[0].params.get("body"),
       buildRsvpClientMessage("Анна", "Маша", manageUrl),
     );
+
+    const afterAccepted = await processRsvpDealUpdate(env, secondJob, 5);
+    assert.equal(afterAccepted.clientMessageStatus, "accepted");
+    assert.equal(queuedMessages.length, 2);
+    assert.equal(olchatCalls.length, 2);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("cancels a pending client message when the deal leaves the closed stage", async () => {
+  const db = sourceEventDb();
+  const generation = "c".repeat(64);
+  db.sync.set("18123", {
+    message_generation: generation,
+    message_scheduled_for: "2030-01-01T00:00:00.000Z",
+  });
+  db.messages.set("18123:rsvp_client_invitation", {
+    deal_id: "18123",
+    message_kind: "rsvp_client_invitation",
+    status: "scheduled",
+    schedule_token: "d".repeat(64),
+    scheduled_for: "2030-01-01T00:00:00.000Z",
+    attempts: 0,
+  });
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (String(url).includes("crm.deal.get.json")) {
+      return Response.json({
+        result: {
+          ID: "18123",
+          CATEGORY_ID: "0",
+          STAGE_ID: "NEW",
+          CONTACT_ID: "4854",
+        },
+      });
+    }
+    if (String(url).includes("crm.contact.get.json")) {
+      return Response.json({ result: { ID: "4854", NAME: "Анна" } });
+    }
+    return Response.json({ error: "unexpected_method" }, { status: 400 });
+  };
+
+  try {
+    const result = await processRsvpDealUpdate({
+      GIFT_DB: db,
+      GIFT_DATA_SECRET: "test-secret-that-is-long-enough-for-encryption",
+      BITRIX_WEBHOOK_URL: "https://example.bitrix24.com/rest/1/hidden",
+    }, { dealId: "18123", messageGeneration: generation }, 1);
+    assert.equal(result.status, "ignored_stage");
+    assert.equal(db.messages.get("18123:rsvp_client_invitation").status, "canceled");
+    assert.equal(db.messages.get("18123:rsvp_client_invitation").schedule_token, null);
   } finally {
     globalThis.fetch = originalFetch;
   }

@@ -14,7 +14,15 @@ const WRITEBACK_LEASE_MS = 2 * 60 * 1000;
 const RSVP_ACTIVITY_MARKER_PREFIX = "[MISHANYA_RSVP_DEAL:";
 const RSVP_CLIENT_MESSAGE_KIND = "rsvp_client_invitation";
 const RSVP_CLIENT_MESSAGE_TEMPLATE_VERSION = "rsvp-client-ru-v1";
+const RSVP_CLIENT_MESSAGE_DELAY_SECONDS = 10 * 60;
 const RSVP_CLIENT_MESSAGE_MODES = new Set(["off", "dry-run", "test", "live"]);
+const RSVP_CLIENT_MESSAGE_TERMINAL_STATUSES = new Set([
+  "accepted",
+  "sent",
+  "sending",
+  "ambiguous",
+  "failed",
+]);
 
 function cleanErrorCode(value, fallback = "bitrix_sync_failed") {
   const code = String(value || fallback).trim().slice(0, 160);
@@ -73,10 +81,12 @@ function clientMessageStatusLabel(status) {
   if (status === "accepted" || status === "sent") {
     return "Сообщение клиенту автоматически принято WhatsApp-сервисом.";
   }
+  if (status === "scheduled" || status === "rescheduling" || status === "retryable") {
+    return "Сообщение клиенту будет отправлено автоматически через 10 минут после последнего изменения сделки.";
+  }
   if (status === "ambiguous" || status === "sending") {
     return "Статус отправки сообщения клиенту требует проверки; автоматический повтор заблокирован.";
   }
-  if (status === "retryable") return "Отправка сообщения клиенту ожидает безопасного повтора.";
   if (status === "failed") return "Сообщение клиенту не отправлено; автоматический повтор заблокирован.";
   return "Сообщение клиенту автоматически ещё не отправлялось.";
 }
@@ -237,11 +247,42 @@ async function saveSyncActivityId(db, dealId, activityId) {
 
 async function readClientMessageState(db, dealId) {
   return db.prepare(
-    `SELECT status, message_fingerprint, next_attempt_at
+    `SELECT status, message_fingerprint, next_attempt_at, schedule_token, scheduled_for, claimed_at
      FROM rsvp_client_messages
      WHERE deal_id = ? AND message_kind = ?
      LIMIT 1`,
   ).bind(String(dealId), RSVP_CLIENT_MESSAGE_KIND).first();
+}
+
+async function readClientMessageSchedule(db, dealId) {
+  return db.prepare(
+    `SELECT message_generation, message_scheduled_for
+     FROM rsvp_bitrix_sync
+     WHERE deal_id = ?
+     LIMIT 1`,
+  ).bind(String(dealId)).first();
+}
+
+async function ensureLegacyClientMessageSchedule(db, dealId, job) {
+  const receivedAtMs = Date.parse(String(job?.receivedAt || ""));
+  if (!Number.isFinite(receivedAtMs)) return readClientMessageSchedule(db, dealId);
+  const generation = await sha256Hex([
+    "legacy-rsvp-deal-update",
+    dealId,
+    String(job?.eventTs || ""),
+    String(job?.eventHandlerId || ""),
+    new Date(receivedAtMs).toISOString(),
+  ].join("|"));
+  const scheduledFor = new Date(
+    receivedAtMs + RSVP_CLIENT_MESSAGE_DELAY_SECONDS * 1000,
+  ).toISOString();
+  const now = new Date().toISOString();
+  await db.prepare(
+    `UPDATE rsvp_bitrix_sync
+     SET message_generation = ?, message_scheduled_for = ?, updated_at = ?
+     WHERE deal_id = ? AND message_generation IS NULL`,
+  ).bind(generation, scheduledFor, now, String(dealId)).run();
+  return readClientMessageSchedule(db, dealId);
 }
 
 function cleanMessageValue(value) {
@@ -298,40 +339,131 @@ export function evaluateRsvpClientMessageEligibility(env, deal, contact) {
   return { allowed, status: allowed ? "eligible" : "before_cutoff", mode };
 }
 
-async function acquireClientMessage(db, data) {
+async function cancelScheduledClientMessage(
+  db,
+  dealId,
+  status = "canceled",
+  scheduleToken = null,
+  requiredGeneration = null,
+) {
   const now = new Date().toISOString();
-  await db.prepare(
-    `INSERT OR IGNORE INTO rsvp_client_messages
+  const tokenClause = scheduleToken ? " AND schedule_token = ?" : "";
+  const generationClause = requiredGeneration
+    ? " AND EXISTS (SELECT 1 FROM rsvp_bitrix_sync WHERE deal_id = ? AND message_generation = ?)"
+    : "";
+  const statement = db.prepare(
+    `UPDATE rsvp_client_messages
+     SET status = ?, schedule_token = NULL, scheduled_for = NULL,
+         next_attempt_at = NULL, last_error = NULL, updated_at = ?
+     WHERE deal_id = ? AND message_kind = ?
+       AND status IN ('scheduled', 'rescheduling', 'retryable')${tokenClause}${generationClause}`,
+  );
+  const args = [status, now, String(dealId), RSVP_CLIENT_MESSAGE_KIND];
+  if (scheduleToken) args.push(scheduleToken);
+  if (requiredGeneration) args.push(String(dealId), requiredGeneration);
+  await statement.bind(...args).run();
+}
+
+async function storeClientMessageSchedule(db, data) {
+  const now = new Date().toISOString();
+  const result = await db.prepare(
+    `INSERT INTO rsvp_client_messages
       (deal_id, message_kind, contact_id, template_version, message_fingerprint,
-       status, attempts, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, 'pending', 0, ?, ?)`,
+       status, attempts, schedule_token, scheduled_for, created_at, updated_at)
+     SELECT ?, ?, ?, ?, ?, 'scheduled', 0, ?, ?, ?, ?
+     FROM rsvp_bitrix_sync
+     WHERE deal_id = ? AND message_generation = ?
+     ON CONFLICT(deal_id, message_kind) DO UPDATE SET
+       contact_id = excluded.contact_id,
+       template_version = excluded.template_version,
+       message_fingerprint = excluded.message_fingerprint,
+       status = 'scheduled',
+       schedule_token = excluded.schedule_token,
+       scheduled_for = excluded.scheduled_for,
+       claimed_at = NULL,
+       next_attempt_at = NULL,
+       provider_message_id = NULL,
+       last_http_status = NULL,
+       last_error = NULL,
+       updated_at = excluded.updated_at
+     WHERE rsvp_client_messages.status NOT IN ('accepted', 'sent', 'sending', 'ambiguous', 'failed')
+       AND NOT (
+         rsvp_client_messages.status IN ('scheduled', 'claimed', 'retryable')
+         AND rsvp_client_messages.schedule_token = excluded.schedule_token
+       )`,
   ).bind(
     data.dealId,
     RSVP_CLIENT_MESSAGE_KIND,
     data.contactId,
     data.templateVersion,
     data.fingerprint,
+    data.scheduleToken,
+    data.scheduledFor,
     now,
     now,
+    data.dealId,
+    data.scheduleToken,
   ).run();
+  if (Number(result?.meta?.changes || 0) > 0) return { scheduled: true, status: "scheduled" };
+  const existing = await readClientMessageState(db, data.dealId);
+  return { scheduled: false, status: String(existing?.status || "message_conflict") };
+}
 
+async function acquireScheduledClientMessage(db, data) {
+  const now = new Date().toISOString();
+  const staleBefore = new Date(Date.now() - WRITEBACK_LEASE_MS).toISOString();
   const claimed = await db.prepare(
     `UPDATE rsvp_client_messages
-     SET status = 'sending', attempts = attempts + 1, claimed_at = ?,
+     SET status = 'claimed', contact_id = ?, template_version = ?,
+         message_fingerprint = ?, attempts = attempts + 1, claimed_at = ?,
          last_error = NULL, updated_at = ?
      WHERE deal_id = ? AND message_kind = ?
-       AND message_fingerprint = ?
-       AND status IN ('pending', 'retryable')`,
+       AND schedule_token = ?
+       AND (
+         status IN ('scheduled', 'retryable')
+         OR (status = 'claimed' AND (claimed_at IS NULL OR claimed_at < ?))
+       )
+       AND EXISTS (
+         SELECT 1 FROM rsvp_bitrix_sync
+         WHERE deal_id = ? AND message_generation = ?
+       )`,
   ).bind(
+    data.contactId,
+    data.templateVersion,
+    data.fingerprint,
     now,
     now,
     data.dealId,
     RSVP_CLIENT_MESSAGE_KIND,
-    data.fingerprint,
+    data.scheduleToken,
+    staleBefore,
+    data.dealId,
+    data.scheduleToken,
   ).run();
-  if (Number(claimed?.meta?.changes || 0) > 0) return { acquired: true, status: "sending" };
+  if (Number(claimed?.meta?.changes || 0) > 0) return { acquired: true, status: "claimed" };
   const existing = await readClientMessageState(db, data.dealId);
   return { acquired: false, status: String(existing?.status || "message_conflict") };
+}
+
+async function markClientMessageSending(db, dealId, scheduleToken) {
+  const now = new Date().toISOString();
+  const result = await db.prepare(
+    `UPDATE rsvp_client_messages
+     SET status = 'sending', updated_at = ?
+     WHERE deal_id = ? AND message_kind = ? AND schedule_token = ? AND status = 'claimed'
+       AND EXISTS (
+         SELECT 1 FROM rsvp_bitrix_sync
+         WHERE deal_id = ? AND message_generation = ?
+       )`,
+  ).bind(
+    now,
+    String(dealId),
+    RSVP_CLIENT_MESSAGE_KIND,
+    scheduleToken,
+    String(dealId),
+    scheduleToken,
+  ).run();
+  return Number(result?.meta?.changes || 0) > 0;
 }
 
 async function saveClientMessageOutcome(db, dealId, outcome) {
@@ -374,11 +506,7 @@ function checkedOlchatUrl(env) {
   return url.toString();
 }
 
-async function sendRsvpClientMessage(env, deal, contact, event, payload, manageUrl) {
-  const existingState = await readClientMessageState(env.GIFT_DB, deal.ID);
-  if (["accepted", "sent", "sending", "ambiguous", "failed"].includes(existingState?.status)) {
-    return { status: existingState.status, mode: clientMessageMode(env) };
-  }
+async function clientMessageDraft(env, deal, contact, payload, manageUrl) {
   const eligibility = evaluateRsvpClientMessageEligibility(env, deal, contact);
   const clientName = cleanMessageValue(contact?.NAME) || payload.organizerName;
   const body = buildRsvpClientMessage(clientName, payload.childName, manageUrl);
@@ -391,36 +519,163 @@ async function sendRsvpClientMessage(env, deal, contact, event, payload, manageU
     manageUrl,
     body,
   ].join("|"));
+  return { eligibility, body, templateVersion, fingerprint };
+}
 
-  if (!eligibility.allowed) {
-    return { status: eligibility.status, mode: eligibility.mode, fingerprint };
+async function scheduleRsvpClientMessage(
+  env,
+  deal,
+  contact,
+  payload,
+  manageUrl,
+  scheduleToken,
+  scheduledFor,
+) {
+  const existingState = await readClientMessageState(env.GIFT_DB, deal.ID);
+  if (RSVP_CLIENT_MESSAGE_TERMINAL_STATUSES.has(existingState?.status)) {
+    return { status: existingState.status, mode: clientMessageMode(env) };
   }
+  const draft = await clientMessageDraft(env, deal, contact, payload, manageUrl);
+  if (!draft.eligibility.allowed) {
+    await cancelScheduledClientMessage(
+      env.GIFT_DB,
+      deal.ID,
+      draft.eligibility.status,
+      null,
+      scheduleToken,
+    );
+    return {
+      status: draft.eligibility.status,
+      mode: draft.eligibility.mode,
+      fingerprint: draft.fingerprint,
+    };
+  }
+  if (!env.GIFT_SYNC_QUEUE) throw new Error("rsvp_message_queue_not_configured");
 
-  const claim = await acquireClientMessage(env.GIFT_DB, {
+  if (!/^[a-f0-9]{64}$/i.test(scheduleToken) || !Number.isFinite(Date.parse(scheduledFor))) {
+    return { status: "stale", mode: draft.eligibility.mode, fingerprint: draft.fingerprint };
+  }
+  const schedule = await storeClientMessageSchedule(env.GIFT_DB, {
     dealId: String(deal.ID),
     contactId: String(contact.ID),
-    templateVersion,
-    fingerprint,
+    templateVersion: draft.templateVersion,
+    fingerprint: draft.fingerprint,
+    scheduleToken,
+    scheduledFor,
   });
-  if (!claim.acquired) return { status: claim.status, mode: eligibility.mode, fingerprint };
+  if (!schedule.scheduled) {
+    return { status: schedule.status, mode: draft.eligibility.mode, fingerprint: draft.fingerprint };
+  }
+
+  const queueJob = {
+    type: "rsvp_send_initial_message",
+    dealId: String(deal.ID),
+    scheduleToken,
+    scheduledFor,
+  };
+  const queuedAt = new Date().toISOString();
+  await env.GIFT_DB.prepare(
+    `INSERT OR IGNORE INTO rsvp_message_outbox
+      (schedule_token, deal_id, job_json, status, attempts, next_attempt_at, created_at, updated_at)
+     VALUES (?, ?, ?, 'pending', 0, ?, ?, ?)`,
+  ).bind(
+    scheduleToken,
+    String(deal.ID),
+    JSON.stringify(queueJob),
+    queuedAt,
+    queuedAt,
+    queuedAt,
+  ).run();
+
+  try {
+    const remainingSeconds = Math.ceil((Date.parse(scheduledFor) - Date.now()) / 1000);
+    await env.GIFT_SYNC_QUEUE.send(
+      queueJob,
+      { delaySeconds: Math.max(1, Math.min(RSVP_CLIENT_MESSAGE_DELAY_SECONDS, remainingSeconds)) },
+    );
+    const deliveredAt = new Date().toISOString();
+    await env.GIFT_DB.prepare(
+      `UPDATE rsvp_message_outbox
+       SET status = 'delivered', delivered_at = ?, last_error = NULL, updated_at = ?
+       WHERE schedule_token = ? AND status = 'pending'`,
+    ).bind(deliveredAt, deliveredAt, scheduleToken).run();
+  } catch {
+    // The durable message outbox is retried by the gift-sync Worker's scheduled handler.
+  }
+  return {
+    status: "scheduled",
+    mode: draft.eligibility.mode,
+    fingerprint: draft.fingerprint,
+    scheduleToken,
+    scheduledFor,
+  };
+}
+
+async function sendRsvpClientMessage(env, deal, contact, payload, manageUrl, scheduleToken) {
+  const existingState = await readClientMessageState(env.GIFT_DB, deal.ID);
+  if (RSVP_CLIENT_MESSAGE_TERMINAL_STATUSES.has(existingState?.status)) {
+    return { status: existingState.status, mode: clientMessageMode(env) };
+  }
+  if (existingState?.schedule_token !== scheduleToken) {
+    return { status: "stale", mode: clientMessageMode(env) };
+  }
+  const draft = await clientMessageDraft(env, deal, contact, payload, manageUrl);
+
+  if (!draft.eligibility.allowed) {
+    await cancelScheduledClientMessage(
+      env.GIFT_DB,
+      deal.ID,
+      draft.eligibility.status,
+      scheduleToken,
+      scheduleToken,
+    );
+    return {
+      status: draft.eligibility.status,
+      mode: draft.eligibility.mode,
+      fingerprint: draft.fingerprint,
+    };
+  }
 
   const phoneNumber = String(payload.organizerPhone || "").replace(/^\+/, "");
   if (!/^\d{8,15}$/.test(phoneNumber)) {
-    await saveClientMessageOutcome(env.GIFT_DB, deal.ID, {
-      status: "failed",
-      errorCode: "invalid_message_phone",
-    });
-    return { status: "failed", mode: eligibility.mode, fingerprint };
+    await cancelScheduledClientMessage(
+      env.GIFT_DB,
+      deal.ID,
+      "failed",
+      scheduleToken,
+      scheduleToken,
+    );
+    return { status: "failed", mode: draft.eligibility.mode, fingerprint: draft.fingerprint };
+  }
+  const requestUrl = new URL(checkedOlchatUrl(env));
+  requestUrl.search = new URLSearchParams({
+    phone_number: phoneNumber,
+    body: draft.body,
+    send_to_imol: "Y",
+  }).toString();
+
+  const claim = await acquireScheduledClientMessage(env.GIFT_DB, {
+    dealId: String(deal.ID),
+    contactId: String(contact.ID),
+    templateVersion: draft.templateVersion,
+    fingerprint: draft.fingerprint,
+    scheduleToken,
+  });
+  if (!claim.acquired) {
+    return { status: claim.status, mode: draft.eligibility.mode, fingerprint: draft.fingerprint };
+  }
+  const markedSending = await markClientMessageSending(env.GIFT_DB, deal.ID, scheduleToken);
+  if (!markedSending) {
+    const current = await readClientMessageState(env.GIFT_DB, deal.ID);
+    return {
+      status: String(current?.status || "stale"),
+      mode: draft.eligibility.mode,
+      fingerprint: draft.fingerprint,
+    };
   }
 
   let response;
   try {
-    const requestUrl = new URL(checkedOlchatUrl(env));
-    requestUrl.search = new URLSearchParams({
-      phone_number: phoneNumber,
-      body,
-      send_to_imol: "Y",
-    }).toString();
     response = await fetch(requestUrl.toString(), {
       method: "GET",
       headers: {
@@ -433,7 +688,7 @@ async function sendRsvpClientMessage(env, deal, contact, event, payload, manageU
       status: "ambiguous",
       errorCode: "olchat_network_error",
     }).catch(() => undefined);
-    return { status: "ambiguous", mode: eligibility.mode, fingerprint };
+    return { status: "ambiguous", mode: draft.eligibility.mode, fingerprint: draft.fingerprint };
   }
 
   if (response.status === 200) {
@@ -441,7 +696,7 @@ async function sendRsvpClientMessage(env, deal, contact, event, payload, manageU
       status: "accepted",
       httpStatus: response.status,
     });
-    return { status: "accepted", mode: eligibility.mode, fingerprint };
+    return { status: "accepted", mode: draft.eligibility.mode, fingerprint: draft.fingerprint };
   }
 
   if (response.status === 429) {
@@ -463,7 +718,11 @@ async function sendRsvpClientMessage(env, deal, contact, event, payload, manageU
     httpStatus: response.status,
     errorCode: ambiguous ? "olchat_ambiguous_response" : "olchat_rejected",
   });
-  return { status: ambiguous ? "ambiguous" : "failed", mode: eligibility.mode, fingerprint };
+  return {
+    status: ambiguous ? "ambiguous" : "failed",
+    mode: draft.eligibility.mode,
+    fingerprint: draft.fingerprint,
+  };
 }
 
 async function findExistingRsvpActivity(env, dealId) {
@@ -514,13 +773,7 @@ function rsvpActivityFields(dealId, description, responsibleId, contact) {
 
 async function writeRsvpLinksToDeal(env, deal, contact, event, secret) {
   const dealId = String(deal.ID);
-  const tokenPayload = await decryptPayload(event.manage_token_ciphertext, secret);
-  const manageToken = String(tokenPayload?.manageToken || "");
-  if (!/^[A-Za-z0-9_-]{32,160}$/.test(manageToken)) throw new Error("invalid_manage_token");
-
-  const origin = publicOrigin(env);
-  const publicUrl = `${origin}/invite?event=${encodeURIComponent(event.public_slug)}`;
-  const manageUrl = `${origin}/my-event#token=${encodeURIComponent(manageToken)}`;
+  const { publicUrl, manageUrl } = await rsvpEventLinks(env, event, secret);
   const messageState = await readClientMessageState(env.GIFT_DB, dealId);
   const description = rsvpActivityDescription(dealId, publicUrl, manageUrl, messageState?.status);
   const fields = rsvpActivityFields(dealId, description, deal.ASSIGNED_BY_ID, contact);
@@ -555,6 +808,17 @@ async function writeRsvpLinksToDeal(env, deal, contact, event, secret) {
   return { activityId, publicUrl, manageUrl };
 }
 
+async function rsvpEventLinks(env, event, secret) {
+  const tokenPayload = await decryptPayload(event.manage_token_ciphertext, secret);
+  const manageToken = String(tokenPayload?.manageToken || "");
+  if (!/^[A-Za-z0-9_-]{32,160}$/.test(manageToken)) throw new Error("invalid_manage_token");
+
+  const origin = publicOrigin(env);
+  const publicUrl = `${origin}/invite?event=${encodeURIComponent(event.public_slug)}`;
+  const manageUrl = `${origin}/my-event#token=${encodeURIComponent(manageToken)}`;
+  return { publicUrl, manageUrl };
+}
+
 async function refreshRsvpActivityMessageStatus(env, deal, contact, writeback, messageStatus) {
   const description = rsvpActivityDescription(
     String(deal.ID),
@@ -569,6 +833,102 @@ async function refreshRsvpActivityMessageStatus(env, deal, contact, writeback, m
   });
 }
 
+export async function processRsvpClientMessageSend(env, job) {
+  const dealId = String(job?.dealId || "");
+  const scheduleToken = String(job?.scheduleToken || "");
+  if (!/^\d+$/.test(dealId) || Number(dealId) < 1) throw new Error("invalid_deal_id");
+  if (!/^[a-f0-9]{64}$/i.test(scheduleToken)) throw new Error("invalid_schedule_token");
+  const secret = dataSecret(env);
+  if (!env.GIFT_DB || !secret || !env.BITRIX_WEBHOOK_URL) throw new Error("rsvp_worker_not_configured");
+
+  const state = await readClientMessageState(env.GIFT_DB, dealId);
+  const schedule = await readClientMessageSchedule(env.GIFT_DB, dealId);
+  if (!state) return { status: "stale" };
+  if (schedule?.message_generation !== scheduleToken) return { status: "stale" };
+  if (state.schedule_token !== scheduleToken) return { status: "stale" };
+  if (["sending", "ambiguous", "failed"].includes(state.status)) return { status: state.status };
+  if (state.status === "claimed") {
+    const claimedAt = Date.parse(String(state.claimed_at || ""));
+    const leaseRemaining = Math.ceil((claimedAt + WRITEBACK_LEASE_MS - Date.now()) / 1000);
+    if (Number.isFinite(claimedAt) && leaseRemaining > 0) {
+      const error = new Error("rsvp_message_claim_busy");
+      error.retryAfterSeconds = Math.min(Math.ceil(WRITEBACK_LEASE_MS / 1000), leaseRemaining);
+      throw error;
+    }
+  }
+  if (state.status === "retryable") {
+    const nextAttemptAt = Date.parse(String(state.next_attempt_at || ""));
+    const retryRemaining = Math.ceil((nextAttemptAt - Date.now()) / 1000);
+    if (Number.isFinite(nextAttemptAt) && retryRemaining > 0) {
+      const error = new Error("rsvp_message_retry_not_due");
+      error.retryAfterSeconds = Math.min(3600, retryRemaining);
+      throw error;
+    }
+  }
+
+  const scheduledFor = Date.parse(String(
+    schedule?.message_scheduled_for || state.scheduled_for || job?.scheduledFor || "",
+  ));
+  const remainingSeconds = Math.ceil((scheduledFor - Date.now()) / 1000);
+  if (!["accepted", "sent"].includes(state.status)
+    && Number.isFinite(scheduledFor) && remainingSeconds > 0) {
+    const error = new Error("rsvp_message_not_due");
+    error.retryAfterSeconds = Math.min(RSVP_CLIENT_MESSAGE_DELAY_SECONDS, remainingSeconds);
+    throw error;
+  }
+
+  const { deal, contact } = await readDealContext(env, dealId);
+  if (!deal || !isClosedBitrixDeal(deal) || isRecurringBitrixTemplate(deal)) {
+    if (["accepted", "sent"].includes(state.status)) return { status: state.status };
+    await cancelScheduledClientMessage(
+      env.GIFT_DB,
+      dealId,
+      "canceled",
+      scheduleToken,
+      scheduleToken,
+    );
+    return { status: "canceled" };
+  }
+  if (!contact) {
+    await cancelScheduledClientMessage(env.GIFT_DB, dealId, "failed", scheduleToken, scheduleToken);
+    return { status: "failed", error: "missing_contact" };
+  }
+
+  const checked = buildRsvpPayloadFromBitrix(deal, contact);
+  if (checked.error) {
+    await cancelScheduledClientMessage(env.GIFT_DB, dealId, "failed", scheduleToken, scheduleToken);
+    return { status: "failed", error: checked.error };
+  }
+  const event = await findSourceEvent(env.GIFT_DB, dealId);
+  if (!event) throw new Error("rsvp_event_not_found");
+  const links = await rsvpEventLinks(env, event, secret);
+  const activityId = await readSyncActivityId(env.GIFT_DB, dealId);
+  if (["accepted", "sent"].includes(state.status)) {
+    if (activityId) {
+      await refreshRsvpActivityMessageStatus(env, deal, contact, {
+        ...links,
+        activityId,
+      }, state.status);
+    }
+    return { status: state.status };
+  }
+  const clientMessage = await sendRsvpClientMessage(
+    env,
+    deal,
+    contact,
+    checked.value,
+    links.manageUrl,
+    scheduleToken,
+  );
+  if (activityId) {
+    await refreshRsvpActivityMessageStatus(env, deal, contact, {
+      ...links,
+      activityId,
+    }, clientMessage.status);
+  }
+  return { status: clientMessage.status };
+}
+
 export async function processRsvpDealUpdate(env, job, attempts = 1) {
   const dealId = String(job?.dealId || "");
   if (!/^\d+$/.test(dealId) || Number(dealId) < 1) throw new Error("invalid_deal_id");
@@ -576,6 +936,18 @@ export async function processRsvpDealUpdate(env, job, attempts = 1) {
   if (!env.GIFT_DB || !secret || !env.BITRIX_WEBHOOK_URL) throw new Error("rsvp_worker_not_configured");
 
   const attemptedAt = new Date().toISOString();
+  let messageSchedule = await readClientMessageSchedule(env.GIFT_DB, dealId);
+  let messageGeneration = String(job?.messageGeneration || "");
+  const hasSuppliedGeneration = /^[a-f0-9]{64}$/i.test(messageGeneration);
+  if (!/^[a-f0-9]{64}$/i.test(messageGeneration)) {
+    messageSchedule = await ensureLegacyClientMessageSchedule(env.GIFT_DB, dealId, job);
+    messageGeneration = String(messageSchedule?.message_generation || "");
+  }
+  const isLatestMessageGeneration = /^[a-f0-9]{64}$/i.test(messageGeneration)
+    && messageSchedule?.message_generation === messageGeneration;
+  if (hasSuppliedGeneration && !isLatestMessageGeneration) {
+    return { status: "stale", clientMessageStatus: "stale" };
+  }
   await updateRsvpBitrixSyncState(env.GIFT_DB, dealId, {
     status: "processing",
     attempts,
@@ -586,6 +958,15 @@ export async function processRsvpDealUpdate(env, job, attempts = 1) {
 
   const { deal, contact } = await readDealContext(env, dealId);
   if (!deal) {
+    if (isLatestMessageGeneration) {
+      await cancelScheduledClientMessage(
+        env.GIFT_DB,
+        dealId,
+        "failed",
+        null,
+        messageGeneration,
+      );
+    }
     await updateRsvpBitrixSyncState(env.GIFT_DB, dealId, {
       status: "invalid",
       attempts,
@@ -596,6 +977,15 @@ export async function processRsvpDealUpdate(env, job, attempts = 1) {
   }
   if (!isClosedBitrixDeal(deal) || isRecurringBitrixTemplate(deal)) {
     const status = isRecurringBitrixTemplate(deal) ? "ignored_template" : "ignored_stage";
+    if (isLatestMessageGeneration) {
+      await cancelScheduledClientMessage(
+        env.GIFT_DB,
+        dealId,
+        "canceled",
+        null,
+        messageGeneration,
+      );
+    }
     await updateRsvpBitrixSyncState(env.GIFT_DB, dealId, {
       status,
       attempts,
@@ -604,6 +994,15 @@ export async function processRsvpDealUpdate(env, job, attempts = 1) {
     return { status };
   }
   if (!contact) {
+    if (isLatestMessageGeneration) {
+      await cancelScheduledClientMessage(
+        env.GIFT_DB,
+        dealId,
+        "failed",
+        null,
+        messageGeneration,
+      );
+    }
     await updateRsvpBitrixSyncState(env.GIFT_DB, dealId, {
       status: "invalid",
       attempts,
@@ -615,6 +1014,15 @@ export async function processRsvpDealUpdate(env, job, attempts = 1) {
 
   const checked = buildRsvpPayloadFromBitrix(deal, contact);
   if (checked.error) {
+    if (isLatestMessageGeneration) {
+      await cancelScheduledClientMessage(
+        env.GIFT_DB,
+        dealId,
+        "failed",
+        null,
+        messageGeneration,
+      );
+    }
     await updateRsvpBitrixSyncState(env.GIFT_DB, dealId, {
       status: "invalid",
       attempts,
@@ -636,15 +1044,21 @@ export async function processRsvpDealUpdate(env, job, attempts = 1) {
     lastAttemptAt: attemptedAt,
     syncedAt,
   });
-  const clientMessage = await sendRsvpClientMessage(
-    env,
-    deal,
-    contact,
-    event,
-    checked.value,
-    writeback.manageUrl,
-  );
-  await refreshRsvpActivityMessageStatus(env, deal, contact, writeback, clientMessage.status);
+  const clientMessage = isLatestMessageGeneration
+    ? await scheduleRsvpClientMessage(
+      env,
+      deal,
+      contact,
+      checked.value,
+      writeback.manageUrl,
+      messageGeneration,
+      String(messageSchedule.message_scheduled_for || job?.messageScheduledFor || ""),
+    )
+    : { status: "stale" };
+  const activityMessageStatus = clientMessage.status === "stale"
+    ? String((await readClientMessageState(env.GIFT_DB, dealId))?.status || "stale")
+    : clientMessage.status;
+  await refreshRsvpActivityMessageStatus(env, deal, contact, writeback, activityMessageStatus);
   return {
     status: "synced",
     publicSlug: event.public_slug,

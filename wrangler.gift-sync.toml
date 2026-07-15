@@ -12,6 +12,10 @@ binding = "GIFT_DB"
 database_name = "mishanya-gift"
 database_id = "895c9651-6854-47fe-aeb0-836e59864f38"
 
+[[queues.producers]]
+binding = "GIFT_SYNC_QUEUE"
+queue = "mishanya-gift-sync"
+
 [[queues.consumers]]
 queue = "mishanya-gift-sync"
 max_batch_size = 1
@@ -19,6 +23,9 @@ max_batch_timeout = 2
 max_retries = 10
 retry_delay = 60
 dead_letter_queue = "mishanya-gift-sync-dlq"
+
+[triggers]
+crons = ["* * * * *"]
 
 [observability]
 enabled = true
