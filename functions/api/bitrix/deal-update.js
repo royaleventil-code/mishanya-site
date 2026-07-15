@@ -7,6 +7,7 @@ import {
 
 const MAX_BODY_BYTES = 24_000;
 const QUEUE_DELAY_SECONDS = 10;
+const CLIENT_MESSAGE_DELAY_SECONDS = 10 * 60;
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -34,51 +35,82 @@ async function recordReceipt(db, event, fingerprint, receivedAt) {
 }
 
 async function markQueued(db, event, fingerprint, receivedAt, queuedAt) {
+  const messageScheduledFor = new Date(
+    Date.parse(receivedAt) + CLIENT_MESSAGE_DELAY_SECONDS * 1000,
+  ).toISOString();
+  const job = {
+    type: "rsvp_deal_update",
+    dealId: event.dealId,
+    eventTs: event.eventTs,
+    eventHandlerId: event.eventHandlerId,
+    receivedAt,
+    messageGeneration: fingerprint,
+    messageScheduledFor,
+  };
   await db.batch([
     db.prepare(
       "UPDATE rsvp_bitrix_webhook_receipts SET status = 'queued', queued_at = ? WHERE fingerprint = ?",
     ).bind(queuedAt, fingerprint),
     db.prepare(
       `INSERT INTO rsvp_bitrix_sync
-        (deal_id, status, attempts, last_event_ts, event_handler_id, created_at, updated_at)
-       VALUES (?, 'queued', 0, ?, ?, ?, ?)
+        (deal_id, status, attempts, last_event_ts, event_handler_id,
+         message_generation, message_scheduled_for, created_at, updated_at)
+       VALUES (?, 'queued', 0, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(deal_id) DO UPDATE SET
          status = 'queued',
          last_event_ts = excluded.last_event_ts,
          event_handler_id = excluded.event_handler_id,
+         message_generation = excluded.message_generation,
+         message_scheduled_for = excluded.message_scheduled_for,
          last_error = NULL,
-         updated_at = excluded.updated_at`,
+         updated_at = excluded.updated_at
+       WHERE rsvp_bitrix_sync.message_scheduled_for IS NULL
+          OR excluded.message_scheduled_for > rsvp_bitrix_sync.message_scheduled_for
+          OR (
+            excluded.message_scheduled_for = rsvp_bitrix_sync.message_scheduled_for
+            AND excluded.message_generation > rsvp_bitrix_sync.message_generation
+          )`,
     ).bind(
       event.dealId,
       event.eventTs,
       event.eventHandlerId,
+      fingerprint,
+      messageScheduledFor,
       receivedAt,
       queuedAt,
     ),
+    db.prepare(
+      `INSERT OR IGNORE INTO rsvp_webhook_outbox
+        (generation, deal_id, job_json, status, attempts, next_attempt_at, created_at, updated_at)
+       VALUES (?, ?, ?, 'pending', 0, ?, ?, ?)`,
+    ).bind(
+      fingerprint,
+      event.dealId,
+      JSON.stringify(job),
+      queuedAt,
+      queuedAt,
+      queuedAt,
+    ),
   ]);
+  const current = await db.prepare(
+    "SELECT message_generation FROM rsvp_bitrix_sync WHERE deal_id = ? LIMIT 1",
+  ).bind(event.dealId).first();
+  const isLatest = current?.message_generation === fingerprint;
+  if (!isLatest) {
+    await db.prepare(
+      "UPDATE rsvp_webhook_outbox SET status = 'stale', updated_at = ? WHERE generation = ?",
+    ).bind(new Date().toISOString(), fingerprint).run();
+  }
+  return { job, isLatest };
 }
 
-async function forgetFailedReceipt(db, event, fingerprint, failedAt) {
-  await db.batch([
-    db.prepare("DELETE FROM rsvp_bitrix_webhook_receipts WHERE fingerprint = ?").bind(fingerprint),
-    db.prepare(
-      `INSERT INTO rsvp_bitrix_sync
-        (deal_id, status, attempts, last_event_ts, event_handler_id, last_error, created_at, updated_at)
-       VALUES (?, 'queue_failed', 0, ?, ?, 'queue_unavailable', ?, ?)
-       ON CONFLICT(deal_id) DO UPDATE SET
-         status = 'queue_failed',
-         last_event_ts = excluded.last_event_ts,
-         event_handler_id = excluded.event_handler_id,
-         last_error = 'queue_unavailable',
-         updated_at = excluded.updated_at`,
-    ).bind(
-      event.dealId,
-      event.eventTs,
-      event.eventHandlerId,
-      failedAt,
-      failedAt,
-    ),
-  ]).catch(() => undefined);
+async function markOutboxDelivered(db, generation) {
+  const now = new Date().toISOString();
+  await db.prepare(
+    `UPDATE rsvp_webhook_outbox
+     SET status = 'delivered', delivered_at = ?, last_error = NULL, updated_at = ?
+     WHERE generation = ? AND status = 'pending'`,
+  ).bind(now, now, generation).run();
 }
 
 export async function onRequestPost(context) {
@@ -116,19 +148,28 @@ export async function onRequestPost(context) {
   if (!isNew) return json({ status: "duplicate" }, 202);
 
   try {
-    await env.GIFT_SYNC_QUEUE.send({
-      type: "rsvp_deal_update",
-      dealId: event.dealId,
-      eventTs: event.eventTs,
-      eventHandlerId: event.eventHandlerId,
-      receivedAt,
-    }, { delaySeconds: QUEUE_DELAY_SECONDS });
     const queuedAt = new Date().toISOString();
-    await markQueued(env.GIFT_DB, event, fingerprint, receivedAt, queuedAt);
+    const queued = await markQueued(
+      env.GIFT_DB,
+      event,
+      fingerprint,
+      receivedAt,
+      queuedAt,
+    );
+    if (queued.isLatest) {
+      try {
+        await env.GIFT_SYNC_QUEUE.send(queued.job, { delaySeconds: QUEUE_DELAY_SECONDS });
+        await markOutboxDelivered(env.GIFT_DB, fingerprint);
+      } catch {
+        // The durable outbox is retried by the gift-sync Worker's scheduled handler.
+      }
+    }
     return json({ status: "queued" }, 202);
   } catch {
-    await forgetFailedReceipt(env.GIFT_DB, event, fingerprint, new Date().toISOString());
-    return json({ error: "queue_unavailable" }, 503);
+    await env.GIFT_DB.prepare(
+      "DELETE FROM rsvp_bitrix_webhook_receipts WHERE fingerprint = ? AND status = 'received'",
+    ).bind(fingerprint).run().catch(() => undefined);
+    return json({ error: "webhook_storage_unavailable" }, 503);
   }
 }
 
