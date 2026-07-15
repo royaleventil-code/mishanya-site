@@ -1354,7 +1354,6 @@ export const PROGRAMS: Program[] = [
       "Торжественный вынос торта",
       "Подарок каждому ребёнку",
     ],
-    bonus: BUBBLE_MACHINE_BONUS,
     videos: ["https://youtu.be/5KKJHI_xvCY"],
     gradientFrom: "from-red-300",
     gradientTo: "to-orange-100",
