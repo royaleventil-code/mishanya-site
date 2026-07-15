@@ -22,6 +22,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify required Cloudflare Pages secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          secret_list="$(npx --yes wrangler@4.111.0 pages secret list --project-name=mishanya-site)"
+          for secret_name in BITRIX_EVENT_TOKEN BITRIX_EVENT_DOMAIN GIFT_DATA_SECRET TURNSTILE_SECRET_KEY; do
+            if ! grep -Fq -- "- ${secret_name}:" <<<"${secret_list}"; then
+              echo "Required Cloudflare Pages secret is missing: ${secret_name}" >&2
+              exit 1
+            fi
+          done
+
       - name: Build
         env:
           NEXT_PUBLIC_GA_MEASUREMENT_ID: G-GLWN1HJVX9
@@ -35,3 +49,21 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy out --project-name=mishanya-site --branch=main --commit-dirty=true
+
+      - name: Verify Bitrix webhook configuration
+        run: |
+          set -euo pipefail
+          status="$({ curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            --request POST \
+            --header 'Content-Type: application/x-www-form-urlencoded' \
+            --data-urlencode 'event=ONCRMDEALUPDATE' \
+            --data-urlencode 'event_handler_id=1' \
+            --data-urlencode 'data[FIELDS][ID]=1' \
+            --data-urlencode 'ts=1' \
+            --data-urlencode 'auth[application_token]=deployment-health-check-invalid' \
+            --data-urlencode 'auth[domain]=deployment-health-check.invalid' \
+            'https://mishanya-show.com/api/bitrix/deal-update'; } 2>/dev/null)"
+          if [ "${status}" != "401" ]; then
+            echo "Bitrix webhook configuration check failed with HTTP ${status}" >&2
+            exit 1
+          fi
