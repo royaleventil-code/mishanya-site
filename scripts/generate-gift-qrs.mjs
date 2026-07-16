@@ -6,16 +6,7 @@ import QRCode from "qrcode";
 
 const SITE_URL = "https://mishanya-show.com";
 
-const SOURCES = [
-  { source: "party-qr", label: "Общий QR" },
-  { source: "qr-mishanya", label: "Мишаня" },
-  { source: "qr-artur-magician", label: "Артур Фокусник" },
-  { source: "qr-artur-mad-professor", label: "Артур Сумасшедший Профессор" },
-  { source: "qr-hanna", label: "Ханна" },
-  { source: "qr-ira", label: "Ира" },
-  { source: "qr-zhenya", label: "Женя" },
-  { source: "qr-leon", label: "Леон" },
-];
+const SOURCES = [{ source: "party-qr", label: "Общий QR" }];
 
 const outDir = process.argv[2];
 if (!outDir) {

@@ -23,19 +23,10 @@ type HostEntry = {
 };
 
 const HOSTS: HostEntry[] = [
-  { code: "party-qr", label: "Общий QR (любой праздник)", source: "party-qr" },
-  { code: "mishanya", label: "Мишаня", source: "qr-mishanya" },
-  { code: "artur-magician", label: "Артур Фокусник", source: "qr-artur-magician" },
-  {
-    code: "artur-mad-professor",
-    label: "Артур Сумасшедший Профессор",
-    source: "qr-artur-mad-professor",
-  },
-  { code: "hanna", label: "Ханна", source: "qr-hanna" },
-  { code: "ira", label: "Ира", source: "qr-ira" },
-  { code: "zhenya", label: "Женя", source: "qr-zhenya" },
-  { code: "leon", label: "Леон", source: "qr-leon" },
+  { code: "party-qr", label: "Единый QR всех аниматоров", source: "party-qr" },
 ];
+
+const PRINT_CARDS_COUNT = 8;
 
 type ParentLanguage = "ru" | "he";
 
@@ -223,7 +214,8 @@ export function GiftLinksPage() {
             >
               {SITE_URL}/gift
             </a>
-            . Метка src показывает в Bitrix24, откуда пришёл лид: с чьего QR или с какого праздника.
+            . Метка src показывает в Bitrix24, откуда пришёл лид: с общего QR или с какого
+            праздника. Ведущего гость выбирает прямо в анкете.
           </p>
         </header>
 
@@ -234,7 +226,7 @@ export function GiftLinksPage() {
               className="flex items-center gap-2 text-lg font-extrabold text-[var(--color-ink)]"
             >
               <QrCode aria-hidden className="h-5 w-5 text-[var(--color-young)]" />
-              QR-коды аниматоров
+              Единый QR-код
             </h2>
             <button
               type="button"
@@ -246,7 +238,7 @@ export function GiftLinksPage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4">
             {HOSTS.map((host) => {
               const link = giftLink(host.source);
               const qr = qrByLink[link];
@@ -405,12 +397,12 @@ export function GiftLinksPage() {
 
       <section aria-hidden className="hidden print:block">
         <div className="grid grid-cols-2 gap-4 p-6">
-          {HOSTS.map((host) => {
-            const link = giftLink(host.source);
+          {Array.from({ length: PRINT_CARDS_COUNT }, (_, index) => {
+            const link = giftLink("party-qr");
             const qr = qrByLink[link];
             return (
               <div
-                key={`print-${host.code}`}
+                key={`print-${index}`}
                 className="flex break-inside-avoid items-center gap-4 rounded-2xl border border-[#d8d8de] p-4"
               >
                 {qr ? (
@@ -434,7 +426,9 @@ export function GiftLinksPage() {
                     Сканируйте и выберите: скидка 200 ₪, шоу мыльных пузырей или конфетти-шоу к
                     вашему дню рождения.
                   </p>
-                  <p className="mt-1.5 text-[10px] font-semibold text-[#8a8a92]">{host.label}</p>
+                  <p className="mt-1.5 text-[10px] font-semibold text-[#8a8a92]">
+                    mishanya-show.com
+                  </p>
                 </div>
               </div>
             );
