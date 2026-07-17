@@ -17,6 +17,7 @@ export const HOST_CODES = new Set([
 const RESPONSIBLE_SERGEY = 3828;
 const NEW_LEAD_STAGE = "NEW";
 const BIRTHDAY_TYPE = 808;
+const MAX_GIFT_CHILDREN = 8;
 const SOURCE_NAME = "QR-код с праздника";
 const GIFT_LABELS = {
   "discount-200": "Скидка 200 ₪",
@@ -84,7 +85,11 @@ export function validateGiftPayload(raw, now = new Date()) {
   if (city.length < 2 || city.length > 160) return { error: "invalid_city" };
   if (!HOST_CODES.has(hostCode)) return { error: "invalid_host" };
   if (!phone) return { error: "invalid_phone" };
-  if (!Array.isArray(raw.children) || raw.children.length < 1 || raw.children.length > 2) {
+  if (
+    !Array.isArray(raw.children) ||
+    raw.children.length < 1 ||
+    raw.children.length > MAX_GIFT_CHILDREN
+  ) {
     return { error: "invalid_children" };
   }
 
@@ -240,9 +245,19 @@ function yearsLabel(age) {
   return "лет";
 }
 
-function secondaryChildLabel(child) {
+function additionalChildLabel(child, index) {
   const gender = child.gender === "boy" ? "мальчик" : "девочка";
-  return `Второй ребёнок: ${gender}; исполнится ${child.ageTurning} ${yearsLabel(child.ageTurning)}; ближайший день рождения: ${dateLabel(child.nextBirthday)}`;
+  const label =
+    [
+      "Второй ребёнок",
+      "Третий ребёнок",
+      "Четвёртый ребёнок",
+      "Пятый ребёнок",
+      "Шестой ребёнок",
+      "Седьмой ребёнок",
+      "Восьмой ребёнок",
+    ][index] || `Ребёнок ${index + 2}`;
+  return `${label}: ${gender}; исполнится ${child.ageTurning} ${yearsLabel(child.ageTurning)}; ближайший день рождения: ${dateLabel(child.nextBirthday)}`;
 }
 
 function duplicateLines(duplicates) {
@@ -274,10 +289,10 @@ export function buildLeadNote(payload, claim, duplicates = {}) {
   ];
 
   if (payload.children.length > 1) {
-    const secondaryChild = payload.children.find(
-      (_child, index) => index !== payload.primaryChildIndex,
-    );
-    if (secondaryChild) sections.push([secondaryChildLabel(secondaryChild)]);
+    const additionalChildren = payload.children
+      .filter((_child, index) => index !== payload.primaryChildIndex)
+      .map((child, index) => additionalChildLabel(child, index));
+    if (additionalChildren.length) sections.push(additionalChildren);
   }
 
   const duplicatesSection = duplicateLines(duplicates);

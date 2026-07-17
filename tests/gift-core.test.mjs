@@ -46,6 +46,46 @@ test("two boys are accepted and the nearest birthday becomes primary", () => {
   assert.equal(result.value.primaryChildIndex, 1);
 });
 
+test("up to eight children are accepted and every additional child is added to the note", () => {
+  const payload = {
+    language: "ru",
+    sourceCode: "parent-5135",
+    giftCode: "bubbles",
+    clientName: "Анна",
+    city: "Нетания",
+    hostCode: "hanna",
+    phone: "0502345678",
+    children: [
+      { gender: "boy", ageTurning: 8, birthdayDay: 20, birthdayMonth: 12 },
+      { gender: "girl", ageTurning: 5, birthdayDay: 20, birthdayMonth: 8 },
+      { gender: "boy", ageTurning: 3, birthdayDay: 25, birthdayMonth: 7 },
+      { gender: "girl", ageTurning: 10, birthdayDay: 5, birthdayMonth: 1 },
+    ],
+  };
+  const result = validateGiftPayload(payload, now);
+  const claim = {
+    id: "claim-four-children",
+    submittedAt: now.toISOString(),
+    validUntil: addOneYearIso(now.toISOString()),
+  };
+  const fields = buildLeadFields(result.value, claim, "QR_PARTY_GIFT", {});
+
+  assert.equal(result.error, undefined);
+  assert.equal(result.value.children.length, 4);
+  assert.equal(result.value.primaryChildIndex, 2);
+  assert.equal(fields.BIRTHDATE, "2026-07-25");
+  assert.match(fields.COMMENTS, /Второй ребёнок: мальчик; исполнится 8 лет/);
+  assert.match(fields.COMMENTS, /Третий ребёнок: девочка; исполнится 5 лет/);
+  assert.match(fields.COMMENTS, /Четвёртый ребёнок: девочка; исполнится 10 лет/);
+  assert.doesNotMatch(fields.COMMENTS, /исполнится 3 года/);
+
+  const tooManyChildren = Array.from({ length: 9 }, () => payload.children[0]);
+  assert.equal(
+    validateGiftPayload({ ...payload, children: tooManyChildren }, now).error,
+    "invalid_children",
+  );
+});
+
 test("only the child outside the main lead fields is added to the note", () => {
   const result = validateGiftPayload(
     {

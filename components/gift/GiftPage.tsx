@@ -10,10 +10,12 @@ import {
   Gift,
   LoaderCircle,
   MapPin,
+  Phone,
+  Plus,
   UserRound,
+  X,
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
-import { InternationalPhoneField } from "@/components/gift/InternationalPhoneField";
 
 type Language = "ru" | "he";
 type GiftCode = "discount-200" | "confetti" | "bubbles";
@@ -35,6 +37,12 @@ type BirthdayInput = {
   age: string;
   day: string;
   month: string;
+};
+
+type MultipleChildInput = {
+  id: number;
+  gender: ChildGenderChoice;
+  birthday: BirthdayInput;
 };
 
 type GiftPayloadChild = {
@@ -87,9 +95,14 @@ declare global {
 }
 
 const EMPTY_BIRTHDAY: BirthdayInput = { age: "", day: "", month: "" };
+const MAX_CHILDREN = 8;
 const AGES = Array.from({ length: 100 }, (_, index) => index + 1);
 const MONTHS = Array.from({ length: 12 }, (_, index) => index + 1);
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim();
+
+function createEmptyChild(id: number): MultipleChildInput {
+  return { id, gender: "", birthday: { ...EMPTY_BIRTHDAY } };
+}
 
 const COPY = {
   ru: {
@@ -122,7 +135,8 @@ const COPY = {
     clientName: "Имя клиента",
     clientNamePlaceholder: "Как к вам обращаться?",
     phone: "Номер телефона / WhatsApp",
-    phoneHint: "Код страны уже указан — если местный номер начинается с 0, вводите без него",
+    phonePlaceholder: "Введите ваш номер телефона",
+    phoneHint: "Если у вас номер другой страны, введите его полностью с кодом страны",
     city: "Город",
     cityPlaceholder: "Например, Хайфа",
     host: "Кто был ведущим на празднике?",
@@ -132,8 +146,12 @@ const COPY = {
     genderGirl: "Девочка",
     genderBoth: "Двое детей",
     bothHint: "Для каждого ребёнка выберите пол, возраст и ближайший день рождения",
-    firstChildCard: "Первый ребёнок",
-    secondChildCard: "Второй ребёнок",
+    childCard: (index: number) =>
+      ["Первый ребёнок", "Второй ребёнок", "Третий ребёнок", "Четвёртый ребёнок"][
+        index
+      ] ?? `Ребёнок ${index + 1}`,
+    addChild: "Добавить ещё ребёнка",
+    removeChild: "Убрать",
     childGender: "Пол ребёнка",
     age: "Сколько лет исполнится?",
     agePlaceholder: "Возраст",
@@ -144,7 +162,7 @@ const COPY = {
       "Нажимая «Сохранить подарок», вы соглашаетесь на сохранение указанных данных и контакт с вами ближе ко дню рождения ребёнка. Мы используем данные только для этого обращения.",
     submit: "Сохранить подарок",
     submitting: "Сохраняем подарок…",
-    invalidPhone: "Проверьте номер телефона и выбранный код страны",
+    invalidPhone: "Проверьте номер телефона. Для номера другой страны укажите код страны",
     invalidHost: "Выберите, кто был ведущим на празднике",
     invalidBirthday: "Выберите пол и проверьте данные каждого ребёнка",
     verificationPending: "Подтвердите, что форму заполняет человек",
@@ -188,7 +206,8 @@ const COPY = {
     clientName: "שם ההורה",
     clientNamePlaceholder: "איך לפנות אליכם?",
     phone: "מספר טלפון / WhatsApp",
-    phoneHint: "קידומת המדינה כבר מופיעה — אם המספר המקומי מתחיל ב־0, הזינו אותו בלעדיו",
+    phonePlaceholder: "הזינו את מספר הטלפון שלכם",
+    phoneHint: "אם יש לכם מספר ממדינה אחרת, הזינו אותו במלואו עם קידומת המדינה",
     city: "עיר",
     cityPlaceholder: "לדוגמה, חיפה",
     host: "מי היה המפעיל או המפעילה באירוע?",
@@ -198,8 +217,11 @@ const COPY = {
     genderGirl: "בת",
     genderBoth: "שני ילדים",
     bothHint: "בחרו מין, גיל ויום הולדת קרוב עבור כל ילד או ילדה",
-    firstChildCard: "ילד/ה ראשון/ה",
-    secondChildCard: "ילד/ה שני/ה",
+    childCard: (index: number) =>
+      ["ילד/ה ראשון/ה", "ילד/ה שני/ה", "ילד/ה שלישי/ת", "ילד/ה רביעי/ת"][index] ??
+      `ילד/ה ${index + 1}`,
+    addChild: "הוספת ילד/ה נוסף/ת",
+    removeChild: "הסרה",
     childGender: "בן או בת?",
     age: "בן או בת כמה יהיו?",
     agePlaceholder: "גיל",
@@ -210,7 +232,7 @@ const COPY = {
       "בלחיצה על „שמירת המתנה“ אתם מסכימים לשמירת הפרטים שמסרתם וליצירת קשר לקראת יום ההולדת של הילד/ה. נשתמש בפרטים רק לצורך הפנייה הזו.",
     submit: "שמירת המתנה",
     submitting: "שומרים את המתנה…",
-    invalidPhone: "בדקו את מספר הטלפון ואת קידומת המדינה שנבחרה",
+    invalidPhone: "בדקו את מספר הטלפון. למספר ממדינה אחרת יש להזין גם את קידומת המדינה",
     invalidHost: "בחרו מי היה המפעיל או המפעילה באירוע",
     invalidBirthday: "בחרו מין ובדקו את הפרטים של כל ילד או ילדה",
     verificationPending: "אשרו שהטופס נשלח על ידי אדם",
@@ -292,16 +314,13 @@ function nextBirthday(day: number, month: number, today = new Date()) {
 function selectedChildren(
   familyGender: FamilyGender,
   single: BirthdayInput,
-  firstGender: ChildGenderChoice,
-  first: BirthdayInput,
-  secondGender: ChildGenderChoice,
-  second: BirthdayInput,
+  multipleChildren: MultipleChildInput[],
 ) {
-  if (familyGender === "two" && firstGender && secondGender) {
-    return [
-      { gender: firstGender, input: first },
-      { gender: secondGender, input: second },
-    ];
+  if (familyGender === "two") {
+    return multipleChildren.map((child) => ({
+      gender: child.gender,
+      input: child.birthday,
+    }));
   }
   if (familyGender === "boy" || familyGender === "girl") {
     return [{ gender: familyGender, input: single }];
@@ -507,10 +526,10 @@ export function GiftPage() {
   const [hostCode, setHostCode] = useState<HostCode | "">("");
   const [familyGender, setFamilyGender] = useState<FamilyGender>("");
   const [singleBirthday, setSingleBirthday] = useState<BirthdayInput>(EMPTY_BIRTHDAY);
-  const [firstChildGender, setFirstChildGender] = useState<ChildGenderChoice>("");
-  const [firstChildBirthday, setFirstChildBirthday] = useState<BirthdayInput>(EMPTY_BIRTHDAY);
-  const [secondChildGender, setSecondChildGender] = useState<ChildGenderChoice>("");
-  const [secondChildBirthday, setSecondChildBirthday] = useState<BirthdayInput>(EMPTY_BIRTHDAY);
+  const [multipleChildren, setMultipleChildren] = useState<MultipleChildInput[]>(() => [
+    createEmptyChild(1),
+    createEmptyChild(2),
+  ]);
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [resultGift, setResultGift] = useState<GiftCode | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -522,6 +541,7 @@ export function GiftPage() {
   const formRef = useRef<HTMLDivElement>(null);
   const turnstileContainerRef = useRef<HTMLDivElement>(null);
   const turnstileWidgetRef = useRef<string | null>(null);
+  const nextChildIdRef = useRef(3);
   const copy = COPY[language];
 
   useEffect(() => {
@@ -617,24 +637,36 @@ export function GiftPage() {
   }, [language, turnstileReady]);
 
   const formChildren = useMemo(
-    () =>
-      selectedChildren(
-        familyGender,
-        singleBirthday,
-        firstChildGender,
-        firstChildBirthday,
-        secondChildGender,
-        secondChildBirthday,
-      ),
-    [
-      familyGender,
-      firstChildBirthday,
-      firstChildGender,
-      secondChildBirthday,
-      secondChildGender,
-      singleBirthday,
-    ],
+    () => selectedChildren(familyGender, singleBirthday, multipleChildren),
+    [familyGender, multipleChildren, singleBirthday],
   );
+
+  const updateMultipleChild = (
+    id: number,
+    patch: Partial<Pick<MultipleChildInput, "gender" | "birthday">>,
+  ) => {
+    setMultipleChildren((children) =>
+      children.map((child) => (child.id === id ? { ...child, ...patch } : child)),
+    );
+    setErrorMessage("");
+  };
+
+  const addMultipleChild = () => {
+    setMultipleChildren((children) => {
+      if (children.length >= MAX_CHILDREN) return children;
+      const nextChild = createEmptyChild(nextChildIdRef.current);
+      nextChildIdRef.current += 1;
+      return [...children, nextChild];
+    });
+    setErrorMessage("");
+  };
+
+  const removeMultipleChild = (id: number) => {
+    setMultipleChildren((children) =>
+      children.length > 2 ? children.filter((child) => child.id !== id) : children,
+    );
+    setErrorMessage("");
+  };
 
   const markFormStarted = () => {
     if (formStartedRef.current || !selectedGift) return;
@@ -691,7 +723,7 @@ export function GiftPage() {
     }
 
     const children = formChildren
-      .map(({ gender, input }) => childPayload(gender, input))
+      .map(({ gender, input }) => (gender ? childPayload(gender, input) : null))
       .filter((child): child is GiftPayloadChild => Boolean(child));
     if (!children.length || children.length !== formChildren.length) {
       setSubmitState("error");
@@ -939,8 +971,28 @@ export function GiftPage() {
                       <label htmlFor="gift-phone">
                         <FieldLabel>{copy.phone}</FieldLabel>
                       </label>
-                      <InternationalPhoneField language={language} onChange={setPhone} />
-                      <span className="mt-1.5 block text-xs font-medium text-zinc-500">{copy.phoneHint}</span>
+                      <span className="relative block" dir="ltr">
+                        <Phone className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
+                        <input
+                          id="gift-phone"
+                          type="tel"
+                          inputMode="tel"
+                          autoComplete="tel"
+                          value={phone}
+                          onChange={(event) => setPhone(event.target.value)}
+                          placeholder={copy.phonePlaceholder}
+                          dir="auto"
+                          aria-describedby="gift-phone-hint"
+                          required
+                          className="h-13 w-full rounded-2xl border border-zinc-200 bg-white pl-12 pr-4 text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-zinc-400 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10"
+                        />
+                      </span>
+                      <span
+                        id="gift-phone-hint"
+                        className="mt-1.5 block text-xs font-medium text-zinc-500"
+                      >
+                        {copy.phoneHint}
+                      </span>
                     </div>
                   </div>
 
@@ -1019,32 +1071,62 @@ export function GiftPage() {
                   {familyGender === "two" ? (
                     <div className="mt-5 space-y-3">
                       <p className="text-sm leading-6 text-[var(--color-ink-soft)]">{copy.bothHint}</p>
-                      <div className="rounded-[22px] border border-[#5e5ce6]/20 bg-[#f5f3ff] p-4 sm:p-5">
-                        <h3 className="mb-4 text-base font-black text-[#4d49bd]">{copy.firstChildCard}</h3>
-                        <ChildGenderPicker
-                          value={firstChildGender}
-                          onChange={setFirstChildGender}
-                          copy={copy}
-                        />
-                        <BirthdayFields
-                          value={firstChildBirthday}
-                          onChange={setFirstChildBirthday}
-                          copy={copy}
-                        />
-                      </div>
-                      <div className="rounded-[22px] border border-[#ff9f0a]/25 bg-[#fff9ef] p-4 sm:p-5">
-                        <h3 className="mb-4 text-base font-black text-[#a55d00]">{copy.secondChildCard}</h3>
-                        <ChildGenderPicker
-                          value={secondChildGender}
-                          onChange={setSecondChildGender}
-                          copy={copy}
-                        />
-                        <BirthdayFields
-                          value={secondChildBirthday}
-                          onChange={setSecondChildBirthday}
-                          copy={copy}
-                        />
-                      </div>
+                      {multipleChildren.map((child, index) => {
+                        const purpleCard = index % 2 === 0;
+                        return (
+                          <div
+                            key={child.id}
+                            className={`rounded-[22px] border p-4 sm:p-5 ${
+                              purpleCard
+                                ? "border-[#5e5ce6]/20 bg-[#f5f3ff]"
+                                : "border-[#ff9f0a]/25 bg-[#fff9ef]"
+                            }`}
+                          >
+                            <div className="mb-4 flex items-center justify-between gap-3">
+                              <h3
+                                className={`text-base font-black ${
+                                  purpleCard ? "text-[#4d49bd]" : "text-[#a55d00]"
+                                }`}
+                              >
+                                {copy.childCard(index)}
+                              </h3>
+                              {index >= 2 ? (
+                                <button
+                                  type="button"
+                                  onClick={() => removeMultipleChild(child.id)}
+                                  aria-label={`${copy.removeChild}: ${copy.childCard(index)}`}
+                                  className="inline-flex min-h-9 items-center gap-1 rounded-full border border-zinc-200 bg-white px-3 text-xs font-black text-zinc-600 transition-colors hover:border-red-200 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5e5ce6]"
+                                >
+                                  <X aria-hidden className="h-3.5 w-3.5" />
+                                  {copy.removeChild}
+                                </button>
+                              ) : null}
+                            </div>
+                            <ChildGenderPicker
+                              value={child.gender}
+                              onChange={(gender) => updateMultipleChild(child.id, { gender })}
+                              copy={copy}
+                            />
+                            <BirthdayFields
+                              value={child.birthday}
+                              onChange={(birthday) =>
+                                updateMultipleChild(child.id, { birthday })
+                              }
+                              copy={copy}
+                            />
+                          </div>
+                        );
+                      })}
+                      {multipleChildren.length < MAX_CHILDREN ? (
+                        <button
+                          type="button"
+                          onClick={addMultipleChild}
+                          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[#5e5ce6]/35 bg-[#f8f7ff] px-4 text-sm font-black text-[#4d49bd] transition-[background-color,border-color,transform] hover:border-[#5e5ce6]/60 hover:bg-[#f2f0ff] active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5e5ce6]"
+                        >
+                          <Plus aria-hidden className="h-4 w-4" />
+                          {copy.addChild}
+                        </button>
+                      ) : null}
                     </div>
                   ) : null}
 
