@@ -327,7 +327,7 @@ export function buildLeadFields(payload, claim, sourceId, duplicates = {}) {
   return {
     TITLE: `${SOURCE_NAME} - ${payload.clientName}`,
     NAME: payload.clientName,
-    PHONE: [{ VALUE: payload.phone, VALUE_TYPE: "MOBILE" }],
+    PHONE: [{ VALUE: payload.phone, VALUE_TYPE: "WORK" }],
     ASSIGNED_BY_ID: RESPONSIBLE_SERGEY,
     STATUS_ID: NEW_LEAD_STAGE,
     SOURCE_ID: sourceId,
