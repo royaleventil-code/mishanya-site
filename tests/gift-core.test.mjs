@@ -112,7 +112,7 @@ test("only the child outside the main lead fields is added to the note", () => {
 
   assert.equal(result.value.primaryChildIndex, 1);
   assert.equal(fields.BIRTHDATE, "2026-08-20");
-  assert.equal(fields.UF_CRM_1644332749977, "2026-07-21");
+  assert.equal(fields.UF_CRM_1644332749977, "2026-07-06");
   assert.equal(fields.UF_CRM_1644327962757, 46);
   assert.match(
     fields.COMMENTS,
@@ -163,8 +163,8 @@ test("host selection is required and limited to the approved list", () => {
   assert.equal(validateGiftPayload({ ...payload, hostCode: "unknown" }, now).error, undefined);
 });
 
-test("wait until is 30 days before the nearest birthday across a year boundary", () => {
-  assert.equal(subtractDaysIso("2027-01-10", 30), "2026-12-11");
+test("wait until is 45 days before the nearest birthday across a year boundary", () => {
+  assert.equal(subtractDaysIso("2027-01-10", 45), "2026-11-26");
 });
 
 test("Hebrew form produces a compact Russian Bitrix note without personal data", () => {
@@ -232,19 +232,20 @@ test("lead is created in NEW while one child stays only in lead fields", () => {
   assert.equal(fields.SOURCE_ID, "QR_PARTY_GIFT");
   assert.equal(fields.UF_CRM_1644327962757, 44);
   assert.equal(fields.UF_CRM_1644329391894, 7);
+  assert.equal(fields.UF_CRM_1784446465040, "Скидка 200 ₪");
   assert.deepEqual(fields.COMMENTS.split("\n").slice(1), [
     "",
     "Подарок: Скидка 200 ₪",
-    "Действует до: 12.07.2027",
     "Ведущий на празднике: Ханна",
   ]);
+  assert.equal(fields.COMMENTS.includes("Действует до"), false);
   assert.equal(fields.COMMENTS.includes("Ирина"), false);
   assert.equal(fields.COMMENTS.includes("Ашдод"), false);
   assert.equal(fields.COMMENTS.includes("+972502345678"), false);
   assert.equal(fields.COMMENTS.includes("Ребёнок"), false);
   assert.equal(fields.COMMENTS.includes("мальчик"), false);
   assert.equal(fields.COMMENTS.includes("Совпадения по телефону"), false);
-  assert.equal(fields.UF_CRM_1644332749977, "2026-09-15");
+  assert.equal(fields.UF_CRM_1644332749977, "2026-08-31");
 });
 
 test("encrypted payload round-trips", async () => {

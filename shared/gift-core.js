@@ -17,6 +17,7 @@ export const HOST_CODES = new Set([
 const RESPONSIBLE_SERGEY = 3828;
 const NEW_LEAD_STAGE = "NEW";
 const BIRTHDAY_TYPE = 808;
+const SELECTED_GIFT_FIELD = "UF_CRM_1784446465040";
 const MAX_GIFT_CHILDREN = 8;
 const SOURCE_NAME = "QR-код с праздника";
 const GIFT_LABELS = {
@@ -283,7 +284,6 @@ export function buildLeadNote(payload, claim, duplicates = {}) {
     [`Дата анкеты: ${dateTimeLabel(claim.submittedAt)}`],
     [
       `Подарок: ${GIFT_LABELS[payload.giftCode]}`,
-      `Действует до: ${dateLabel(claim.validUntil)}`,
       `Ведущий на празднике: ${HOST_LABELS[payload.hostCode]}`,
     ],
   ];
@@ -327,11 +327,12 @@ export function buildLeadFields(payload, claim, sourceId, duplicates = {}) {
     UTM_CAMPAIGN: payload.sourceCode,
     BIRTHDATE: primary.nextBirthday,
     UF_CRM_1649234588017: primary.nextBirthday,
-    UF_CRM_1644332749977: subtractDaysIso(primary.nextBirthday, 30),
+    UF_CRM_1644332749977: subtractDaysIso(primary.nextBirthday, 45),
     UF_CRM_1644328015350: payload.city,
     UF_CRM_1644327962757: primary.gender === "boy" ? 44 : 46,
     UF_CRM_1644329391894: primary.ageTurning,
     UF_CRM_1666781395585: BIRTHDAY_TYPE,
+    [SELECTED_GIFT_FIELD]: GIFT_LABELS[payload.giftCode],
     COMMENTS: buildLeadNote(payload, claim, duplicates),
   };
 }
