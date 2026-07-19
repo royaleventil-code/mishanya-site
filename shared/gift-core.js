@@ -310,6 +310,17 @@ export function subtractDaysIso(isoDate, days) {
   return date.toISOString().slice(0, 10);
 }
 
+export function giftWaitUntilIso(birthdayIso) {
+  const waitUntil = subtractDaysIso(birthdayIso, 32);
+  const date = new Date(`${waitUntil}T00:00:00.000Z`);
+
+  if (date.getUTCDay() === 6) {
+    return subtractDaysIso(birthdayIso, 31);
+  }
+
+  return waitUntil;
+}
+
 export function buildLeadFields(payload, claim, sourceId, duplicates = {}) {
   if (!sourceId) throw new Error("BITRIX_QR_SOURCE_ID is not configured");
   const primary = payload.children[payload.primaryChildIndex];
@@ -327,7 +338,7 @@ export function buildLeadFields(payload, claim, sourceId, duplicates = {}) {
     UTM_CAMPAIGN: payload.sourceCode,
     BIRTHDATE: primary.nextBirthday,
     UF_CRM_1649234588017: primary.nextBirthday,
-    UF_CRM_1644332749977: subtractDaysIso(primary.nextBirthday, 45),
+    UF_CRM_1644332749977: giftWaitUntilIso(primary.nextBirthday),
     UF_CRM_1644328015350: payload.city,
     UF_CRM_1644327962757: primary.gender === "boy" ? 44 : 46,
     UF_CRM_1644329391894: primary.ageTurning,

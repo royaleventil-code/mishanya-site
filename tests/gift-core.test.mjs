@@ -6,6 +6,7 @@ import {
   buildLeadNote,
   decryptPayload,
   encryptPayload,
+  giftWaitUntilIso,
   normalizeInternationalPhone,
   subtractDaysIso,
   validateGiftPayload,
@@ -112,7 +113,7 @@ test("only the child outside the main lead fields is added to the note", () => {
 
   assert.equal(result.value.primaryChildIndex, 1);
   assert.equal(fields.BIRTHDATE, "2026-08-20");
-  assert.equal(fields.UF_CRM_1644332749977, "2026-07-06");
+  assert.equal(fields.UF_CRM_1644332749977, "2026-07-19");
   assert.equal(fields.UF_CRM_1644327962757, 46);
   assert.match(
     fields.COMMENTS,
@@ -163,8 +164,31 @@ test("host selection is required and limited to the approved list", () => {
   assert.equal(validateGiftPayload({ ...payload, hostCode: "unknown" }, now).error, undefined);
 });
 
-test("wait until is 45 days before the nearest birthday across a year boundary", () => {
-  assert.equal(subtractDaysIso("2027-01-10", 45), "2026-11-26");
+test("wait until is 32 days before the nearest birthday across a year boundary", () => {
+  assert.equal(giftWaitUntilIso("2027-01-10"), "2026-12-09");
+});
+
+test("wait until moves from Saturday to the following Sunday", () => {
+  const waitUntil = giftWaitUntilIso("2026-08-19");
+
+  assert.equal(subtractDaysIso("2026-08-19", 32), "2026-07-18");
+  assert.equal(waitUntil, "2026-07-19");
+  assert.notEqual(new Date(`${waitUntil}T00:00:00.000Z`).getUTCDay(), 6);
+});
+
+test("wait until always stays 30 to 35 days before birthday and never lands on Saturday", () => {
+  const birthday = new Date("2026-01-01T00:00:00.000Z");
+
+  for (let day = 0; day < 730; day += 1) {
+    const birthdayIso = birthday.toISOString().slice(0, 10);
+    const waitUntil = giftWaitUntilIso(birthdayIso);
+    const waitUntilDate = new Date(`${waitUntil}T00:00:00.000Z`);
+    const daysBefore = Math.round((birthday.getTime() - waitUntilDate.getTime()) / 86_400_000);
+
+    assert.ok(daysBefore >= 30 && daysBefore <= 35, `${birthdayIso}: ${daysBefore} days`);
+    assert.notEqual(waitUntilDate.getUTCDay(), 6, `${birthdayIso}: ${waitUntil}`);
+    birthday.setUTCDate(birthday.getUTCDate() + 1);
+  }
 });
 
 test("Hebrew form produces a compact Russian Bitrix note without personal data", () => {
@@ -245,7 +269,7 @@ test("lead is created in NEW while one child stays only in lead fields", () => {
   assert.equal(fields.COMMENTS.includes("Ребёнок"), false);
   assert.equal(fields.COMMENTS.includes("мальчик"), false);
   assert.equal(fields.COMMENTS.includes("Совпадения по телефону"), false);
-  assert.equal(fields.UF_CRM_1644332749977, "2026-08-31");
+  assert.equal(fields.UF_CRM_1644332749977, "2026-09-13");
 });
 
 test("encrypted payload round-trips", async () => {
