@@ -254,6 +254,7 @@ test("lead is created in NEW while one child stays only in lead fields", () => {
   const fields = buildLeadFields(result.value, claim, "QR_PARTY_GIFT", {});
   assert.equal(fields.STATUS_ID, "NEW");
   assert.equal(fields.SOURCE_ID, "QR_PARTY_GIFT");
+  assert.deepEqual(fields.PHONE, [{ VALUE: "+972502345678", VALUE_TYPE: "WORK" }]);
   assert.equal(fields.UF_CRM_1644327962757, 44);
   assert.equal(fields.UF_CRM_1644329391894, 7);
   assert.equal(fields.UF_CRM_1784446465040, "Скидка 200 ₪");

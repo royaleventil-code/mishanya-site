@@ -18,7 +18,7 @@
 Основной ребёнок — ребёнок с ближайшей будущей датой дня рождения:
 
 - `NAME` — имя клиента;
-- `PHONE` — телефон в международном формате E.164 (`+972...`, `+380...`, `+1...` и другие);
+- `PHONE` — телефон в международном формате E.164 (`+972...`, `+380...`, `+1...` и другие) с типом `WORK`, который используют WhatsApp-роботы Bitrix24;
 - `UF_CRM_1644328015350` — город;
 - `UF_CRM_1644327962757` — пол основного ребёнка (`44` мальчик / `46` девочка);
 - `UF_CRM_1644329391894` — сколько лет исполнится;
@@ -72,6 +72,8 @@ Worker `mishanya-gift-sync`:
 - Queue consumer `mishanya-gift-sync`;
 - encrypted secrets `GIFT_DATA_SECRET` и `BITRIX_WEBHOOK_URL`;
 - variable `BITRIX_QR_SOURCE_ID = QR_PARTY_GIFT`.
+
+Production workflow обязан публиковать и Cloudflare Pages, и Worker `mishanya-gift-sync`. Изменения `shared/gift-core.js` не попадают в обработчик очереди, пока Worker не выполнит отдельный `wrangler deploy`.
 
 Для выбранного подарка используется пользовательское поле лида `UF_CRM_1784446465040`. Все секреты хранятся в Cloudflare и не попадают в GitHub или клиентский JavaScript.
 
