@@ -65,7 +65,7 @@ export function HowItWorks({ locale = "ru" }: { locale?: Locale }) {
             href={whatsappLink(waMessages.default)}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-whatsapp)] px-7 py-4 text-base font-black text-white shadow-lg transition active:scale-95"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-whatsapp)] px-7 py-4 text-base font-black text-white shadow-lg transition active:scale-95 sm:w-auto"
           >
             <MessageCircle className="h-5 w-5" strokeWidth={2.4} />
             <BidiText locale={locale}>{dict.home.howItWorks.cta}</BidiText>
