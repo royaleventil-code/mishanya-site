@@ -1,0 +1,176 @@
+.rsvp-shell {
+  --rsvp-blue: #007aff;
+  --rsvp-blue-pressed: #0067d8;
+  --rsvp-label: #1d1d1f;
+  --rsvp-secondary-label: #6e6e73;
+  --rsvp-tertiary-label: #8e8e93;
+  --rsvp-fill: rgba(120, 120, 128, 0.12);
+  --rsvp-hairline: rgba(60, 60, 67, 0.12);
+  --rsvp-material: rgba(255, 255, 255, 0.72);
+  --rsvp-material-strong: rgba(255, 255, 255, 0.88);
+  color: var(--rsvp-label);
+  background:
+    radial-gradient(circle at 12% -8%, rgba(0, 122, 255, 0.12), transparent 31rem),
+    radial-gradient(circle at 92% 4%, rgba(175, 82, 222, 0.1), transparent 29rem),
+    #f5f5f7;
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.rsvp-chrome {
+  background: rgba(248, 248, 250, 0.72);
+  border-color: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 1px 0 rgba(60, 60, 67, 0.08);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+}
+
+.rsvp-material {
+  background: var(--rsvp-material);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.82) inset,
+    0 20px 60px rgba(31, 35, 48, 0.09);
+  -webkit-backdrop-filter: blur(30px) saturate(175%);
+  backdrop-filter: blur(30px) saturate(175%);
+}
+
+.rsvp-material-strong {
+  background: var(--rsvp-material-strong);
+  border: 1px solid rgba(255, 255, 255, 0.84);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 14px 42px rgba(31, 35, 48, 0.08);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  backdrop-filter: blur(24px) saturate(170%);
+}
+
+.rsvp-grouped-surface {
+  background: rgba(118, 118, 128, 0.08);
+  border: 1px solid rgba(60, 60, 67, 0.08);
+}
+
+.rsvp-display {
+  font-optical-sizing: auto;
+  letter-spacing: -0.035em;
+  line-height: 1.04;
+}
+
+.rsvp-section-title {
+  letter-spacing: -0.022em;
+  line-height: 1.12;
+}
+
+.rsvp-caption {
+  color: var(--rsvp-secondary-label);
+  letter-spacing: 0.01em;
+}
+
+.rsvp-pressable {
+  touch-action: manipulation;
+  transition:
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease,
+    opacity 180ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rsvp-pressable:active:not(:disabled) {
+  transform: scale(0.97);
+  transition-duration: 80ms;
+}
+
+.rsvp-pressable:focus-visible,
+.rsvp-field:focus-visible {
+  outline: 3px solid rgba(0, 122, 255, 0.28);
+  outline-offset: 2px;
+}
+
+.rsvp-primary-button {
+  color: white;
+  background: var(--rsvp-blue);
+  box-shadow: 0 10px 24px rgba(0, 122, 255, 0.22);
+}
+
+.rsvp-primary-button:hover {
+  background: var(--rsvp-blue-pressed);
+}
+
+.rsvp-field {
+  color: var(--rsvp-label);
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid var(--rsvp-hairline);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.82) inset;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+.rsvp-field:hover {
+  border-color: rgba(60, 60, 67, 0.2);
+}
+
+.rsvp-field:focus {
+  border-color: rgba(0, 122, 255, 0.72);
+  box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.11);
+}
+
+.rsvp-invitation-hero {
+  background:
+    radial-gradient(circle at 50% -24%, rgba(255, 255, 255, 0.96), transparent 18rem),
+    linear-gradient(145deg, rgba(255, 236, 243, 0.9), rgba(238, 241, 255, 0.92) 54%, rgba(232, 247, 255, 0.88));
+}
+
+.rsvp-segmented-control {
+  background: rgba(118, 118, 128, 0.12);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) inset;
+}
+
+.rsvp-segment-selected {
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rsvp-pressable {
+    transition: opacity 160ms ease, background-color 160ms ease, color 160ms ease !important;
+  }
+
+  .rsvp-pressable:active:not(:disabled) {
+    transform: none;
+    opacity: 0.72;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .rsvp-chrome,
+  .rsvp-material,
+  .rsvp-material-strong {
+    background: #fff;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .rsvp-chrome,
+  .rsvp-material,
+  .rsvp-material-strong,
+  .rsvp-grouped-surface,
+  .rsvp-field {
+    background: #fff;
+    border-color: rgba(0, 0, 0, 0.55);
+  }
+
+  .rsvp-caption {
+    color: #3a3a3c;
+  }
+}

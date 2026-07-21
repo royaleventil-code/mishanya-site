@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { RootDocument, viewport as rootViewport } from "@/app/RootDocument";
+import "./rsvp.css";
 
 export const metadata: Metadata = {
   title: "Приглашение на праздник | Мишаня в Стране Чудес",

@@ -13,6 +13,7 @@ import {
   UsersRound,
   XCircle,
 } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 import { FormEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { RsvpInvitationDetails } from "@/components/rsvp/RsvpInvitationDetails";
 import { RsvpLoading, RsvpShell } from "@/components/rsvp/RsvpShell";
@@ -25,7 +26,7 @@ import {
   type RsvpResponseInput,
   type RsvpStatus,
 } from "@/lib/rsvp";
-import { formatRsvpEventLocation } from "@/shared/rsvp-invitation.js";
+import { formatRsvpEventLocation, localizeRsvpInvitationEvent } from "@/shared/rsvp-invitation.js";
 
 const COPY = {
   ru: {
@@ -107,27 +108,40 @@ function StatusButton({
   label,
   icon,
   tone,
+  reduceMotion,
   onClick,
 }: {
   active: boolean;
   label: string;
   icon: React.ReactNode;
   tone: "yes" | "no" | "maybe";
+  reduceMotion: boolean;
   onClick: () => void;
 }) {
   const activeTone = {
-    yes: "border-emerald-500 bg-emerald-500 text-white shadow-[0_12px_28px_rgba(16,185,129,0.24)]",
-    no: "border-rose-500 bg-rose-500 text-white shadow-[0_12px_28px_rgba(244,63,94,0.2)]",
-    maybe: "border-amber-400 bg-amber-400 text-zinc-950 shadow-[0_12px_28px_rgba(251,191,36,0.22)]",
+    yes: "text-emerald-600",
+    no: "text-rose-600",
+    maybe: "text-amber-600",
   }[tone];
   return (
     <button
       type="button"
+      aria-label={label}
       aria-pressed={active}
       onClick={onClick}
-      className={`flex min-h-24 flex-col items-center justify-center gap-2 rounded-3xl border px-3 text-sm font-black transition-[transform,background-color,color,border-color] duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5e5ce6] ${active ? activeTone : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"}`}
+      className="rsvp-pressable relative flex min-h-[4.75rem] min-w-0 items-center justify-center rounded-[1rem] px-1.5 py-2 focus-visible:outline-none sm:px-3"
     >
-      {icon}{label}
+      {active ? (
+        <motion.span
+          aria-hidden
+          layoutId="rsvp-status-selection"
+          className="rsvp-segment-selected absolute inset-1 rounded-[0.85rem]"
+          transition={reduceMotion ? { duration: 0 } : { type: "spring", bounce: 0, duration: 0.36 }}
+        />
+      ) : null}
+      <span className={`relative z-[1] flex min-w-0 flex-col items-center justify-center gap-1.5 text-center text-xs font-semibold leading-4 sm:text-sm ${active ? activeTone : "text-zinc-600"}`}>
+        {icon}{label}
+      </span>
     </button>
   );
 }
@@ -147,11 +161,19 @@ export function GuestInvitePage() {
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileReset, setTurnstileReset] = useState(0);
   const successRef = useRef<HTMLElement>(null);
+  const reduceMotion = useReducedMotion() ?? false;
 
   useEffect(() => {
-    const slug = new URLSearchParams(window.location.search).get("event") || "";
+    const search = new URLSearchParams(window.location.search);
+    const slug = search.get("event") || "";
+    const requestedLocale = search.get("lang");
     getPublicRsvpEvent(slug)
-      .then(setEvent)
+      .then((loadedEvent) => {
+        const locale = requestedLocale === "he" || requestedLocale === "ru"
+          ? requestedLocale
+          : loadedEvent.locale;
+        setEvent(localizeRsvpInvitationEvent(loadedEvent, locale));
+      })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, []);
@@ -199,7 +221,7 @@ export function GuestInvitePage() {
   if (notFound || !event) {
     return (
       <RsvpShell locale="ru" compact>
-        <div className="rounded-[30px] border border-black/[0.06] bg-white p-7 text-center shadow-[var(--shadow-card)] sm:p-10">
+        <div className="rsvp-material rounded-[2rem] p-7 text-center sm:p-10">
           <XCircle className="mx-auto h-12 w-12 text-rose-500" />
           <h1 className="mt-5 text-3xl font-black">{COPY.ru.notFoundTitle}</h1>
           <p className="mx-auto mt-3 max-w-md leading-7 text-zinc-600">{COPY.ru.notFoundText}</p>
@@ -213,65 +235,72 @@ export function GuestInvitePage() {
     : null;
   const location = formatRsvpEventLocation(event);
   const wazeHref = `https://www.waze.com/ul?${new URLSearchParams({ q: location, navigate: "yes" }).toString()}`;
-  const inputClass = "h-13 w-full rounded-2xl border border-zinc-200 bg-white px-4 text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-zinc-400 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10";
+  const inputClass = "rsvp-field h-13 w-full rounded-[1rem] px-4 text-base font-medium outline-none placeholder:text-zinc-400";
 
   return (
     <RsvpShell locale={event.locale} compact>
-      <article className="overflow-hidden rounded-[34px] border border-black/[0.06] bg-white/92 shadow-[0_30px_90px_rgba(30,20,60,0.14)] backdrop-blur">
+      <article className="rsvp-material overflow-hidden rounded-[2.15rem]">
         <RsvpInvitationDetails event={event} />
 
         {saved ? (
-          <section ref={successRef} role="status" aria-live="polite" tabIndex={-1} className="scroll-mt-3 p-6 text-center outline-none sm:p-9">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-100 text-emerald-700"><Check className="h-8 w-8" /></div>
-            <h2 className="mt-5 text-3xl font-black">{copy.successTitle}</h2>
-            <p className="mt-3 leading-7 text-zinc-600">{copy.successText}</p>
-            <button type="button" onClick={() => setSaved(false)} className="mt-6 min-h-11 rounded-xl px-4 text-sm font-black text-[#5e5ce6] underline decoration-violet-200 underline-offset-4 hover:text-violet-800">
+          <section ref={successRef} role="status" aria-live="polite" tabIndex={-1} className="scroll-mt-20 bg-white/90 p-6 text-center outline-none sm:p-9">
+            <motion.div
+              initial={reduceMotion ? false : { scale: 0.78, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+              className="mx-auto flex h-16 w-16 items-center justify-center rounded-[1.35rem] bg-emerald-500 text-white shadow-[0_12px_30px_rgba(16,185,129,0.22)]"
+            >
+              <Check className="h-8 w-8" />
+            </motion.div>
+            <h2 className="rsvp-section-title mt-5 text-3xl font-bold">{copy.successTitle}</h2>
+            <p className="rsvp-caption mt-3 font-medium leading-7">{copy.successText}</p>
+            <button type="button" onClick={() => setSaved(false)} className="rsvp-pressable mt-5 min-h-11 rounded-xl px-4 text-sm font-semibold text-[#007aff] hover:bg-[#007aff]/[0.06]">
               {copy.update}
             </button>
-            <div className="mt-7 rounded-3xl bg-zinc-950 p-6 text-white">
+            <div className="mt-7 rounded-[1.6rem] bg-zinc-950 p-6 text-white shadow-[0_16px_40px_rgba(0,0,0,0.18)]">
               <Sparkles className="mx-auto h-6 w-6 text-amber-300" />
-              <p className="mt-3 text-lg font-black">{copy.brand}</p>
-              <a href={`/${event.locale}/all?utm_source=rsvp_invite&utm_medium=referral&utm_campaign=guest_response`} className="mt-4 inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-white px-5 text-sm font-black text-zinc-950 transition-transform duration-150 active:scale-[0.98]">
+              <p className="mt-3 text-lg font-bold tracking-[-0.015em]">{copy.brand}</p>
+              <a href={`/${event.locale}/all?utm_source=rsvp_invite&utm_medium=referral&utm_campaign=guest_response`} className="rsvp-pressable mt-4 inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-zinc-950">
                 {copy.brandAction}<ChevronRight className="h-4 w-4 rtl:rotate-180" />
               </a>
             </div>
           </section>
         ) : (
-          <form onSubmit={submit} className="p-5 sm:p-8">
+          <form onSubmit={submit} className="bg-white/90 p-5 sm:p-8">
             <div className="text-center">
-              <h2 className="text-2xl font-black sm:text-3xl">{copy.question}</h2>
-              <p className="mt-2 text-sm leading-6 text-zinc-500">{copy.questionHint}</p>
+              <h2 className="rsvp-section-title text-2xl font-bold sm:text-3xl">{copy.question}</h2>
+              <p className="rsvp-caption mt-2 text-sm font-medium leading-6">{copy.questionHint}</p>
             </div>
-            <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-3">
-              <StatusButton active={status === "yes"} label={copy.yes} icon={<CheckCircle2 className="h-6 w-6" />} tone="yes" onClick={() => setStatus("yes")} />
-              <StatusButton active={status === "no"} label={copy.no} icon={<XCircle className="h-6 w-6" />} tone="no" onClick={() => setStatus("no")} />
-              <StatusButton active={status === "maybe"} label={copy.maybe} icon={<HelpCircle className="h-6 w-6" />} tone="maybe" onClick={() => setStatus("maybe")} />
+            <div className="rsvp-segmented-control mt-6 grid grid-cols-3 gap-0.5 rounded-[1.2rem] p-1">
+              <StatusButton active={status === "yes"} label={copy.yes} icon={<CheckCircle2 className="h-5 w-5" />} tone="yes" reduceMotion={reduceMotion} onClick={() => setStatus("yes")} />
+              <StatusButton active={status === "no"} label={copy.no} icon={<XCircle className="h-5 w-5" />} tone="no" reduceMotion={reduceMotion} onClick={() => setStatus("no")} />
+              <StatusButton active={status === "maybe"} label={copy.maybe} icon={<HelpCircle className="h-5 w-5" />} tone="maybe" reduceMotion={reduceMotion} onClick={() => setStatus("maybe")} />
             </div>
 
             <div className="mt-6">
               <label>
-                <span className="mb-2 block text-sm font-black">{copy.name}</span>
+                <span className="mb-2 block text-sm font-semibold">{copy.name}</span>
                 <input className={inputClass} value={respondentName} onChange={(input) => setRespondentName(input.target.value)} placeholder={copy.namePlaceholder} minLength={2} maxLength={80} required />
               </label>
             </div>
 
             {status === "yes" ? (
-              <fieldset className="mt-5 rounded-3xl border border-zinc-200 bg-zinc-50 p-4">
-                <legend className="px-2 text-sm font-black"><span className="inline-flex items-center gap-2"><UsersRound className="h-4 w-4" />{copy.yes}</span></legend>
+              <fieldset className="rsvp-grouped-surface mt-5 rounded-[1.35rem] p-4">
+                <legend className="px-2 text-sm font-semibold"><span className="inline-flex items-center gap-2"><UsersRound className="h-4 w-4" />{copy.yes}</span></legend>
                 <div className="grid grid-cols-2 gap-4">
-                  <label><span className="mb-2 block text-sm font-black">{copy.adults}</span><select className={inputClass} value={adults} onChange={(input) => setAdults(Number(input.target.value))}>{Array.from({ length: 11 }, (_, index) => <option key={index} value={index}>{index}</option>)}</select></label>
-                  <label><span className="mb-2 block text-sm font-black">{copy.children}</span><select className={inputClass} value={children} onChange={(input) => setChildren(Number(input.target.value))}>{Array.from({ length: 11 }, (_, index) => <option key={index} value={index}>{index}</option>)}</select></label>
+                  <label><span className="mb-2 block text-sm font-semibold">{copy.adults}</span><select className={inputClass} value={adults} onChange={(input) => setAdults(Number(input.target.value))}>{Array.from({ length: 11 }, (_, index) => <option key={index} value={index}>{index}</option>)}</select></label>
+                  <label><span className="mb-2 block text-sm font-semibold">{copy.children}</span><select className={inputClass} value={children} onChange={(input) => setChildren(Number(input.target.value))}>{Array.from({ length: 11 }, (_, index) => <option key={index} value={index}>{index}</option>)}</select></label>
                 </div>
               </fieldset>
             ) : null}
 
             <label className="mt-5 block">
-              <span className="mb-2 block text-sm font-black">{copy.comment}</span>
-              <textarea className="min-h-24 w-full resize-y rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-base font-semibold leading-6 outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-zinc-400 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10" value={comment} onChange={(input) => setComment(input.target.value)} placeholder={copy.commentPlaceholder} maxLength={500} />
+              <span className="mb-2 block text-sm font-semibold">{copy.comment}</span>
+              <textarea className="rsvp-field min-h-24 w-full resize-y rounded-[1rem] px-4 py-3 text-base font-medium leading-6 outline-none placeholder:text-zinc-400" value={comment} onChange={(input) => setComment(input.target.value)} placeholder={copy.commentPlaceholder} maxLength={500} />
             </label>
             <RsvpTurnstile locale={event.locale} action="rsvp_response" onTokenChange={setTurnstileToken} resetKey={turnstileReset} />
             {error ? <p role="alert" className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">{RSVP_TURNSTILE_ENABLED && !turnstileToken ? copy.verification : copy.error}</p> : null}
-            <button type="submit" disabled={submitting} className="mt-5 inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-5 text-base font-black text-white transition-transform duration-150 active:scale-[0.98] disabled:cursor-wait disabled:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5e5ce6]">
+            <button type="submit" disabled={submitting} className="rsvp-pressable rsvp-primary-button mt-5 inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-[1.15rem] px-5 text-base font-semibold disabled:cursor-wait disabled:opacity-70 focus-visible:outline-none">
               {submitting ? <LoaderCircle className="h-5 w-5 animate-spin motion-reduce:animate-none" /> : <CheckCircle2 className="h-5 w-5" />}
               {submitting ? copy.submitting : copy.submit}
             </button>
@@ -280,9 +309,9 @@ export function GuestInvitePage() {
       </article>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <a href={googleCalendarUrl(event)} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-white px-4 text-sm font-black shadow-sm transition-colors duration-150 hover:bg-zinc-50"><CalendarPlus className="h-4 w-4" />{copy.calendar}</a>
-        <a href={wazeHref} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-white px-4 text-sm font-black shadow-sm transition-colors duration-150 hover:bg-zinc-50"><MapPin className="h-4 w-4" />{copy.route}</a>
-        {contactHref ? <a href={contactHref} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--color-whatsapp)] px-4 text-sm font-black text-white shadow-sm transition-transform duration-150 active:scale-[0.98]"><MessageCircle className="h-4 w-4" />{copy.contact}</a> : null}
+        <a href={googleCalendarUrl(event)} target="_blank" rel="noreferrer" className="rsvp-pressable rsvp-material-strong inline-flex min-h-12 items-center justify-center gap-2 rounded-[1.15rem] px-4 text-sm font-semibold text-zinc-800 hover:bg-white"><CalendarPlus className="h-4 w-4 text-[#007aff]" />{copy.calendar}</a>
+        <a href={wazeHref} target="_blank" rel="noreferrer" className="rsvp-pressable rsvp-material-strong inline-flex min-h-12 items-center justify-center gap-2 rounded-[1.15rem] px-4 text-sm font-semibold text-zinc-800 hover:bg-white"><MapPin className="h-4 w-4 text-[#007aff]" />{copy.route}</a>
+        {contactHref ? <a href={contactHref} target="_blank" rel="noreferrer" className="rsvp-pressable inline-flex min-h-12 items-center justify-center gap-2 rounded-[1.15rem] bg-[var(--color-whatsapp)] px-4 text-sm font-semibold text-white shadow-[0_9px_24px_rgba(37,211,102,0.2)]"><MessageCircle className="h-4 w-4" />{copy.contact}</a> : null}
       </div>
     </RsvpShell>
   );

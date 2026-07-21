@@ -1,4 +1,5 @@
 import { normalizeRsvpPhone, validateRsvpEventPayload } from "./rsvp-core.js";
+import { DEFAULT_RSVP_INVITATION_MESSAGES } from "./rsvp-invitation.js";
 
 export const BITRIX_DEAL_UPDATE_EVENT = "ONCRMDEALUPDATE";
 export const BITRIX_CLOSED_STAGES = new Map([
@@ -6,7 +7,7 @@ export const BITRIX_CLOSED_STAGES = new Map([
   ["2", "C2:UC_AWENHX"],
 ]);
 export const RSVP_BITRIX_SOURCE_TYPE = "bitrix_deal";
-export const RSVP_DEFAULT_MESSAGE_RU = "Будем рады разделить этот день вместе!";
+export const RSVP_DEFAULT_MESSAGE_RU = DEFAULT_RSVP_INVITATION_MESSAGES.ru;
 
 function cleanText(value) {
   return String(value || "").trim().replace(/\s+/g, " ");

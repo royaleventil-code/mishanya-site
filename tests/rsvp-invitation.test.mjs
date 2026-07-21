@@ -1,9 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  buildRsvpGuestShareBody,
+  buildRsvpGuestUrl,
   buildRsvpGuestShareText,
+  composeRsvpGuestShareText,
+  DEFAULT_RSVP_INVITATION_MESSAGES,
   formatRsvpEventDate,
   formatRsvpEventLocation,
+  localizeRsvpInvitationEvent,
+  transliterateRsvpChildNameToHebrew,
 } from "../shared/rsvp-invitation.js";
 
 const event = {
@@ -40,4 +46,51 @@ test("does not repeat the city when the full address already contains it", () =>
   assert.equal(formatRsvpEventLocation(event), "Хайфа, Herzl 10, Haifa");
   assert.equal(formatRsvpEventLocation({ city: "Haifa", address: "Herzl 10, Haifa" }), "Herzl 10, Haifa");
   assert.equal(formatRsvpEventLocation({ city: "Хайфа", address: "Хайфа" }), "Хайфа");
+});
+
+test("builds separate Russian and Hebrew guest links for the same event", () => {
+  assert.equal(
+    buildRsvpGuestUrl("https://mishanya-show.com/", "example", "ru"),
+    "https://mishanya-show.com/invite?event=example&lang=ru",
+  );
+  assert.equal(
+    buildRsvpGuestUrl("https://mishanya-show.com", "example", "he"),
+    "https://mishanya-show.com/invite?event=example&lang=he",
+  );
+});
+
+test("localizes the automatic invitation message without duplicating the event", () => {
+  const localized = localizeRsvpInvitationEvent({
+    ...event,
+    message: DEFAULT_RSVP_INVITATION_MESSAGES.ru,
+  }, "he");
+
+  assert.equal(localized.locale, "he");
+  assert.equal(localized.message, DEFAULT_RSVP_INVITATION_MESSAGES.he);
+  assert.equal(localized.childName, "מאשה");
+  assert.equal(event.childName, "Маша");
+  assert.equal(localized.startsAt, event.startsAt);
+});
+
+test("keeps a custom invitation message when changing the interface language", () => {
+  const localized = localizeRsvpInvitationEvent({ ...event, message: "Вход со двора" }, "he");
+  assert.equal(localized.message, "Вход со двора");
+});
+
+test("transliterates a Cyrillic child name for Hebrew invitations", () => {
+  assert.equal(transliterateRsvpChildNameToHebrew("Роберт"), "רוברט");
+  assert.equal(transliterateRsvpChildNameToHebrew("Маша"), "מאשה");
+});
+
+test("keeps Hebrew and Latin child names unchanged", () => {
+  assert.equal(transliterateRsvpChildNameToHebrew("רוברט"), "רוברט");
+  assert.equal(transliterateRsvpChildNameToHebrew("Robert"), "Robert");
+});
+
+test("keeps the guest link protected when the organizer edits the message body", () => {
+  const publicUrl = "https://mishanya-show.com/invite?event=example&lang=ru";
+  const body = buildRsvpGuestShareBody(event);
+  assert.doesNotMatch(body, /https:\/\//);
+  assert.equal(composeRsvpGuestShareText("Ждём вас!", publicUrl), `Ждём вас!\n${publicUrl}`);
+  assert.equal(composeRsvpGuestShareText("", publicUrl), publicUrl);
 });

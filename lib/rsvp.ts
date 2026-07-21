@@ -68,6 +68,8 @@ type LocalRsvpStore = {
 
 const STORAGE_KEY = "mishanya-rsvp:v1";
 const RESPONDENT_KEY_PREFIX = "mishanya-rsvp:respondent:v1";
+const LOCAL_PREVIEW_MANAGE_TOKEN = "local_preview_mishanya_rsvp_2026_0001";
+const LOCAL_PREVIEW_SLUG = "localpreview1";
 
 function isLocalMode() {
   if (typeof window === "undefined") return false;
@@ -110,6 +112,34 @@ function loadStore(): LocalRsvpStore {
 
 function saveStore(store: LocalRsvpStore) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+}
+
+function ensureLocalPreviewEvent(store: LocalRsvpStore, manageToken: string) {
+  if (manageToken !== LOCAL_PREVIEW_MANAGE_TOKEN) return;
+  if (store.events.some((event) => event.manageToken === manageToken)) return;
+
+  const startsAt = new Date();
+  startsAt.setDate(startsAt.getDate() + 30);
+  startsAt.setHours(17, 0, 0, 0);
+  store.events.push({
+    id: "local-preview-event",
+    slug: LOCAL_PREVIEW_SLUG,
+    manageToken,
+    createdAt: new Date().toISOString(),
+    data: {
+      locale: "ru",
+      organizerName: "Анна",
+      organizerPhone: "+972541234567",
+      childName: "Роберт",
+      childAge: 4,
+      startsAt: startsAt.toISOString(),
+      city: "Petah Tikva",
+      address: "Community Garden, Petah Tikva",
+      message: "Будем рады разделить этот день вместе!",
+      contactEnabled: true,
+    },
+  });
+  saveStore(store);
 }
 
 function publicEvent(record: LocalEventRecord): PublicRsvpEvent {
@@ -224,6 +254,7 @@ export async function submitRsvpResponse(input: RsvpResponseInput, turnstileToke
 export async function getManagedRsvpEvent(token: string): Promise<ManagedRsvpEvent> {
   if (isLocalMode()) {
     const store = loadStore();
+    ensureLocalPreviewEvent(store, token);
     const record = store.events.find((event) => event.manageToken === token);
     if (!record) throw new Error("event_not_found");
     return {
