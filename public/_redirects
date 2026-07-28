@@ -1,0 +1,7 @@
+# Старые страницы без языкового префикса переехали в русскую версию сайта.
+/shows /ru/shows 301
+/shows/ /ru/shows 301
+/municipalities /ru/municipalities 301
+/municipalities/ /ru/municipalities 301
+/business /ru/business 301
+/business/ /ru/business 301
