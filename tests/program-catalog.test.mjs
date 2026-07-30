@@ -88,7 +88,6 @@ test("thematic programs prioritize heroes without restricting the full choice", 
     "minecraft",
     "huggy-wuggy-party",
     "leon-dj-marshmello",
-    "kpop",
     "frozen-toddler-girls",
     "stitch-ohana-party",
   ];
@@ -102,6 +101,14 @@ test("thematic programs prioritize heroes without restricting the full choice", 
     assert.doesNotMatch(block, /label:\s*"Ростовая кукла"/);
     assert.doesNotMatch(block, /label:\s*"Персонаж на выбор"/);
   }
+});
+
+test("K-pop limits the presenter choice to the three themed costumes", () => {
+  const block = programBlock("kpop");
+  const kpopHeroIds = /\["kpop-rumi", "kpop-zoey", "kpop-mira"\]/;
+
+  assert.match(block, new RegExp(`onlyHeroIds:\\s*${kpopHeroIds.source}`));
+  assert.match(block, new RegExp(`priorityHeroIds:\\s*${kpopHeroIds.source}`));
 });
 
 test("core program covers match the new audience-specific artwork", () => {

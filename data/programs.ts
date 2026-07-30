@@ -1191,7 +1191,12 @@ export const PROGRAMS: Program[] = [
     segments: ["girl", "all"],
     hiddenFor: [{ gender: "girl", maxAge: 3 }],
     heroSlots: [
-      { label: "Образ ведущего на выбор", kind: "costume", priorityHeroIds: ["kpop-rumi", "kpop-zoey", "kpop-mira"] },
+      {
+        label: "Образ ведущего на выбор",
+        kind: "costume",
+        onlyHeroIds: ["kpop-rumi", "kpop-zoey", "kpop-mira"],
+        priorityHeroIds: ["kpop-rumi", "kpop-zoey", "kpop-mira"],
+      },
     ],
     includes: [
       "Топ-ведущие Руми + Зои или Мири",
