@@ -4,10 +4,11 @@
 
 Set these variables in the production hosting environment before deploying:
 
-- `NEXT_PUBLIC_GA_MEASUREMENT_ID`: GA4 measurement ID, for example `G-XXXXXXXXXX`.
 - `NEXT_PUBLIC_META_PIXEL_ID`: Meta Pixel ID.
 - `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`: optional Google Search Console URL-prefix meta verification token.
 - `NEXT_PUBLIC_SITE_URL`: keep as `https://mishanya-show.com` unless the production domain changes.
+
+Google Tag Manager container `GTM-NBGL3X4H` is installed directly in the root document and loads on every page.
 
 The site sends:
 
@@ -28,11 +29,11 @@ After verification:
 
 If DNS access is not available, use a URL-prefix property and set the meta-token in `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`.
 
-## Google Analytics 4
+## Google Tag Manager and Google Analytics 4
 
-1. Create or open a GA4 property for `mishanya-show.com`.
-2. Copy the web stream measurement ID into `NEXT_PUBLIC_GA_MEASUREMENT_ID`.
-3. Deploy the site.
+1. Open container `GTM-NBGL3X4H` in Google Tag Manager.
+2. Configure the GA4 Google tag inside that container.
+3. Publish the GTM container.
 4. Open GA4 Realtime and visit the site to confirm events arrive.
 5. Click a WhatsApp button and confirm `whatsapp_click`.
 

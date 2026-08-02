@@ -18,6 +18,19 @@ import {
 } from "@/lib/seo";
 import "./globals.css";
 
+const GOOGLE_TAG_MANAGER_ID = "GTM-NBGL3X4H";
+const GOOGLE_TAG_MANAGER_BOOT_SCRIPT = `
+  (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','${GOOGLE_TAG_MANAGER_ID}');
+`;
+const GOOGLE_TAG_MANAGER_EVENT_BRIDGE_SCRIPT = `
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = window.gtag || function gtag(){window.dataLayer.push(arguments);};
+`;
+
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
   variable: "--font-inter",
@@ -192,10 +205,25 @@ export function RootDocument({
       className={`${inter.variable} ${notoHebrew.variable} ${lilita.variable} ${nunito.variable}`}
     >
       <head>
+        {/* Google Tag Manager */}
+        <script dangerouslySetInnerHTML={{ __html: GOOGLE_TAG_MANAGER_BOOT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: GOOGLE_TAG_MANAGER_EVENT_BRIDGE_SCRIPT }} />
+        {/* End Google Tag Manager */}
         {/* Восстанавливает включённые режимы доступности до первой отрисовки */}
         <script dangerouslySetInnerHTML={{ __html: A11Y_BOOT_SCRIPT }} />
       </head>
       <body className="min-h-screen antialiased">
+        {/* Google Tag Manager (noscript) */}
+        <noscript>
+          <iframe
+            src={`https://www.googletagmanager.com/ns.html?id=${GOOGLE_TAG_MANAGER_ID}`}
+            height={0}
+            width={0}
+            style={{ display: "none", visibility: "hidden" }}
+            title="Google Tag Manager"
+          />
+        </noscript>
+        {/* End Google Tag Manager (noscript) */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

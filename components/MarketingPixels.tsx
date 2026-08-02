@@ -1,36 +1,12 @@
 import Script from "next/script";
 
-const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim();
 const metaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim();
 
 export function MarketingPixels() {
-  const serializedGaId = JSON.stringify(gaMeasurementId);
   const serializedMetaPixelId = JSON.stringify(metaPixelId);
 
   return (
     <>
-      {gaMeasurementId ? (
-        <>
-          <Script
-            id="ga4-loader"
-            src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
-            strategy="afterInteractive"
-          />
-          <Script
-            id="ga4-init"
-            strategy="afterInteractive"
-            dangerouslySetInnerHTML={{
-              __html: `
-                window.dataLayer = window.dataLayer || [];
-                window.gtag = window.gtag || function gtag(){window.dataLayer.push(arguments);}
-                window.gtag('js', new Date());
-                window.gtag('config', ${serializedGaId}, { send_page_view: false });
-              `,
-            }}
-          />
-        </>
-      ) : null}
-
       {metaPixelId ? (
         <>
           <Script
