@@ -7,20 +7,46 @@ import {
   decryptPayload,
   encryptPayload,
   giftWaitUntilIso,
-  normalizeInternationalPhone,
   subtractDaysIso,
   validateGiftPayload,
 } from "../shared/gift-core.js";
 
 const now = new Date("2026-07-12T12:00:00.000Z");
 
-test("phone accepts valid Israeli and international numbers", () => {
-  assert.equal(normalizeInternationalPhone("0502345678"), "+972502345678");
-  assert.equal(normalizeInternationalPhone("+972502345678"), "+972502345678");
-  assert.equal(normalizeInternationalPhone("+380501234567"), "+380501234567");
-  assert.equal(normalizeInternationalPhone("+12015550123"), "+12015550123");
-  assert.equal(normalizeInternationalPhone("050123456"), null);
-  assert.equal(normalizeInternationalPhone("+38050123"), null);
+test("phone accepts any non-empty format without normalization", () => {
+  const basePayload = {
+    language: "ru",
+    sourceCode: "party-qr",
+    giftCode: "discount-200",
+    clientName: "Марина",
+    city: "Хайфа",
+    hostCode: "mishanya",
+    children: [{ gender: "boy", ageTurning: 8, birthdayDay: 20, birthdayMonth: 12 }],
+  };
+
+  for (const phone of ["050-12", "+380 (50) 123-45-67", "WhatsApp: abc"]) {
+    const result = validateGiftPayload({ ...basePayload, phone: `  ${phone}  ` }, now);
+    assert.equal(result.error, undefined);
+    assert.equal(result.value.phone, phone);
+  }
+
+  assert.equal(validateGiftPayload({ ...basePayload, phone: "   " }, now).error, "invalid_phone");
+});
+
+test("new submissions accept only the 200 shekel discount", () => {
+  const payload = {
+    language: "ru",
+    sourceCode: "party-qr",
+    clientName: "Марина",
+    city: "Хайфа",
+    hostCode: "mishanya",
+    phone: "0502345678",
+    children: [{ gender: "boy", ageTurning: 8, birthdayDay: 1, birthdayMonth: 12 }],
+  };
+
+  assert.equal(validateGiftPayload({ ...payload, giftCode: "discount-200" }, now).error, undefined);
+  assert.equal(validateGiftPayload({ ...payload, giftCode: "confetti" }, now).error, "invalid_gift");
+  assert.equal(validateGiftPayload({ ...payload, giftCode: "bubbles" }, now).error, "invalid_gift");
 });
 
 test("two boys are accepted and the nearest birthday becomes primary", () => {
@@ -28,7 +54,7 @@ test("two boys are accepted and the nearest birthday becomes primary", () => {
     {
       language: "ru",
       sourceCode: "banner-01",
-      giftCode: "confetti",
+      giftCode: "discount-200",
       clientName: "Марина",
       city: "Хайфа",
       hostCode: "mishanya",
@@ -51,7 +77,7 @@ test("up to eight children are accepted and every additional child is added to t
   const payload = {
     language: "ru",
     sourceCode: "parent-5135",
-    giftCode: "bubbles",
+    giftCode: "discount-200",
     clientName: "Анна",
     city: "Нетания",
     hostCode: "hanna",
@@ -92,7 +118,7 @@ test("only the child outside the main lead fields is added to the note", () => {
     {
       language: "ru",
       sourceCode: "banner-01",
-      giftCode: "confetti",
+      giftCode: "discount-200",
       clientName: "Марина",
       city: "Хайфа",
       hostCode: "artur-magician",
@@ -123,33 +149,55 @@ test("only the child outside the main lead fields is added to the note", () => {
   assert.doesNotMatch(fields.COMMENTS, /исполнится 5 лет/);
 });
 
-test("age dropdown range is accepted from 1 through 100", () => {
+test("age selection is accepted from 1 through 10", () => {
   const payload = {
     language: "ru",
     sourceCode: "banner-01",
-    giftCode: "confetti",
+    giftCode: "discount-200",
     clientName: "Тест",
     city: "Хайфа",
     hostCode: "leon",
     phone: "0502345678",
-    children: [{ gender: "boy", ageTurning: 100, birthdayDay: 20, birthdayMonth: 8 }],
+    children: [{ gender: "boy", ageTurning: 10, birthdayDay: 1, birthdayMonth: 8 }],
   };
 
   assert.equal(validateGiftPayload(payload, now).error, undefined);
   assert.equal(
     validateGiftPayload(
-      { ...payload, children: [{ ...payload.children[0], ageTurning: 101 }] },
+      { ...payload, children: [{ ...payload.children[0], ageTurning: 11 }] },
       now,
     ).error,
     "invalid_child_age",
   );
 });
 
+test("name, city, and phone accept any non-empty Unicode text without length limits", () => {
+  const longText = "שלום🙂Привет".repeat(5000);
+  const result = validateGiftPayload(
+    {
+      language: "he",
+      sourceCode: "party-qr",
+      giftCode: "discount-200",
+      clientName: longText,
+      city: longText,
+      hostCode: "unknown",
+      phone: longText,
+      children: [{ gender: "girl", ageTurning: 1, birthdayDay: 1, birthdayMonth: 1 }],
+    },
+    now,
+  );
+
+  assert.equal(result.error, undefined);
+  assert.equal(result.value.clientName, longText);
+  assert.equal(result.value.city, longText);
+  assert.equal(result.value.phone, longText);
+});
+
 test("host selection is required and limited to the approved list", () => {
   const payload = {
     language: "ru",
     sourceCode: "banner-01",
-    giftCode: "confetti",
+    giftCode: "discount-200",
     clientName: "Тест",
     city: "Хайфа",
     phone: "0502345678",
@@ -196,7 +244,7 @@ test("Hebrew form produces a compact Russian Bitrix note without personal data",
     {
       language: "he",
       sourceCode: "banner-01",
-      giftCode: "bubbles",
+      giftCode: "discount-200",
       clientName: "נועה",
       city: "חיפה",
       hostCode: "artur-mad-professor",
@@ -212,7 +260,7 @@ test("Hebrew form produces a compact Russian Bitrix note without personal data",
   };
   const note = buildLeadNote(result.value, claim, { LEAD: [12], CONTACT: [34] });
   assert.match(note, /Дата анкеты:/);
-  assert.match(note, /Подарок: Бесплатное шоу мыльных пузырей/);
+  assert.match(note, /Подарок: Скидка 200 ₪/);
   assert.match(note, /Ведущий на празднике: Артур Сумасшедший Профессор/);
   assert.match(note, /Лиды: 12/);
   assert.match(note, /Контакты: 34/);
@@ -254,7 +302,7 @@ test("lead is created in NEW while one child stays only in lead fields", () => {
   const fields = buildLeadFields(result.value, claim, "QR_PARTY_GIFT", {});
   assert.equal(fields.STATUS_ID, "NEW");
   assert.equal(fields.SOURCE_ID, "QR_PARTY_GIFT");
-  assert.deepEqual(fields.PHONE, [{ VALUE: "+972502345678", VALUE_TYPE: "WORK" }]);
+  assert.deepEqual(fields.PHONE, [{ VALUE: "0502345678", VALUE_TYPE: "WORK" }]);
   assert.equal(fields.UF_CRM_1644327962757, 44);
   assert.equal(fields.UF_CRM_1644329391894, 7);
   assert.equal(fields.UF_CRM_1784446465040, "Скидка 200 ₪");

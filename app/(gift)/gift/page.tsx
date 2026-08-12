@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { GiftPage } from "@/components/gift/GiftPage";
 
 export const metadata: Metadata = {
-  title: "Подарок для будущего праздника | Мишаня в Стране Чудес",
+  title: "Скидка 200 ₪ на будущий праздник | Мишаня в Стране Чудес",
   description:
-    "Выберите подарок для ближайшего дня рождения ребёнка и сохраните его за своим номером телефона.",
+    "Заберите скидку 200 ₪ на программу будущего праздника и закрепите её за своим номером телефона.",
   alternates: {
     canonical: "/gift",
   },

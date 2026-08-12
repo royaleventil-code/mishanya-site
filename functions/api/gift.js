@@ -74,8 +74,6 @@ async function enqueueClaim(env, claimId) {
 
 export async function onRequestPost(context) {
   const { request, env } = context;
-  const contentLength = Number(request.headers.get("content-length") || 0);
-  if (contentLength > 24_000) return json({ error: "payload_too_large" }, 413);
   if (!env.GIFT_DB || !env.GIFT_DATA_SECRET || !env.GIFT_SYNC_QUEUE) {
     return json({ error: "gift_service_not_configured" }, 503);
   }

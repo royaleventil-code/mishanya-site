@@ -1,8 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { parsePhoneNumberFromString } from "libphonenumber-js/max";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   CalendarDays,
   Check,
@@ -11,15 +10,13 @@ import {
   LoaderCircle,
   MapPin,
   Phone,
-  Plus,
   UserRound,
   X,
 } from "lucide-react";
-import { motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 type Language = "ru" | "he";
 type GiftCode = "discount-200" | "confetti" | "bubbles";
-type FamilyGender = "" | "boy" | "girl" | "two";
 type ChildGender = "boy" | "girl";
 type ChildGenderChoice = "" | ChildGender;
 type HostCode =
@@ -32,18 +29,6 @@ type HostCode =
   | "leon"
   | "unknown";
 type SubmitState = "idle" | "submitting" | "success" | "existing" | "error";
-
-type BirthdayInput = {
-  age: string;
-  day: string;
-  month: string;
-};
-
-type MultipleChildInput = {
-  id: number;
-  gender: ChildGenderChoice;
-  birthday: BirthdayInput;
-};
 
 type GiftPayloadChild = {
   gender: ChildGender;
@@ -94,28 +79,19 @@ declare global {
   }
 }
 
-const EMPTY_BIRTHDAY: BirthdayInput = { age: "", day: "", month: "" };
-const MAX_CHILDREN = 8;
-const AGES = Array.from({ length: 100 }, (_, index) => index + 1);
+const AGES = Array.from({ length: 10 }, (_, index) => index + 1);
 const MONTHS = Array.from({ length: 12 }, (_, index) => index + 1);
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim();
-
-function createEmptyChild(id: number): MultipleChildInput {
-  return { id, gender: "", birthday: { ...EMPTY_BIRTHDAY } };
-}
 
 const COPY = {
   ru: {
     logoAlt: "Мишаня в Стране Чудес",
     eyebrow: "Подарок с праздника",
-    title: "Выберите подарок для будущего дня рождения",
+    title: "Вы можете забрать подарок — скидку 200\u00a0₪",
     intro:
-      "Закрепим один подарок за вашим номером телефона, подтвердим его в WhatsApp и один раз напомним ближе ко дню рождения ребёнка.",
-    promise: "Подарок действует 12 месяцев",
-    stepOne: "1. Выберите подарок",
-    stepOneHint: "Можно выбрать только один вариант",
-    selectGift: "Выбрать",
-    selectedGift: "Выбрано",
+      "Скидка действует на программу будущего праздника. Закрепим её за вашим номером телефона, подтвердим в WhatsApp и один раз напомним ближе ко дню рождения ребёнка.",
+    promise: "Скидка действует 12 месяцев",
+    claimDiscount: "Забрать скидку 200 шек.",
     gifts: {
       "discount-200": {
         title: "Скидка 200 ₪",
@@ -130,63 +106,64 @@ const COPY = {
         description: "Подарок к выбранной программе",
       },
     },
-    stepTwo: "2. Сохраните подарок",
+    stepTwo: "Закрепите скидку",
     stepTwoHint: "Все поля обязательны",
+    closeForm: "Закрыть форму",
     clientName: "Имя клиента",
     clientNamePlaceholder: "Как к вам обращаться?",
     phone: "Номер телефона / WhatsApp",
     phonePlaceholder: "Введите ваш номер телефона",
-    phoneHint: "Если у вас номер другой страны, введите его полностью с кодом страны",
+    phoneHint: "Введите номер в любом удобном формате",
     city: "Город",
     cityPlaceholder: "Например, Хайфа",
     host: "Кто был ведущим на празднике?",
     hostPlaceholder: "Выберите ведущего",
-    who: "Кого поздравляем?",
+    childDetails: "О ребёнке",
+    gender: "Пол",
     genderBoy: "Мальчик",
     genderGirl: "Девочка",
-    genderBoth: "Двое детей",
-    bothHint: "Для каждого ребёнка выберите пол, возраст и ближайший день рождения",
-    childCard: (index: number) =>
-      ["Первый ребёнок", "Второй ребёнок", "Третий ребёнок", "Четвёртый ребёнок"][
-        index
-      ] ?? `Ребёнок ${index + 1}`,
-    addChild: "Добавить ещё ребёнка",
-    removeChild: "Убрать",
-    childGender: "Пол ребёнка",
-    age: "Сколько лет исполнится?",
-    agePlaceholder: "Возраст",
-    birthday: "Ближайший день рождения",
-    day: "День",
-    month: "Месяц",
+    age: "Возраст",
+    ageHint: "От 1 до 10 лет",
+    month: "Месяц рождения",
+    months: [
+      "Январь",
+      "Февраль",
+      "Март",
+      "Апрель",
+      "Май",
+      "Июнь",
+      "Июль",
+      "Август",
+      "Сентябрь",
+      "Октябрь",
+      "Ноябрь",
+      "Декабрь",
+    ],
     consent:
-      "Нажимая «Сохранить подарок», вы соглашаетесь на сохранение указанных данных, подтверждение подарка сообщением в WhatsApp и одно напоминание ближе ко дню рождения ребёнка. Мы используем данные только для этих обращений.",
-    submit: "Сохранить подарок",
-    submitting: "Сохраняем подарок…",
-    invalidPhone: "Проверьте номер телефона. Для номера другой страны укажите код страны",
+      "Нажимая «Закрепить скидку», вы соглашаетесь на сохранение указанных данных, подтверждение скидки сообщением в WhatsApp и одно напоминание ближе ко дню рождения ребёнка. Мы используем данные только для этих обращений.",
+    submit: "Закрепить скидку",
+    submitting: "Закрепляем скидку…",
     invalidHost: "Выберите, кто был ведущим на празднике",
-    invalidBirthday: "Выберите пол и проверьте данные каждого ребёнка",
+    invalidBirthday: "Выберите пол, возраст и месяц рождения",
     verificationPending: "Подтвердите, что форму заполняет человек",
     formError: "Не удалось сохранить подарок. Попробуйте ещё раз.",
-    successTitle: "Подарок сохранён",
+    successTitle: "Скидка сохранена",
     successText:
-      "Спасибо! Ваш подарок сохранён. Мы подтвердим его сообщением в WhatsApp и один раз напомним ближе ко дню рождения ребёнка.",
+      "Спасибо! Скидка 200 ₪ закреплена за вами. Мы подтвердим её сообщением в WhatsApp и один раз напомним ближе ко дню рождения ребёнка.",
     existingTitle: "Подарок уже закреплён",
     existingText: (giftName: string) =>
-      `За вашим номером уже закреплён подарок: «${giftName}». Если при бронировании вы захотите выбрать другой подарок, просто сообщите об этом менеджеру.`,
+      `За вашим номером уже закреплён подарок: «${giftName}».`,
     validFor: "Срок действия — 12 месяцев с момента заполнения анкеты.",
     closeHint: "Эту страницу можно закрыть",
   },
   he: {
     logoAlt: "מישניה בארץ הפלאות",
     eyebrow: "מתנה מהאירוע",
-    title: "בחרו מתנה ליום ההולדת הבא",
+    title: "מחכה לכם מתנה — הנחה של 200\u00a0₪",
     intro:
-      "נשמור מתנה אחת לפי מספר הטלפון שלכם, נאשר אותה ב-WhatsApp ונשלח תזכורת אחת לקראת יום ההולדת של הילד או הילדה.",
-    promise: "המתנה בתוקף ל-12 חודשים",
-    stepOne: "1. בחרו מתנה",
-    stepOneHint: "אפשר לבחור אפשרות אחת בלבד",
-    selectGift: "בחירה",
-    selectedGift: "נבחר",
+      "ההנחה תקפה לתוכנית ליום ההולדת הבא. נשמור אותה לפי מספר הטלפון שלכם, נאשר ב-WhatsApp ונשלח תזכורת אחת לקראת יום ההולדת של הילד או הילדה.",
+    promise: "ההנחה בתוקף ל-12 חודשים",
+    claimDiscount: "לקבלת הנחה של 200 ₪",
     gifts: {
       "discount-200": {
         title: "הנחה של 200 ₪",
@@ -201,54 +178,60 @@ const COPY = {
         description: "מתנה כתוספת לתוכנית שתבחרו",
       },
     },
-    stepTwo: "2. שמרו את המתנה",
+    stepTwo: "שמרו את ההנחה",
     stepTwoHint: "כל השדות הם חובה",
+    closeForm: "סגירת הטופס",
     clientName: "שם ההורה",
     clientNamePlaceholder: "איך לפנות אליכם?",
     phone: "מספר טלפון / WhatsApp",
     phonePlaceholder: "הזינו את מספר הטלפון שלכם",
-    phoneHint: "אם יש לכם מספר ממדינה אחרת, הזינו אותו במלואו עם קידומת המדינה",
+    phoneHint: "אפשר להזין את המספר בכל פורמט שנוח לכם",
     city: "עיר",
     cityPlaceholder: "לדוגמה, חיפה",
     host: "מי היה המפעיל או המפעילה באירוע?",
     hostPlaceholder: "בחרו מפעיל או מפעילה",
-    who: "למי חוגגים?",
+    childDetails: "פרטי הילד/ה",
+    gender: "מין",
     genderBoy: "בן",
     genderGirl: "בת",
-    genderBoth: "שני ילדים",
-    bothHint: "בחרו מין, גיל ויום הולדת קרוב עבור כל ילד או ילדה",
-    childCard: (index: number) =>
-      ["ילד/ה ראשון/ה", "ילד/ה שני/ה", "ילד/ה שלישי/ת", "ילד/ה רביעי/ת"][index] ??
-      `ילד/ה ${index + 1}`,
-    addChild: "הוספת ילד/ה נוסף/ת",
-    removeChild: "הסרה",
-    childGender: "בן או בת?",
-    age: "בן או בת כמה יהיו?",
-    agePlaceholder: "גיל",
-    birthday: "יום ההולדת הקרוב",
-    day: "יום",
-    month: "חודש",
+    age: "גיל",
+    ageHint: "מגיל שנה עד 10",
+    month: "חודש לידה",
+    months: [
+      "ינואר",
+      "פברואר",
+      "מרץ",
+      "אפריל",
+      "מאי",
+      "יוני",
+      "יולי",
+      "אוגוסט",
+      "ספטמבר",
+      "אוקטובר",
+      "נובמבר",
+      "דצמבר",
+    ],
     consent:
-      "בלחיצה על „שמירת המתנה“ אתם מסכימים לשמירת הפרטים שמסרתם, לקבלת הודעת WhatsApp לאישור המתנה ולתזכורת אחת לקראת יום ההולדת של הילד/ה. נשתמש בפרטים רק לצורך הפניות האלה.",
-    submit: "שמירת המתנה",
-    submitting: "שומרים את המתנה…",
-    invalidPhone: "בדקו את מספר הטלפון. למספר ממדינה אחרת יש להזין גם את קידומת המדינה",
+      "בלחיצה על „שמירת ההנחה“ אתם מסכימים לשמירת הפרטים שמסרתם, לקבלת הודעת WhatsApp לאישור ההנחה ולתזכורת אחת לקראת יום ההולדת של הילד/ה. נשתמש בפרטים רק לצורך הפניות האלה.",
+    submit: "שמירת ההנחה",
+    submitting: "שומרים את ההנחה…",
     invalidHost: "בחרו מי היה המפעיל או המפעילה באירוע",
-    invalidBirthday: "בחרו מין ובדקו את הפרטים של כל ילד או ילדה",
+    invalidBirthday: "בחרו מין, גיל וחודש לידה",
     verificationPending: "אשרו שהטופס נשלח על ידי אדם",
     formError: "לא הצלחנו לשמור את המתנה. נסו שוב.",
-    successTitle: "המתנה נשמרה",
+    successTitle: "ההנחה נשמרה",
     successText:
-      "תודה! המתנה שלכם נשמרה. נאשר אותה בהודעת WhatsApp ונשלח תזכורת אחת לקראת יום ההולדת של הילד/ה.",
+      "תודה! ההנחה של 200 ₪ נשמרה עבורכם. נאשר אותה בהודעת WhatsApp ונשלח תזכורת אחת לקראת יום ההולדת של הילד/ה.",
     existingTitle: "כבר שמורה מתנה",
     existingText: (giftName: string) =>
-      `למספר הטלפון שלכם כבר שמורה מתנה: „${giftName}“. אם בזמן ההזמנה תרצו לבחור מתנה אחרת, פשוט אמרו זאת לנציג/ה שלנו.`,
+      `למספר הטלפון שלכם כבר שמורה מתנה: „${giftName}“.`,
     validFor: "המתנה בתוקף ל-12 חודשים ממועד מילוי הטופס.",
     closeHint: "אפשר לסגור את העמוד",
   },
 } as const;
 
-const GIFT_ORDER: GiftCode[] = ["discount-200", "confetti", "bubbles"];
+const OFFER_GIFT: GiftCode = "discount-200";
+const KNOWN_GIFT_CODES = new Set<GiftCode>(["discount-200", "confetti", "bubbles"]);
 const HOST_OPTIONS: Array<{ code: HostCode; labels: Record<Language, string> }> = [
   { code: "mishanya", labels: { ru: "Мишаня", he: "מישניה" } },
   { code: "artur-magician", labels: { ru: "Артур Фокусник", he: "ארתור הקוסם" } },
@@ -265,27 +248,10 @@ const HOST_OPTIONS: Array<{ code: HostCode; labels: Record<Language, string> }> 
     labels: { ru: "Не знаю, кто ведущий", he: "לא יודע/ת מי היה המפעיל או המפעילה" },
   },
 ];
-const GIFT_IMAGES: Record<GiftCode, string> = {
-  "discount-200": "/gift/gift-discount-200.webp",
-  confetti: "/gift/gift-confetti.webp",
-  bubbles: "/gift/gift-bubbles.webp",
-};
-
 function sanitizeSource(value: string | null) {
   if (!value) return "party-qr";
   const clean = value.trim().toLowerCase();
   return /^[a-z0-9_-]{1,64}$/.test(clean) ? clean : "party-qr";
-}
-
-function normalizeInternationalPhone(value: string) {
-  const phoneNumber = parsePhoneNumberFromString(value, "IL");
-  return phoneNumber?.isValid() ? String(phoneNumber.number) : null;
-}
-
-function daysInMonth(month: number) {
-  if (month === 2) return 29;
-  if ([4, 6, 9, 11].includes(month)) return 30;
-  return 31;
 }
 
 function formatDate(year: number, month: number, day: number) {
@@ -311,33 +277,16 @@ function nextBirthday(day: number, month: number, today = new Date()) {
   return null;
 }
 
-function selectedChildren(
-  familyGender: FamilyGender,
-  single: BirthdayInput,
-  multipleChildren: MultipleChildInput[],
-) {
-  if (familyGender === "two") {
-    return multipleChildren.map((child) => ({
-      gender: child.gender,
-      input: child.birthday,
-    }));
-  }
-  if (familyGender === "boy" || familyGender === "girl") {
-    return [{ gender: familyGender, input: single }];
-  }
-  return [];
-}
-
 function childPayload(
   gender: ChildGender,
-  input: BirthdayInput,
+  ageValue: string,
+  monthValue: string,
 ): GiftPayloadChild | null {
-  const ageTurning = Number(input.age);
-  const day = Number(input.day);
-  const month = Number(input.month);
-  if (!Number.isInteger(ageTurning) || ageTurning < 1 || ageTurning > 100) return null;
-  if (!Number.isInteger(day) || !Number.isInteger(month)) return null;
-  if (month < 1 || month > 12 || day < 1 || day > daysInMonth(month)) return null;
+  const ageTurning = Number(ageValue);
+  const month = Number(monthValue);
+  const day = 1;
+  if (!Number.isInteger(ageTurning) || ageTurning < 1 || ageTurning > 10) return null;
+  if (!Number.isInteger(month) || month < 1 || month > 12) return null;
   const birthday = nextBirthday(day, month);
   if (!birthday) return null;
   return {
@@ -349,140 +298,109 @@ function childPayload(
   };
 }
 
-function GiftVisual({ code }: { code: GiftCode }) {
-  return (
-    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-[#fff9ef]">
-      <Image
-        src={GIFT_IMAGES[code]}
-        alt=""
-        fill
-        sizes="(max-width: 640px) 30vw, 220px"
-        className="object-cover"
-      />
-    </div>
-  );
-}
-
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return <span className="mb-2 block text-sm font-black text-zinc-900">{children}</span>;
 }
 
-function ChildGenderPicker({
-  value,
-  onChange,
-  copy,
+function ChoiceButton({
+  selected,
+  onClick,
+  children,
 }: {
-  value: ChildGenderChoice;
-  onChange: (value: ChildGender) => void;
-  copy: (typeof COPY)[Language];
+  selected: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
 }) {
   return (
-    <fieldset className="mb-4">
-      <legend className="text-sm font-black text-zinc-900">{copy.childGender}</legend>
-      <div className="mt-2 grid grid-cols-2 gap-2 rounded-2xl bg-white/80 p-1.5 ring-1 ring-black/[0.04]">
-        {(
-          [
-            ["boy", copy.genderBoy],
-            ["girl", copy.genderGirl],
-          ] as const
-        ).map(([gender, label]) => (
-          <button
-            key={gender}
-            type="button"
-            aria-pressed={value === gender}
-            onClick={() => onChange(gender)}
-            className={`min-h-11 rounded-xl px-3 text-sm font-black transition-[background-color,color,box-shadow,transform] duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5e5ce6] ${
-              value === gender ? "bg-zinc-950 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-800"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-    </fieldset>
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={onClick}
+      className={`min-h-11 rounded-xl border px-2 text-sm font-black transition-[background-color,border-color,color,box-shadow,transform] duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5e5ce6] ${
+        selected
+          ? "border-zinc-950 bg-zinc-950 text-white shadow-sm"
+          : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-900"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 
-function BirthdayFields({
-  value,
-  onChange,
+function ChildDetailsPicker({
+  gender,
+  age,
+  month,
+  onGenderChange,
+  onAgeChange,
+  onMonthChange,
   copy,
 }: {
-  value: BirthdayInput;
-  onChange: (value: BirthdayInput) => void;
+  gender: ChildGenderChoice;
+  age: string;
+  month: string;
+  onGenderChange: (value: ChildGender) => void;
+  onAgeChange: (value: string) => void;
+  onMonthChange: (value: string) => void;
   copy: (typeof COPY)[Language];
 }) {
-  const maxDay = value.month ? daysInMonth(Number(value.month)) : 31;
-  const days = Array.from({ length: maxDay }, (_, index) => index + 1);
-
-  const updateMonth = (month: string) => {
-    const nextMax = month ? daysInMonth(Number(month)) : 31;
-    onChange({
-      ...value,
-      month,
-      day: Number(value.day) > nextMax ? "" : value.day,
-    });
-  };
-
   return (
-    <div className="grid gap-4 sm:grid-cols-[0.8fr_1.2fr]">
-      <label className="relative">
-        <FieldLabel>{copy.age}</FieldLabel>
-        <select
-          value={value.age}
-          onChange={(event) => onChange({ ...value, age: event.target.value })}
-          required
-          className="h-13 w-full appearance-none rounded-2xl border border-zinc-200 bg-white px-4 pe-10 text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10"
-        >
-          <option value="">{copy.agePlaceholder}</option>
-          {AGES.map((age) => (
-            <option key={age} value={age}>
-              {age}
-            </option>
+    <section className="mt-6 rounded-[22px] border border-zinc-200 bg-[#fffdf8] p-4 sm:p-5">
+      <h3 className="text-base font-black text-zinc-950">{copy.childDetails}</h3>
+
+      <fieldset className="mt-4">
+        <legend className="text-sm font-black text-zinc-900">{copy.gender}</legend>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {(
+            [
+              ["boy", copy.genderBoy],
+              ["girl", copy.genderGirl],
+            ] as const
+          ).map(([value, label]) => (
+            <ChoiceButton
+              key={value}
+              selected={gender === value}
+              onClick={() => onGenderChange(value)}
+            >
+              {label}
+            </ChoiceButton>
           ))}
-        </select>
-        <ChevronDown className="pointer-events-none absolute end-3 bottom-[18px] h-4 w-4 text-zinc-400" />
-      </label>
-      <fieldset>
-        <FieldLabel>{copy.birthday}</FieldLabel>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="relative">
-            <span className="sr-only">{copy.day}</span>
-            <select
-              value={value.day}
-              onChange={(event) => onChange({ ...value, day: event.target.value })}
-              required
-              className="h-13 w-full appearance-none rounded-2xl border border-zinc-200 bg-white px-4 pe-10 text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10"
-            >
-              <option value="">{copy.day}</option>
-              {days.map((day) => (
-                <option key={day} value={day}>
-                  {day}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-          </label>
-          <label className="relative">
-            <span className="sr-only">{copy.month}</span>
-            <select
-              value={value.month}
-              onChange={(event) => updateMonth(event.target.value)}
-              required
-              className="h-13 w-full appearance-none rounded-2xl border border-zinc-200 bg-white px-4 pe-10 text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10"
-            >
-              <option value="">{copy.month}</option>
-              {MONTHS.map((month) => (
-                <option key={month} value={month}>
-                  {String(month).padStart(2, "0")}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-          </label>
         </div>
       </fieldset>
-    </div>
+
+      <fieldset className="mt-5">
+        <legend className="flex w-full items-baseline justify-between gap-3 text-sm font-black text-zinc-900">
+          <span>{copy.age}</span>
+          <span className="text-xs font-semibold text-zinc-500">{copy.ageHint}</span>
+        </legend>
+        <div className="mt-2 grid grid-cols-5 gap-2">
+          {AGES.map((value) => (
+            <ChoiceButton
+              key={value}
+              selected={age === String(value)}
+              onClick={() => onAgeChange(String(value))}
+            >
+              {value}
+            </ChoiceButton>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset className="mt-5">
+        <legend className="text-sm font-black text-zinc-900">{copy.month}</legend>
+        <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
+          {MONTHS.map((value, index) => (
+            <ChoiceButton
+              key={value}
+              selected={month === String(value)}
+              onClick={() => onMonthChange(String(value))}
+            >
+              {copy.months[index]}
+            </ChoiceButton>
+          ))}
+        </div>
+      </fieldset>
+    </section>
   );
 }
 
@@ -492,7 +410,7 @@ async function localGiftSubmit(payload: GiftPayload): Promise<GiftSubmitResponse
   if (existingRaw) {
     try {
       const existing = JSON.parse(existingRaw) as { giftCode?: GiftCode };
-      if (existing.giftCode && GIFT_ORDER.includes(existing.giftCode)) {
+      if (existing.giftCode && KNOWN_GIFT_CODES.has(existing.giftCode)) {
         return { status: "existing", giftCode: existing.giftCode };
       }
     } catch {
@@ -519,17 +437,14 @@ export function GiftPage() {
   const [language, setLanguage] = useState<Language>("ru");
   const [sourceCode, setSourceCode] = useState("party-qr");
   const [pageContextReady, setPageContextReady] = useState(false);
-  const [selectedGift, setSelectedGift] = useState<GiftCode | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
   const [clientName, setClientName] = useState("");
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
   const [hostCode, setHostCode] = useState<HostCode | "">("");
-  const [familyGender, setFamilyGender] = useState<FamilyGender>("");
-  const [singleBirthday, setSingleBirthday] = useState<BirthdayInput>(EMPTY_BIRTHDAY);
-  const [multipleChildren, setMultipleChildren] = useState<MultipleChildInput[]>(() => [
-    createEmptyChild(1),
-    createEmptyChild(2),
-  ]);
+  const [childGender, setChildGender] = useState<ChildGenderChoice>("");
+  const [childAge, setChildAge] = useState("");
+  const [birthdayMonth, setBirthdayMonth] = useState("");
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [resultGift, setResultGift] = useState<GiftCode | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -538,10 +453,12 @@ export function GiftPage() {
   const [website, setWebsite] = useState("");
   const pageTrackedRef = useRef(false);
   const formStartedRef = useRef(false);
-  const formRef = useRef<HTMLDivElement>(null);
+  const claimButtonRef = useRef<HTMLButtonElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const clientNameInputRef = useRef<HTMLInputElement>(null);
+  const submittingRef = useRef(false);
   const turnstileContainerRef = useRef<HTMLDivElement>(null);
   const turnstileWidgetRef = useRef<string | null>(null);
-  const nextChildIdRef = useRef(3);
   const copy = COPY[language];
 
   useEffect(() => {
@@ -581,6 +498,59 @@ export function GiftPage() {
   }, [language, pageContextReady, sourceCode]);
 
   useEffect(() => {
+    submittingRef.current = submitState === "submitting";
+  }, [submitState]);
+
+  useEffect(() => {
+    if (!formOpen) return;
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    const focusTimer = window.setTimeout(() => clientNameInputRef.current?.focus(), 40);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (!submittingRef.current) setFormOpen(false);
+        return;
+      }
+      if (event.key !== "Tab" || !modalRef.current) return;
+
+      const focusable = Array.from(
+        modalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]):not([type="hidden"]):not([tabindex="-1"]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (focusable.length === 0) {
+        event.preventDefault();
+        modalRef.current.focus();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !modalRef.current.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      if (previouslyFocused?.isConnected) previouslyFocused.focus();
+    };
+  }, [formOpen]);
+
+  useEffect(() => {
     if (!TURNSTILE_SITE_KEY) return;
 
     const markReady = () => {
@@ -613,6 +583,7 @@ export function GiftPage() {
 
   useEffect(() => {
     if (
+      !formOpen ||
       !TURNSTILE_SITE_KEY ||
       !turnstileReady ||
       !window.turnstile ||
@@ -621,8 +592,9 @@ export function GiftPage() {
     ) {
       return;
     }
+    let widgetId: string | null = null;
     try {
-      turnstileWidgetRef.current = window.turnstile.render(turnstileContainerRef.current, {
+      widgetId = window.turnstile.render(turnstileContainerRef.current, {
         sitekey: TURNSTILE_SITE_KEY,
         theme: "light",
         language,
@@ -631,120 +603,92 @@ export function GiftPage() {
         "expired-callback": () => setTurnstileToken(""),
         "error-callback": () => setTurnstileToken(""),
       });
+      turnstileWidgetRef.current = widgetId;
     } catch {
       window.requestAnimationFrame(() => setTurnstileReady(false));
     }
-  }, [language, turnstileReady]);
-
-  const formChildren = useMemo(
-    () => selectedChildren(familyGender, singleBirthday, multipleChildren),
-    [familyGender, multipleChildren, singleBirthday],
-  );
-
-  const updateMultipleChild = (
-    id: number,
-    patch: Partial<Pick<MultipleChildInput, "gender" | "birthday">>,
-  ) => {
-    setMultipleChildren((children) =>
-      children.map((child) => (child.id === id ? { ...child, ...patch } : child)),
-    );
-    setErrorMessage("");
-  };
-
-  const addMultipleChild = () => {
-    setMultipleChildren((children) => {
-      if (children.length >= MAX_CHILDREN) return children;
-      const nextChild = createEmptyChild(nextChildIdRef.current);
-      nextChildIdRef.current += 1;
-      return [...children, nextChild];
-    });
-    setErrorMessage("");
-  };
-
-  const removeMultipleChild = (id: number) => {
-    setMultipleChildren((children) =>
-      children.length > 2 ? children.filter((child) => child.id !== id) : children,
-    );
-    setErrorMessage("");
-  };
+    return () => {
+      if (widgetId && window.turnstile) {
+        try {
+          window.turnstile.remove(widgetId);
+        } catch {
+          // The widget may already be gone when the modal is removed.
+        }
+      }
+      if (turnstileWidgetRef.current === widgetId) {
+        turnstileWidgetRef.current = null;
+      }
+    };
+  }, [formOpen, language, turnstileReady]);
 
   const markFormStarted = () => {
-    if (formStartedRef.current || !selectedGift) return;
+    if (formStartedRef.current || !formOpen) return;
     formStartedRef.current = true;
     window.gtag?.("event", "gift_form_start", {
       event_category: "gift_form",
       source_code: sourceCode,
-      gift_type: selectedGift,
+      gift_type: OFFER_GIFT,
       language,
     });
     window.fbq?.("trackCustom", "GiftFormStart", {
       source_code: sourceCode,
-      gift_type: selectedGift,
+      gift_type: OFFER_GIFT,
       language,
     });
   };
 
-  const chooseGift = (giftCode: GiftCode) => {
-    setSelectedGift(giftCode);
+  const openDiscountForm = () => {
+    setFormOpen(true);
     setSubmitState("idle");
     setErrorMessage("");
+    setTurnstileToken("");
     window.gtag?.("event", "gift_select", {
       event_category: "gift_form",
       source_code: sourceCode,
-      gift_type: giftCode,
+      gift_type: OFFER_GIFT,
       language,
     });
     window.fbq?.("trackCustom", "GiftSelect", {
       source_code: sourceCode,
-      gift_type: giftCode,
+      gift_type: OFFER_GIFT,
       language,
     });
-    window.setTimeout(() => {
-      formRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
-    }, 60);
+  };
+
+  const closeDiscountForm = () => {
+    if (submitState === "submitting") return;
+    setFormOpen(false);
+    setErrorMessage("");
+    setTurnstileToken("");
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!selectedGift) return;
     setSubmitState("submitting");
     setErrorMessage("");
 
-    const normalizedPhone = normalizeInternationalPhone(phone);
-    if (!normalizedPhone) {
-      setSubmitState("error");
-      setErrorMessage(copy.invalidPhone);
-      return;
-    }
     if (!hostCode) {
       setSubmitState("error");
       setErrorMessage(copy.invalidHost);
       return;
     }
 
-    const children = formChildren
-      .map(({ gender, input }) => (gender ? childPayload(gender, input) : null))
-      .filter((child): child is GiftPayloadChild => Boolean(child));
-    if (!children.length || children.length !== formChildren.length) {
+    const child = childGender ? childPayload(childGender, childAge, birthdayMonth) : null;
+    if (!child) {
       setSubmitState("error");
       setErrorMessage(copy.invalidBirthday);
       return;
     }
-    const primaryChildIndex = children.reduce(
-      (nearestIndex, child, index, list) =>
-        child.nextBirthday < list[nearestIndex].nextBirthday ? index : nearestIndex,
-      0,
-    );
     const payload: GiftPayload = {
       language,
       sourceCode,
-      giftCode: selectedGift,
+      giftCode: OFFER_GIFT,
       clientName: clientName.trim(),
-      phone: normalizedPhone,
+      phone: phone.trim(),
       city: city.trim(),
       hostCode,
-      children,
-      primaryChildIndex,
+      children: [child],
+      primaryChildIndex: 0,
       turnstileToken: turnstileToken || undefined,
       website,
     };
@@ -764,6 +708,7 @@ export function GiftPage() {
 
       setResultGift(response.giftCode);
       const state: SubmitState = response.status === "existing" ? "existing" : "success";
+      setFormOpen(false);
       setSubmitState(state);
       window.gtag?.("event", "gift_form_submit_success", {
         event_category: "gift_form",
@@ -778,7 +723,10 @@ export function GiftPage() {
         result: response.status,
         language,
       });
-      window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+      window.setTimeout(
+        () => window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" }),
+        0,
+      );
     } catch {
       setSubmitState("error");
       setErrorMessage(copy.formError);
@@ -788,13 +736,13 @@ export function GiftPage() {
   };
 
   const completed = submitState === "success" || submitState === "existing";
-  const completedGift = resultGift ?? selectedGift;
+  const completedGift = resultGift ?? OFFER_GIFT;
 
   return (
     <main
       id="main"
       dir={language === "he" ? "rtl" : "ltr"}
-      className="min-h-screen overflow-hidden bg-[radial-gradient(120%_90%_at_50%_-12%,#fff4d9_0%,#ffedf2_42%,#f1f0ff_100%)] px-4 py-5 text-[var(--color-ink)] sm:px-6 sm:py-8"
+      className="min-h-screen overflow-x-hidden bg-[radial-gradient(120%_90%_at_50%_-12%,#fff4d9_0%,#ffedf2_42%,#f1f0ff_100%)] px-4 py-5 text-[var(--color-ink)] sm:px-6 sm:py-8"
     >
       <div className="pointer-events-none fixed inset-0" aria-hidden>
         <span className="absolute start-[8%] top-[18%] h-3 w-3 rounded-full bg-[#ff375f]/35" />
@@ -863,75 +811,55 @@ export function GiftPage() {
                 <Gift className="h-4 w-4" />
                 {copy.eyebrow}
               </span>
-              <h1 className="mx-auto mt-5 max-w-2xl text-[38px] font-black leading-[1.03] tracking-tight text-zinc-950 sm:text-6xl">
+              <h1 className="mx-auto mt-5 max-w-2xl text-[38px] font-black leading-[1.03] tracking-tight text-zinc-950 sm:max-w-4xl sm:text-6xl">
                 {copy.title}
               </h1>
               <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-[var(--color-ink-soft)] sm:text-lg">
                 {copy.intro}
               </p>
-              <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-sm font-bold text-zinc-700 ring-1 ring-black/[0.04]">
+              <button
+                ref={claimButtonRef}
+                type="button"
+                onClick={openDiscountForm}
+                className="mx-auto mt-6 flex min-h-14 items-center justify-center gap-2 rounded-full bg-zinc-950 px-8 text-base font-black text-white shadow-[0_12px_30px_rgba(15,15,20,0.22)] transition-[background-color,transform] duration-100 hover:bg-zinc-800 active:scale-[0.985] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5e5ce6]"
+              >
+                <Gift className="h-5 w-5" />
+                {copy.claimDiscount}
+              </button>
+              <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-sm font-bold text-zinc-700 ring-1 ring-black/[0.04]">
                 <CalendarDays className="h-4 w-4 text-[#ff9f0a]" />
                 {copy.promise}
               </div>
             </section>
 
-            <section className="rounded-[28px] bg-white/88 p-4 shadow-[var(--shadow-card)] ring-1 ring-black/[0.04] backdrop-blur sm:p-6">
-              <div className="flex items-end justify-between gap-4">
-                <div>
-                  <h2 className="text-2xl font-black tracking-tight sm:text-3xl">{copy.stepOne}</h2>
-                  <p className="mt-1 text-sm text-[var(--color-ink-soft)]">{copy.stepOneHint}</p>
-                </div>
-              </div>
-
-              <div className="mt-5 grid grid-cols-3 gap-2.5 sm:gap-4" role="radiogroup" aria-label={copy.stepOne}>
-                {GIFT_ORDER.map((giftCode) => {
-                  const selected = selectedGift === giftCode;
-                  return (
-                    <button
-                      key={giftCode}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected}
-                      onClick={() => chooseGift(giftCode)}
-                      className={`group relative min-w-0 rounded-[22px] border p-2 text-start transition-[border-color,background-color,transform,box-shadow] duration-150 active:scale-[0.985] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5e5ce6] sm:p-3 ${
-                        selected
-                          ? "border-[#5e5ce6] bg-[#f5f3ff] shadow-[0_12px_30px_rgba(94,92,230,0.14)]"
-                          : "border-zinc-200 bg-white hover:border-zinc-300"
-                      }`}
-                    >
-                      {selected ? (
-                        <span className="absolute end-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-[#5e5ce6] text-white shadow-sm">
-                          <Check className="h-4 w-4" strokeWidth={3} />
-                        </span>
-                      ) : null}
-                      <GiftVisual code={giftCode} />
-                      <span className="mt-3 block text-[13px] font-black leading-tight text-zinc-950 sm:text-base">
-                        {copy.gifts[giftCode].title}
-                      </span>
-                      <span className="mt-1 hidden text-xs leading-5 text-[var(--color-ink-soft)] sm:block">
-                        {copy.gifts[giftCode].description}
-                      </span>
-                      <span className={`mt-3 block text-xs font-black ${selected ? "text-[#5e5ce6]" : "text-zinc-400"}`}>
-                        {selected ? copy.selectedGift : copy.selectGift}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-
-            {selectedGift ? (
-              <motion.div
-                ref={formRef}
-                initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
-                className="scroll-mt-4"
-              >
+            <AnimatePresence>
+              {formOpen ? (
+                <motion.div
+                  initial={reduceMotion ? false : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: reduceMotion ? 0 : 0.16, ease: "easeOut" }}
+                  className="fixed inset-0 z-[300] flex items-center justify-center bg-zinc-950/45 p-2 backdrop-blur-[2px] sm:p-6"
+                  onMouseDown={(event) => {
+                    if (event.target === event.currentTarget) closeDiscountForm();
+                  }}
+                >
+                  <motion.div
+                    ref={modalRef}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="gift-form-title"
+                    tabIndex={-1}
+                    initial={reduceMotion ? false : { opacity: 0, scale: 0.98, y: 8 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.985, y: 4 }}
+                    transition={{ duration: reduceMotion ? 0 : 0.2, ease: "easeOut" }}
+                    className="h-[calc(100dvh-1rem)] w-full max-w-3xl overflow-hidden rounded-[28px] bg-white shadow-2xl ring-1 ring-black/10 sm:h-[calc(100dvh-3rem)] sm:max-h-[900px] sm:rounded-[30px]"
+                  >
                 <form
                   onSubmit={handleSubmit}
                   onFocusCapture={markFormStarted}
-                  className="mt-5 rounded-[28px] bg-white p-5 shadow-[var(--shadow-card)] ring-1 ring-black/[0.04] sm:mt-6 sm:p-8"
+                  className="h-full overflow-x-hidden overflow-y-auto overscroll-contain p-5 sm:p-8"
                 >
                   <div className="absolute -start-[10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
                     <label htmlFor="gift-website">Website</label>
@@ -945,11 +873,22 @@ export function GiftPage() {
                       onChange={(event) => setWebsite(event.target.value)}
                     />
                   </div>
-                  <div className="flex items-end justify-between gap-4">
+                  <div className="sticky -top-5 z-10 -mx-5 -mt-5 flex items-center justify-between gap-4 border-b border-zinc-100 bg-white/95 px-5 py-4 backdrop-blur sm:-top-8 sm:-mx-8 sm:-mt-8 sm:px-8 sm:py-5">
                     <div>
-                      <h2 className="text-2xl font-black tracking-tight sm:text-3xl">{copy.stepTwo}</h2>
+                      <h2 id="gift-form-title" className="text-2xl font-black tracking-tight sm:text-3xl">
+                        {copy.stepTwo}
+                      </h2>
                       <p className="mt-1 text-sm text-[var(--color-ink-soft)]">{copy.stepTwoHint}</p>
                     </div>
+                    <button
+                      type="button"
+                      onClick={closeDiscountForm}
+                      disabled={submitState === "submitting"}
+                      aria-label={copy.closeForm}
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-700 transition-[background-color,transform,opacity] duration-100 hover:bg-zinc-200 active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5e5ce6]"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
                   </div>
 
                   <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -958,10 +897,12 @@ export function GiftPage() {
                       <span className="relative block">
                         <UserRound className="pointer-events-none absolute start-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
                         <input
+                          ref={clientNameInputRef}
                           value={clientName}
                           onChange={(event) => setClientName(event.target.value)}
                           autoComplete="name"
                           placeholder={copy.clientNamePlaceholder}
+                          dir="auto"
                           required
                           className="h-13 w-full rounded-2xl border border-zinc-200 bg-white ps-12 pe-4 text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-zinc-400 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10"
                         />
@@ -975,8 +916,7 @@ export function GiftPage() {
                         <Phone className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
                         <input
                           id="gift-phone"
-                          type="tel"
-                          inputMode="tel"
+                          type="text"
                           autoComplete="tel"
                           value={phone}
                           onChange={(event) => setPhone(event.target.value)}
@@ -1005,6 +945,7 @@ export function GiftPage() {
                         onChange={(event) => setCity(event.target.value)}
                         autoComplete="address-level2"
                         placeholder={copy.cityPlaceholder}
+                        dir="auto"
                         required
                         className="h-13 w-full rounded-2xl border border-zinc-200 bg-white ps-12 pe-4 text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-zinc-400 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10"
                       />
@@ -1032,103 +973,24 @@ export function GiftPage() {
                     <ChevronDown className="pointer-events-none absolute end-3 bottom-[18px] h-4 w-4 text-zinc-400" />
                   </label>
 
-                  <fieldset className="mt-6">
-                    <legend className="text-sm font-black text-zinc-900">{copy.who}</legend>
-                    <div className="mt-3 grid grid-cols-3 gap-2 rounded-2xl bg-zinc-100 p-1.5">
-                      {(
-                        [
-                          ["boy", copy.genderBoy],
-                          ["girl", copy.genderGirl],
-                          ["two", copy.genderBoth],
-                        ] as const
-                      ).map(([value, label]) => (
-                        <button
-                          key={value}
-                          type="button"
-                          aria-pressed={familyGender === value}
-                          onClick={() => {
-                            setFamilyGender(value);
-                            setErrorMessage("");
-                          }}
-                          className={`min-h-12 rounded-xl px-2 text-sm font-black transition-[background-color,color,box-shadow,transform] duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5e5ce6] ${
-                            familyGender === value
-                              ? "bg-white text-zinc-950 shadow-sm"
-                              : "text-zinc-500 hover:text-zinc-800"
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </fieldset>
-
-                  {familyGender === "boy" || familyGender === "girl" ? (
-                    <div className="mt-5 rounded-[22px] border border-zinc-200 bg-[#fffdf8] p-4 sm:p-5">
-                      <BirthdayFields value={singleBirthday} onChange={setSingleBirthday} copy={copy} />
-                    </div>
-                  ) : null}
-
-                  {familyGender === "two" ? (
-                    <div className="mt-5 space-y-3">
-                      <p className="text-sm leading-6 text-[var(--color-ink-soft)]">{copy.bothHint}</p>
-                      {multipleChildren.map((child, index) => {
-                        const purpleCard = index % 2 === 0;
-                        return (
-                          <div
-                            key={child.id}
-                            className={`rounded-[22px] border p-4 sm:p-5 ${
-                              purpleCard
-                                ? "border-[#5e5ce6]/20 bg-[#f5f3ff]"
-                                : "border-[#ff9f0a]/25 bg-[#fff9ef]"
-                            }`}
-                          >
-                            <div className="mb-4 flex items-center justify-between gap-3">
-                              <h3
-                                className={`text-base font-black ${
-                                  purpleCard ? "text-[#4d49bd]" : "text-[#a55d00]"
-                                }`}
-                              >
-                                {copy.childCard(index)}
-                              </h3>
-                              {index >= 2 ? (
-                                <button
-                                  type="button"
-                                  onClick={() => removeMultipleChild(child.id)}
-                                  aria-label={`${copy.removeChild}: ${copy.childCard(index)}`}
-                                  className="inline-flex min-h-9 items-center gap-1 rounded-full border border-zinc-200 bg-white px-3 text-xs font-black text-zinc-600 transition-colors hover:border-red-200 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5e5ce6]"
-                                >
-                                  <X aria-hidden className="h-3.5 w-3.5" />
-                                  {copy.removeChild}
-                                </button>
-                              ) : null}
-                            </div>
-                            <ChildGenderPicker
-                              value={child.gender}
-                              onChange={(gender) => updateMultipleChild(child.id, { gender })}
-                              copy={copy}
-                            />
-                            <BirthdayFields
-                              value={child.birthday}
-                              onChange={(birthday) =>
-                                updateMultipleChild(child.id, { birthday })
-                              }
-                              copy={copy}
-                            />
-                          </div>
-                        );
-                      })}
-                      {multipleChildren.length < MAX_CHILDREN ? (
-                        <button
-                          type="button"
-                          onClick={addMultipleChild}
-                          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[#5e5ce6]/35 bg-[#f8f7ff] px-4 text-sm font-black text-[#4d49bd] transition-[background-color,border-color,transform] hover:border-[#5e5ce6]/60 hover:bg-[#f2f0ff] active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5e5ce6]"
-                        >
-                          <Plus aria-hidden className="h-4 w-4" />
-                          {copy.addChild}
-                        </button>
-                      ) : null}
-                    </div>
-                  ) : null}
+                  <ChildDetailsPicker
+                    gender={childGender}
+                    age={childAge}
+                    month={birthdayMonth}
+                    onGenderChange={(value) => {
+                      setChildGender(value);
+                      setErrorMessage("");
+                    }}
+                    onAgeChange={(value) => {
+                      setChildAge(value);
+                      setErrorMessage("");
+                    }}
+                    onMonthChange={(value) => {
+                      setBirthdayMonth(value);
+                      setErrorMessage("");
+                    }}
+                    copy={copy}
+                  />
 
                   {errorMessage ? (
                     <p className="mt-5 rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-700" role="alert">
@@ -1144,7 +1006,12 @@ export function GiftPage() {
 
                   <button
                     type="submit"
-                    disabled={submitState === "submitting" || !familyGender}
+                    disabled={
+                      submitState === "submitting" ||
+                      !childGender ||
+                      !childAge ||
+                      !birthdayMonth
+                    }
                     className="mt-6 flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-zinc-950 px-6 text-base font-black text-white shadow-[0_12px_30px_rgba(15,15,20,0.22)] transition-[background-color,transform,opacity] duration-100 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5e5ce6]"
                   >
                     {submitState === "submitting" ? (
@@ -1162,9 +1029,11 @@ export function GiftPage() {
                   <p className="mx-auto mt-4 max-w-xl text-center text-xs leading-5 text-zinc-500">
                     {copy.consent}
                   </p>
-                </form>
-              </motion.div>
-            ) : null}
+                    </form>
+                  </motion.div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
           </>
         )}
       </div>

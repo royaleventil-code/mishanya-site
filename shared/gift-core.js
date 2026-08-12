@@ -1,6 +1,4 @@
-import { parsePhoneNumberFromString } from "libphonenumber-js/max";
-
-export const GIFT_CODES = new Set(["discount-200", "confetti", "bubbles"]);
+export const GIFT_CODES = new Set(["discount-200"]);
 export const LANGUAGES = new Set(["ru", "he"]);
 export const CHILD_GENDERS = new Set(["boy", "girl"]);
 export const HOST_CODES = new Set([
@@ -35,13 +33,6 @@ const HOST_LABELS = {
   leon: "Леон",
   unknown: "Не знаю, кто ведущий",
 };
-export function normalizeInternationalPhone(value) {
-  const phoneNumber = parsePhoneNumberFromString(String(value || ""), "IL");
-  return phoneNumber?.isValid() ? String(phoneNumber.number) : null;
-}
-
-export const normalizeIsraeliPhone = normalizeInternationalPhone;
-
 export function sanitizeSource(value) {
   const clean = String(value || "party-qr").trim().toLowerCase();
   return /^[a-z0-9_-]{1,64}$/.test(clean) ? clean : "party-qr";
@@ -81,9 +72,9 @@ export function validateGiftPayload(raw, now = new Date()) {
   const clientName = String(raw.clientName || "").trim();
   const city = String(raw.city || "").trim();
   const hostCode = String(raw.hostCode || "").trim();
-  const phone = normalizeInternationalPhone(raw.phone);
-  if (clientName.length < 2 || clientName.length > 120) return { error: "invalid_name" };
-  if (city.length < 2 || city.length > 160) return { error: "invalid_city" };
+  const phone = String(raw.phone || "").trim();
+  if (!clientName) return { error: "invalid_name" };
+  if (!city) return { error: "invalid_city" };
   if (!HOST_CODES.has(hostCode)) return { error: "invalid_host" };
   if (!phone) return { error: "invalid_phone" };
   if (
@@ -101,7 +92,7 @@ export function validateGiftPayload(raw, now = new Date()) {
     const birthdayDay = Number(item?.birthdayDay);
     const birthdayMonth = Number(item?.birthdayMonth);
     if (!CHILD_GENDERS.has(gender)) return { error: "invalid_child_gender" };
-    if (!Number.isInteger(ageTurning) || ageTurning < 1 || ageTurning > 100) {
+    if (!Number.isInteger(ageTurning) || ageTurning < 1 || ageTurning > 10) {
       return { error: "invalid_child_age" };
     }
     if (
