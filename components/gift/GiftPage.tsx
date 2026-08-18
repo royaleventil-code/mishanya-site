@@ -81,6 +81,7 @@ declare global {
 
 const AGES = Array.from({ length: 10 }, (_, index) => index + 1);
 const MONTHS = Array.from({ length: 12 }, (_, index) => index + 1);
+const BIRTHDAY_DAYS = Array.from({ length: 31 }, (_, index) => index + 1);
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim();
 
 const COPY = {
@@ -125,6 +126,7 @@ const COPY = {
     age: "Возраст",
     ageHint: "От 1 до 10 лет",
     month: "Месяц рождения",
+    day: "Число рождения",
     months: [
       "Январь",
       "Февраль",
@@ -144,7 +146,7 @@ const COPY = {
     submit: "Закрепить скидку",
     submitting: "Закрепляем скидку…",
     invalidHost: "Выберите, кто был ведущим на празднике",
-    invalidBirthday: "Выберите пол, возраст и месяц рождения",
+    invalidBirthday: "Выберите пол, возраст, месяц и число рождения",
     verificationPending: "Подтвердите, что форму заполняет человек",
     formError: "Не удалось сохранить подарок. Попробуйте ещё раз.",
     successTitle: "Скидка сохранена",
@@ -197,6 +199,7 @@ const COPY = {
     age: "גיל",
     ageHint: "מגיל שנה עד 10",
     month: "חודש לידה",
+    day: "יום בחודש",
     months: [
       "ינואר",
       "פברואר",
@@ -216,7 +219,7 @@ const COPY = {
     submit: "שמירת ההנחה",
     submitting: "שומרים את ההנחה…",
     invalidHost: "בחרו מי היה המפעיל או המפעילה באירוע",
-    invalidBirthday: "בחרו מין, גיל וחודש לידה",
+    invalidBirthday: "בחרו מין, גיל, חודש ויום לידה",
     verificationPending: "אשרו שהטופס נשלח על ידי אדם",
     formError: "לא הצלחנו לשמור את המתנה. נסו שוב.",
     successTitle: "ההנחה נשמרה",
@@ -277,16 +280,26 @@ function nextBirthday(day: number, month: number, today = new Date()) {
   return null;
 }
 
+function birthdayDayLimit(monthValue: string) {
+  const month = Number(monthValue);
+  if (!Number.isInteger(month) || month < 1 || month > 12) return 31;
+  if (month === 2) return 29;
+  if ([4, 6, 9, 11].includes(month)) return 30;
+  return 31;
+}
+
 function childPayload(
   gender: ChildGender,
   ageValue: string,
   monthValue: string,
+  dayValue: string,
 ): GiftPayloadChild | null {
   const ageTurning = Number(ageValue);
   const month = Number(monthValue);
-  const day = 1;
+  const day = Number(dayValue);
   if (!Number.isInteger(ageTurning) || ageTurning < 1 || ageTurning > 10) return null;
   if (!Number.isInteger(month) || month < 1 || month > 12) return null;
+  if (!Number.isInteger(day) || day < 1 || day > birthdayDayLimit(monthValue)) return null;
   const birthday = nextBirthday(day, month);
   if (!birthday) return null;
   return {
@@ -331,19 +344,25 @@ function ChildDetailsPicker({
   gender,
   age,
   month,
+  day,
   onGenderChange,
   onAgeChange,
   onMonthChange,
+  onDayChange,
   copy,
 }: {
   gender: ChildGenderChoice;
   age: string;
   month: string;
+  day: string;
   onGenderChange: (value: ChildGender) => void;
   onAgeChange: (value: string) => void;
   onMonthChange: (value: string) => void;
+  onDayChange: (value: string) => void;
   copy: (typeof COPY)[Language];
 }) {
+  const availableDays = BIRTHDAY_DAYS.slice(0, birthdayDayLimit(month));
+
   return (
     <section className="mt-6 rounded-[22px] border border-zinc-200 bg-[#fffdf8] p-4 sm:p-5">
       <h3 className="text-base font-black text-zinc-950">{copy.childDetails}</h3>
@@ -400,6 +419,21 @@ function ChildDetailsPicker({
           ))}
         </div>
       </fieldset>
+
+      <fieldset className="mt-5">
+        <legend className="text-sm font-black text-zinc-900">{copy.day}</legend>
+        <div className="mt-2 grid grid-cols-7 gap-2">
+          {availableDays.map((value) => (
+            <ChoiceButton
+              key={value}
+              selected={day === String(value)}
+              onClick={() => onDayChange(String(value))}
+            >
+              {value}
+            </ChoiceButton>
+          ))}
+        </div>
+      </fieldset>
     </section>
   );
 }
@@ -445,6 +479,7 @@ export function GiftPage() {
   const [childGender, setChildGender] = useState<ChildGenderChoice>("");
   const [childAge, setChildAge] = useState("");
   const [birthdayMonth, setBirthdayMonth] = useState("");
+  const [birthdayDay, setBirthdayDay] = useState("");
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [resultGift, setResultGift] = useState<GiftCode | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -673,7 +708,9 @@ export function GiftPage() {
       return;
     }
 
-    const child = childGender ? childPayload(childGender, childAge, birthdayMonth) : null;
+    const child = childGender
+      ? childPayload(childGender, childAge, birthdayMonth, birthdayDay)
+      : null;
     if (!child) {
       setSubmitState("error");
       setErrorMessage(copy.invalidBirthday);
@@ -977,6 +1014,7 @@ export function GiftPage() {
                     gender={childGender}
                     age={childAge}
                     month={birthdayMonth}
+                    day={birthdayDay}
                     onGenderChange={(value) => {
                       setChildGender(value);
                       setErrorMessage("");
@@ -986,7 +1024,14 @@ export function GiftPage() {
                       setErrorMessage("");
                     }}
                     onMonthChange={(value) => {
+                      if (Number(birthdayDay) > birthdayDayLimit(value)) {
+                        setBirthdayDay("");
+                      }
                       setBirthdayMonth(value);
+                      setErrorMessage("");
+                    }}
+                    onDayChange={(value) => {
+                      setBirthdayDay(value);
                       setErrorMessage("");
                     }}
                     copy={copy}
@@ -1010,7 +1055,8 @@ export function GiftPage() {
                       submitState === "submitting" ||
                       !childGender ||
                       !childAge ||
-                      !birthdayMonth
+                      !birthdayMonth ||
+                      !birthdayDay
                     }
                     className="mt-6 flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-zinc-950 px-6 text-base font-black text-white shadow-[0_12px_30px_rgba(15,15,20,0.22)] transition-[background-color,transform,opacity] duration-100 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5e5ce6]"
                   >
