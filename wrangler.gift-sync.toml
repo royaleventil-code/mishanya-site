@@ -4,7 +4,7 @@ account_id = "1171f931de9f44c2a0375a9684dd40c5"
 compatibility_date = "2026-05-21"
 
 [vars]
-BITRIX_QR_SOURCE_ID = "QR_PARTY_GIFT"
+BITRIX_QR_SOURCE_ID = "REPEAT_SALE"
 RSVP_PUBLIC_ORIGIN = "https://mishanya-show.com"
 
 [[d1_databases]]

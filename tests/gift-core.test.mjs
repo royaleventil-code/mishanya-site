@@ -7,6 +7,7 @@ import {
   decryptPayload,
   encryptPayload,
   giftWaitUntilIso,
+  syncBitrix,
   subtractDaysIso,
   validateGiftPayload,
 } from "../shared/gift-core.js";
@@ -95,7 +96,7 @@ test("up to eight children are accepted and every additional child is added to t
     submittedAt: now.toISOString(),
     validUntil: addOneYearIso(now.toISOString()),
   };
-  const fields = buildLeadFields(result.value, claim, "QR_PARTY_GIFT", {});
+  const fields = buildLeadFields(result.value, claim, "REPEAT_SALE", {});
 
   assert.equal(result.error, undefined);
   assert.equal(result.value.children.length, 4);
@@ -135,7 +136,7 @@ test("only the child outside the main lead fields is added to the note", () => {
     submittedAt: now.toISOString(),
     validUntil: addOneYearIso(now.toISOString()),
   };
-  const fields = buildLeadFields(result.value, claim, "QR_PARTY_GIFT", {});
+  const fields = buildLeadFields(result.value, claim, "REPEAT_SALE", {});
 
   assert.equal(result.value.primaryChildIndex, 1);
   assert.equal(fields.BIRTHDATE, "2026-08-20");
@@ -299,9 +300,9 @@ test("lead is created in NEW while one child stays only in lead fields", () => {
     submittedAt: now.toISOString(),
     validUntil: addOneYearIso(now.toISOString()),
   };
-  const fields = buildLeadFields(result.value, claim, "QR_PARTY_GIFT", {});
+  const fields = buildLeadFields(result.value, claim, "REPEAT_SALE", {});
   assert.equal(fields.STATUS_ID, "NEW");
-  assert.equal(fields.SOURCE_ID, "QR_PARTY_GIFT");
+  assert.equal(fields.SOURCE_ID, "REPEAT_SALE");
   assert.deepEqual(fields.PHONE, [{ VALUE: "0502345678", VALUE_TYPE: "WORK" }]);
   assert.equal(fields.UF_CRM_1644327962757, 44);
   assert.equal(fields.UF_CRM_1644329391894, 7);
@@ -326,4 +327,94 @@ test("encrypted payload round-trips", async () => {
   const encrypted = await encryptPayload(payload, "test-secret-value");
   assert.notEqual(encrypted, JSON.stringify(payload));
   assert.deepEqual(await decryptPayload(encrypted, "test-secret-value"), payload);
+});
+
+test("Bitrix sync rejects a source code that is missing from the source directory", async () => {
+  const payload = validateGiftPayload({
+    language: "ru",
+    sourceCode: "party-qr",
+    giftCode: "discount-200",
+    clientName: "Тест",
+    city: "Хайфа",
+    hostCode: "mishanya",
+    phone: "0502345678",
+    children: [{ gender: "boy", ageTurning: 7, birthdayDay: 1, birthdayMonth: 12 }],
+  }, now).value;
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url: String(url), body: JSON.parse(String(options?.body || "{}")) });
+    return new Response(JSON.stringify({ result: [] }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+
+  try {
+    await assert.rejects(
+      syncBitrix(payload, { id: "claim-invalid-source", submittedAt: now.toISOString() }, {
+        BITRIX_WEBHOOK_URL: "https://example.test/rest/1/token",
+        BITRIX_QR_SOURCE_ID: "QR_PARTY_GIFT",
+      }),
+      /Bitrix source QR_PARTY_GIFT is not registered/,
+    );
+    assert.equal(calls.length, 1);
+    assert.match(calls[0].url, /crm\.status\.list\.json$/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("Bitrix sync repairs source and wait-until on an existing QR lead and verifies both", async () => {
+  const payload = validateGiftPayload({
+    language: "ru",
+    sourceCode: "party-qr",
+    giftCode: "discount-200",
+    clientName: "Тест",
+    city: "Хайфа",
+    hostCode: "mishanya",
+    phone: "0502345678",
+    children: [{ gender: "girl", ageTurning: 6, birthdayDay: 1, birthdayMonth: 12 }],
+  }, now).value;
+  const responses = [
+    [{ STATUS_ID: "REPEAT_SALE", NAME: "QR-код с праздника" }],
+    [{ ID: "55176", SOURCE_ID: "QR_PARTY_GIFT", UF_CRM_1644332749977: "" }],
+    true,
+    {
+      ID: "55176",
+      SOURCE_ID: "REPEAT_SALE",
+      UF_CRM_1644332749977: "2026-10-30T00:00:00+03:00",
+    },
+  ];
+  const calls = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url: String(url), body: JSON.parse(String(options?.body || "{}")) });
+    return new Response(JSON.stringify({ result: responses.shift() }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+
+  try {
+    const result = await syncBitrix(
+      payload,
+      { id: "claim-existing", submittedAt: now.toISOString() },
+      {
+        BITRIX_WEBHOOK_URL: "https://example.test/rest/1/token",
+        BITRIX_QR_SOURCE_ID: "REPEAT_SALE",
+      },
+    );
+    assert.deepEqual(result, { status: "created", leadId: 55176 });
+    assert.match(calls[2].url, /crm\.lead\.update\.json$/);
+    assert.deepEqual(calls[2].body, {
+      id: 55176,
+      fields: {
+        SOURCE_ID: "REPEAT_SALE",
+        UF_CRM_1644332749977: "2026-10-30",
+      },
+    });
+    assert.match(calls[3].url, /crm\.lead\.get\.json$/);
+    assert.equal(responses.length, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

@@ -16,6 +16,7 @@ const RESPONSIBLE_SERGEY = 3828;
 const NEW_LEAD_STAGE = "NEW";
 const BIRTHDAY_TYPE = 808;
 const SELECTED_GIFT_FIELD = "UF_CRM_1784446465040";
+const WAIT_UNTIL_FIELD = "UF_CRM_1644332749977";
 const MAX_GIFT_CHILDREN = 8;
 const SOURCE_NAME = "QR-код с праздника";
 const GIFT_LABELS = {
@@ -329,7 +330,7 @@ export function buildLeadFields(payload, claim, sourceId, duplicates = {}) {
     UTM_CAMPAIGN: payload.sourceCode,
     BIRTHDATE: primary.nextBirthday,
     UF_CRM_1649234588017: primary.nextBirthday,
-    UF_CRM_1644332749977: giftWaitUntilIso(primary.nextBirthday),
+    [WAIT_UNTIL_FIELD]: giftWaitUntilIso(primary.nextBirthday),
     UF_CRM_1644328015350: payload.city,
     UF_CRM_1644327962757: primary.gender === "boy" ? 44 : 46,
     UF_CRM_1644329391894: primary.ageTurning,
@@ -365,17 +366,71 @@ async function findLeadByClaim(env, claimId) {
       "=ORIGINATOR_ID": "mishanya-gift",
       "=ORIGIN_ID": claimId,
     },
-    select: ["ID"],
+    select: ["ID", "SOURCE_ID", WAIT_UNTIL_FIELD],
     start: 0,
   });
-  return Array.isArray(leads) && leads[0]?.ID ? Number(leads[0].ID) : null;
+  if (!Array.isArray(leads) || !leads[0]?.ID) return null;
+  return {
+    id: Number(leads[0].ID),
+    sourceId: String(leads[0].SOURCE_ID || "").trim(),
+    waitUntil: String(leads[0][WAIT_UNTIL_FIELD] || "").slice(0, 10),
+  };
+}
+
+async function assertBitrixSourceExists(env, sourceId) {
+  const statuses = await bitrixCall(env, "crm.status.list", {
+    filter: { ENTITY_ID: "SOURCE", STATUS_ID: sourceId },
+  });
+  const exists = Array.isArray(statuses)
+    && statuses.some((status) => String(status?.STATUS_ID || "").trim() === sourceId);
+  if (!exists) throw new Error(`Bitrix source ${sourceId} is not registered`);
+}
+
+function normalizedLeadTracking(lead) {
+  return {
+    sourceId: String(lead?.SOURCE_ID ?? lead?.sourceId ?? "").trim(),
+    waitUntil: String(lead?.[WAIT_UNTIL_FIELD] ?? lead?.waitUntil ?? "").slice(0, 10),
+  };
+}
+
+function assertLeadTracking(lead, leadId, sourceId, waitUntil) {
+  const actual = normalizedLeadTracking(lead);
+  if (actual.sourceId !== sourceId) {
+    throw new Error(`Bitrix lead ${leadId} source mismatch: ${actual.sourceId || "empty"}`);
+  }
+  if (actual.waitUntil !== waitUntil) {
+    throw new Error(`Bitrix lead ${leadId} wait-until mismatch: ${actual.waitUntil || "empty"}`);
+  }
+}
+
+async function ensureLeadTracking(env, leadId, sourceId, waitUntil, knownLead = null) {
+  const current = normalizedLeadTracking(
+    knownLead || await bitrixCall(env, "crm.lead.get", { id: leadId }),
+  );
+  const fields = {};
+  if (current.sourceId !== sourceId) fields.SOURCE_ID = sourceId;
+  if (current.waitUntil !== waitUntil) fields[WAIT_UNTIL_FIELD] = waitUntil;
+
+  if (Object.keys(fields).length) {
+    await bitrixCall(env, "crm.lead.update", { id: leadId, fields });
+    const verifiedLead = await bitrixCall(env, "crm.lead.get", { id: leadId });
+    assertLeadTracking(verifiedLead, leadId, sourceId, waitUntil);
+    return;
+  }
+  assertLeadTracking(current, leadId, sourceId, waitUntil);
 }
 
 export async function syncBitrix(payload, claim, env) {
   const sourceId = String(env.BITRIX_QR_SOURCE_ID || "").trim();
   if (!sourceId) throw new Error("BITRIX_QR_SOURCE_ID is not configured");
-  const existingClaimLeadId = await findLeadByClaim(env, claim.id);
-  if (existingClaimLeadId) return { status: "created", leadId: existingClaimLeadId };
+  await assertBitrixSourceExists(env, sourceId);
+  const primary = payload.children[payload.primaryChildIndex];
+  const waitUntil = giftWaitUntilIso(primary.nextBirthday);
+  const existingClaimLead = await findLeadByClaim(env, claim.id);
+  if (existingClaimLead) {
+    await ensureLeadTracking(env, existingClaimLead.id, sourceId, waitUntil, existingClaimLead);
+    return { status: "created", leadId: existingClaimLead.id };
+  }
 
   const duplicates = await bitrixCall(env, "crm.duplicate.findbycomm", {
     type: "PHONE",
@@ -388,5 +443,6 @@ export async function syncBitrix(payload, claim, env) {
     }),
   );
   if (!leadId) throw new Error("Bitrix returned an invalid lead id");
+  await ensureLeadTracking(env, leadId, sourceId, waitUntil);
   return { status: "created", leadId };
 }
