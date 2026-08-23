@@ -5,6 +5,10 @@ import { notFound } from "next/navigation";
 import { PartyPopper } from "lucide-react";
 import { BAR_MITZVAH_MEDIA, BAR_MITZVAH_COPY, BAR_MITZVAH_PROMO } from "@/data/bar-mitzvah";
 import { BidiText } from "@/components/BidiText";
+import { EmphasisText } from "@/components/EmphasisText";
+import { FeatureTiles } from "@/components/FeatureTiles";
+import { StepList } from "@/components/StepList";
+import { accentAt, mirrorAngle } from "@/components/AccentPalette";
 import { EventVideoGallery } from "@/components/EventVideoGallery";
 import { LiteYouTube } from "@/components/LiteYouTube";
 import { SiteFooter } from "@/components/home/SiteFooter";
@@ -107,6 +111,7 @@ export default async function BarMitzvahPage({ params }: Props) {
     BAR_MITZVAH_MEDIA.photos.length > 0 &&
     (locale !== "he" || BAR_MITZVAH_MEDIA.photos.every((photo) => photo.altHe));
   const videos = getEventVideos("bar-mitzvah");
+  const cardAngle = mirrorAngle(158, locale);
   // экранируем «<»: текст с "</script>" не должен ломать inline-скрипт
   const jsonLd = JSON.stringify(barMitzvahJsonLd(locale)).replace(/</g, "\\u003c");
 
@@ -152,8 +157,9 @@ export default async function BarMitzvahPage({ params }: Props) {
 
           <div className="mt-4 space-y-3 text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
             {copy.intro.map((paragraph, index) => (
-              <p key={index}>
-                <BidiText locale={locale}>{paragraph}</BidiText>
+              // первый абзац - лид: крупнее остальных, чтобы взгляд зацепился
+              <p key={index} className={index === 0 ? "text-[17px] leading-relaxed" : undefined}>
+                <EmphasisText locale={locale}>{paragraph}</EmphasisText>
               </p>
             ))}
           </div>
@@ -167,25 +173,54 @@ export default async function BarMitzvahPage({ params }: Props) {
               <p className="text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
                 <BidiText locale={locale}>{copy.entranceIntro}</BidiText>
               </p>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 {[
-                  { title: copy.entranceGirlTitle, items: copy.entranceGirlItems },
-                  { title: copy.entranceBoyTitle, items: copy.entranceBoyItems },
+                  {
+                    title: copy.entranceGirlTitle,
+                    items: copy.entranceGirlItems,
+                    accent: "var(--color-girl)",
+                    surface: `linear-gradient(${cardAngle}deg, #ffeaf0 0%, #ffffff 58%, #fff7f9 100%)`,
+                    shadow: "0 22px 54px rgba(255,55,95,0.2), 0 6px 16px rgba(15,15,20,0.08)",
+                    glow: "rgba(255,55,95,0.16)",
+                  },
+                  {
+                    title: copy.entranceBoyTitle,
+                    items: copy.entranceBoyItems,
+                    accent: "var(--color-boy)",
+                    surface: `linear-gradient(${cardAngle}deg, #e8f3ff 0%, #ffffff 58%, #f7fbff 100%)`,
+                    shadow: "0 22px 54px rgba(10,132,255,0.22), 0 6px 16px rgba(15,15,20,0.08)",
+                    glow: "rgba(10,132,255,0.16)",
+                  },
                 ].map((group) => (
                   <div
                     key={group.title}
-                    className="rounded-2xl px-4 py-3"
-                    style={{ background: "rgba(255,255,255,0.55)", border: "1px solid rgba(0,0,0,0.06)" }}
+                    className="relative overflow-hidden rounded-[26px] border border-white/70 p-5 ring-1 ring-white/70 transition-transform duration-500 [transform-style:preserve-3d] hover:[transform:rotateX(2deg)_rotateY(-3deg)_translateY(-4px)]"
+                    style={{ background: group.surface, boxShadow: group.shadow }}
                   >
-                    <h3 className="text-[15px] font-semibold leading-snug">
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[linear-gradient(135deg,rgba(255,255,255,0.85)_0%,rgba(255,255,255,0.25)_34%,rgba(255,255,255,0)_66%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.95),inset_0_-26px_46px_rgba(15,15,20,0.06)]"
+                    />
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute inset-x-0 top-0 h-1.5"
+                      style={{ background: group.accent }}
+                    />
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full blur-2xl"
+                      style={{ background: group.glow }}
+                    />
+                    <h3 className="relative text-base font-bold leading-snug">
                       <BidiText locale={locale}>{group.title}</BidiText>
                     </h3>
-                    <ul className="mt-2 space-y-1.5 text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
+                    <ul className="relative mt-3 space-y-2 text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
                       {group.items.map((item, index) => (
-                        <li key={index} className="flex gap-2">
+                        <li key={index} className="flex gap-2.5">
                           <span
                             aria-hidden
-                            className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-ink-soft)]"
+                            className="mt-[8px] h-1.5 w-1.5 shrink-0 rounded-full"
+                            style={{ background: group.accent }}
                           />
                           <BidiText locale={locale}>{item}</BidiText>
                         </li>
@@ -205,17 +240,7 @@ export default async function BarMitzvahPage({ params }: Props) {
             <h2 className="mb-3 text-base font-semibold">
               <BidiText locale={locale}>{copy.whatTitle}</BidiText>
             </h2>
-            <ul className="space-y-2 text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
-              {copy.whatItems.map((item, index) => (
-                <li key={index} className="flex gap-2">
-                  <span
-                    aria-hidden
-                    className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-ink-soft)]"
-                  />
-                  <BidiText locale={locale}>{item}</BidiText>
-                </li>
-              ))}
-            </ul>
+            <FeatureTiles items={copy.whatItems} locale={locale} />
           </section>
 
           {/* Структура вечера */}
@@ -226,28 +251,7 @@ export default async function BarMitzvahPage({ params }: Props) {
             <p className="text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
               <BidiText locale={locale}>{copy.structureIntro}</BidiText>
             </p>
-            <ol
-              className="mt-3 overflow-hidden rounded-2xl"
-              style={{ background: "rgba(255,255,255,0.55)", border: "1px solid rgba(0,0,0,0.06)" }}
-            >
-              {copy.structureSteps.map((step, index) => (
-                <li
-                  key={index}
-                  className="flex gap-3 px-4 py-3"
-                  style={{ borderTop: index === 0 ? "none" : "0.5px solid rgba(0,0,0,0.08)" }}
-                >
-                  <span
-                    aria-hidden
-                    className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--color-ink)] text-xs font-bold text-white"
-                  >
-                    {index + 1}
-                  </span>
-                  <span className="text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
-                    <BidiText locale={locale}>{step}</BidiText>
-                  </span>
-                </li>
-              ))}
-            </ol>
+            <StepList steps={copy.structureSteps} locale={locale} />
           </section>
 
           {/* Фото событий (HE-гейт: пока altHe пусты, на /he блок скрыт) */}
@@ -292,16 +296,23 @@ export default async function BarMitzvahPage({ params }: Props) {
             <h2 className="mb-3 text-base font-semibold">
               <BidiText locale={locale}>{copy.casesTitle}</BidiText>
             </h2>
-            <ul className="space-y-2 text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
-              {copy.cases.map((item, index) => (
-                <li key={index} className="flex gap-2">
-                  <span
-                    aria-hidden
-                    className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-ink-soft)]"
-                  />
-                  <BidiText locale={locale}>{item}</BidiText>
-                </li>
-              ))}
+            <ul className="flex flex-wrap gap-2">
+              {copy.cases.map((item, index) => {
+                const accent = accentAt(index);
+                return (
+                  <li
+                    key={index}
+                    className="flex items-center gap-2 rounded-full border border-white/70 bg-white px-3.5 py-2 text-sm leading-snug text-[var(--color-ink-soft)] shadow-[0_4px_14px_rgba(15,15,20,0.06)]"
+                  >
+                    <span
+                      aria-hidden
+                      className="h-2 w-2 shrink-0 rounded-full"
+                      style={{ background: accent, boxShadow: `0 0 0 3px ${accent}1f` }}
+                    />
+                    <BidiText locale={locale}>{item}</BidiText>
+                  </li>
+                );
+              })}
             </ul>
           </section>
 

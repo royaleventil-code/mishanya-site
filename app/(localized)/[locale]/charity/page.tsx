@@ -10,6 +10,8 @@ import {
   CHARITY_VIDEO_ID,
 } from "@/data/charity";
 import { BidiText } from "@/components/BidiText";
+import { EmphasisText } from "@/components/EmphasisText";
+import { FeatureTiles } from "@/components/FeatureTiles";
 import { SiteFooter } from "@/components/home/SiteFooter";
 import { LiteYouTube } from "@/components/LiteYouTube";
 import { PublicHeader } from "@/components/PublicHeader";
@@ -102,8 +104,9 @@ export default async function CharityPage({ params }: Props) {
 
           <div className="mt-4 space-y-3 text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
             {copy.intro.map((paragraph, index) => (
-              <p key={index}>
-                <BidiText locale={locale}>{paragraph}</BidiText>
+              // первый абзац - лид: крупнее остальных, чтобы взгляд зацепился
+              <p key={index} className={index === 0 ? "text-[17px] leading-relaxed" : undefined}>
+                <EmphasisText locale={locale}>{paragraph}</EmphasisText>
               </p>
             ))}
           </div>
@@ -113,17 +116,7 @@ export default async function CharityPage({ params }: Props) {
             <h2 className="mb-3 text-base font-semibold">
               <BidiText locale={locale}>{copy.whatTitle}</BidiText>
             </h2>
-            <ul className="space-y-2 text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
-              {copy.whatItems.map((item, index) => (
-                <li key={index} className="flex gap-2">
-                  <span
-                    aria-hidden
-                    className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-ink-soft)]"
-                  />
-                  <BidiText locale={locale}>{item}</BidiText>
-                </li>
-              ))}
-            </ul>
+            <FeatureTiles items={copy.whatItems} locale={locale} />
           </section>
 
           {/* Наши праздники для подопечных фонда */}

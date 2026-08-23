@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { School } from "lucide-react";
 import { BUSINESS_COPY } from "@/data/b2b";
 import { BidiText } from "@/components/BidiText";
+import { EmphasisText } from "@/components/EmphasisText";
+import { accentAt, mirrorAngle } from "@/components/AccentPalette";
 import { SiteFooter } from "@/components/home/SiteFooter";
 import { ProgramCatalogCard } from "@/components/ProgramCatalogCard";
 import { PublicHeader } from "@/components/PublicHeader";
@@ -82,6 +84,7 @@ export default async function BusinessPage({ params }: Props) {
 
   const dict = getDictionary(locale);
   const waHref = whatsappLink(copy.waMessage);
+  const cardAngle = mirrorAngle(158, locale);
   // «Что привозим»: пункты-программы показываем каталожными карточками,
   // остальные (без /programs/-ссылки) остаются текстовым списком
   const offerPrograms = copy.offer
@@ -125,8 +128,9 @@ export default async function BusinessPage({ params }: Props) {
 
           <div className="mt-4 space-y-3 text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
             {copy.intro.map((paragraph, index) => (
-              <p key={index}>
-                <BidiText locale={locale}>{paragraph}</BidiText>
+              // первый абзац - лид: крупнее остальных, чтобы взгляд зацепился
+              <p key={index} className={index === 0 ? "text-[17px] leading-relaxed" : undefined}>
+                <EmphasisText locale={locale}>{paragraph}</EmphasisText>
               </p>
             ))}
           </div>
@@ -136,17 +140,27 @@ export default async function BusinessPage({ params }: Props) {
             <h2 className="mb-3 text-base font-semibold">
               <BidiText locale={locale}>{copy.audienceTitle}</BidiText>
             </h2>
-            <ul className="grid gap-3 sm:grid-cols-2">
-              {copy.audience.map((item) => (
+            <ul className="grid gap-4 sm:grid-cols-2">
+              {copy.audience.map((item, index) => (
                 <li
                   key={item.title}
-                  className="rounded-2xl p-4"
-                  style={{ background: "rgba(255,255,255,0.55)", border: "1px solid rgba(0,0,0,0.06)" }}
+                  className="relative overflow-hidden rounded-[26px] border border-white/70 p-5 ring-1 ring-white/70 shadow-[0_16px_40px_rgba(15,15,20,0.08)] transition-transform duration-500 hover:-translate-y-1"
+                  style={{ background: `linear-gradient(${cardAngle}deg, ${accentAt(index)}14 0%, #ffffff 60%)` }}
                 >
-                  <h3 className="text-[15px] font-semibold leading-snug">
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-x-0 top-0 h-1.5"
+                    style={{ background: accentAt(index) }}
+                  />
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full blur-2xl"
+                    style={{ background: `${accentAt(index)}29` }}
+                  />
+                  <h3 className="relative text-base font-bold leading-snug">
                     <BidiText locale={locale}>{item.title}</BidiText>
                   </h3>
-                  <p className="mt-1 text-sm leading-snug text-[var(--color-ink-soft)]">
+                  <p className="relative mt-1.5 text-sm leading-relaxed text-[var(--color-ink-soft)]">
                     <BidiText locale={locale}>{item.text}</BidiText>
                   </p>
                 </li>
@@ -166,10 +180,17 @@ export default async function BusinessPage({ params }: Props) {
                 </li>
               ))}
             </ul>
-            <ul className="mt-4 space-y-2 text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
+            <ul className="mt-4 flex flex-wrap gap-2 text-[15px] leading-snug text-[var(--color-ink-soft)]">
               {offerRest.map((item, index) => (
-                <li key={index} className="flex gap-2">
-                  <span aria-hidden className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-ink-soft)]" />
+                <li
+                  key={index}
+                  className="flex items-center gap-2 rounded-full border border-white/70 bg-white px-3.5 py-2 text-sm shadow-[0_4px_14px_rgba(15,15,20,0.06)]"
+                >
+                  <span
+                    aria-hidden
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ background: accentAt(index), boxShadow: `0 0 0 3px ${accentAt(index)}1f` }}
+                  />
                   {item.href ? (
                     <Link
                       href={localePath(locale, item.href)}

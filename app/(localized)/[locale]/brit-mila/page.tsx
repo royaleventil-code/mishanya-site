@@ -6,6 +6,9 @@ import { Baby, Heart } from "lucide-react";
 import { BRIT_MILA_MEDIA, BRIT_MILA_COPY, BRIT_MILA_OPTION_MEDIA } from "@/data/brit-mila";
 import { BidiText } from "@/components/BidiText";
 import { EmphasisText } from "@/components/EmphasisText";
+import { FeatureTiles } from "@/components/FeatureTiles";
+import { StepList } from "@/components/StepList";
+import { mirrorAngle } from "@/components/AccentPalette";
 import { LiteYouTube } from "@/components/LiteYouTube";
 import { SiteFooter } from "@/components/home/SiteFooter";
 import { PublicHeader } from "@/components/PublicHeader";
@@ -24,9 +27,6 @@ type Props = {
   params: Promise<{ locale: string }>;
 };
 
-/** Бренд-палитра сайта: ею красим шаги и плитки, чтобы страница не была серой */
-const ACCENTS = ["#0a84ff", "#ff375f", "#ff9f0a", "#5e5ce6"] as const;
-const accentAt = (index: number) => ACCENTS[index % ACCENTS.length];
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale: localeParam } = await params;
@@ -134,9 +134,7 @@ export default async function BritMilaPage({ params }: Props) {
     BRIT_MILA_MEDIA.photos.length > 0 &&
     (locale !== "he" || BRIT_MILA_MEDIA.photos.every((photo) => photo.altHe));
   // экранируем «<»: текст с "</script>" не должен ломать inline-скрипт
-  // linear-gradient не знает про направление письма: на иврите зеркалим угол вручную,
-  // иначе цветная подложка уходит в сторону, противоположную полоске
-  const stepGradientAngle = locale === "he" ? 260 : 100;
+  const cardAngle = mirrorAngle(158, locale);
   const jsonLd = JSON.stringify(britMilaJsonLd(locale)).replace(/</g, "\\u003c");
 
   return (
@@ -197,7 +195,7 @@ export default async function BritMilaPage({ params }: Props) {
                     items: copy.occasionsBoyItems,
                     Icon: Baby,
                     accent: "var(--color-boy)",
-                    surface: `linear-gradient(${locale === "he" ? 202 : 158}deg, #e8f3ff 0%, #ffffff 58%, #f7fbff 100%)`,
+                    surface: `linear-gradient(${cardAngle}deg, #e8f3ff 0%, #ffffff 58%, #f7fbff 100%)`,
                     shadow: "0 22px 54px rgba(10,132,255,0.22), 0 6px 16px rgba(15,15,20,0.08)",
                     glow: "rgba(10,132,255,0.16)",
                   },
@@ -206,7 +204,7 @@ export default async function BritMilaPage({ params }: Props) {
                     items: copy.occasionsGirlItems,
                     Icon: Heart,
                     accent: "var(--color-girl)",
-                    surface: `linear-gradient(${locale === "he" ? 202 : 158}deg, #ffeaf0 0%, #ffffff 58%, #fff7f9 100%)`,
+                    surface: `linear-gradient(${cardAngle}deg, #ffeaf0 0%, #ffffff 58%, #fff7f9 100%)`,
                     shadow: "0 22px 54px rgba(255,55,95,0.2), 0 6px 16px rgba(15,15,20,0.08)",
                     glow: "rgba(255,55,95,0.16)",
                   },
@@ -270,39 +268,7 @@ export default async function BritMilaPage({ params }: Props) {
             <h2 className="mb-3 text-base font-semibold">
               <BidiText locale={locale}>{copy.whatTitle}</BidiText>
             </h2>
-            {/* Плитки вместо списка: каждая услуга - отдельная «кнопка» с цветной меткой */}
-            <ul className="grid gap-2.5 sm:grid-cols-2">
-              {copy.whatItems.map((item, index) => {
-                // копирайт написан как «Заголовок: подробности» - разбираем на две части
-                const separator = item.indexOf(": ");
-                const title = separator > 0 ? item.slice(0, separator) : item;
-                const detail = separator > 0 ? item.slice(separator + 2) : "";
-                const accent = accentAt(index);
-
-                return (
-                  <li
-                    key={index}
-                    className="group/tile rounded-2xl border border-white/70 bg-white px-4 py-3 shadow-[0_6px_18px_rgba(15,15,20,0.06)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(15,15,20,0.1)]"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span
-                        aria-hidden
-                        className="h-2.5 w-2.5 shrink-0 rounded-full"
-                        style={{ background: accent, boxShadow: `0 0 0 4px ${accent}1f` }}
-                      />
-                      <span className="text-[15px] font-bold leading-snug text-[var(--color-ink)]">
-                        <BidiText locale={locale}>{title}</BidiText>
-                      </span>
-                    </span>
-                    {detail && (
-                      <span className="mt-1 block text-sm leading-relaxed text-[var(--color-ink-soft)]">
-                        <BidiText locale={locale}>{detail}</BidiText>
-                      </span>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
+            <FeatureTiles items={copy.whatItems} locale={locale} />
           </section>
 
           {/* Опции: карточки, которые клиент выбирает под свой праздник */}
@@ -369,39 +335,7 @@ export default async function BritMilaPage({ params }: Props) {
             <p className="text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
               <BidiText locale={locale}>{copy.structureIntro}</BidiText>
             </p>
-            {/* Каждый шаг - своя цветная полоса с крупной цифрой: сценарий читается как маршрут */}
-            <ol className="mt-3 space-y-2.5">
-              {copy.structureSteps.map((step, index) => {
-                const accent = accentAt(index);
-
-                return (
-                  <li
-                    key={index}
-                    className="relative overflow-hidden rounded-2xl border border-white/70 py-3 pe-4 ps-5 shadow-[0_6px_18px_rgba(15,15,20,0.05)]"
-                    style={{ background: `linear-gradient(${stepGradientAngle}deg, ${accent}14 0%, #ffffff 62%)` }}
-                  >
-                    {/* цветная полоска слева (справа на иврите) */}
-                    <span
-                      aria-hidden
-                      className="pointer-events-none absolute inset-y-0 start-0 w-1.5"
-                      style={{ background: accent }}
-                    />
-                    <span className="flex items-start gap-3">
-                      <span
-                        aria-hidden
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl text-base font-black text-white"
-                        style={{ background: accent, boxShadow: `0 8px 18px ${accent}59` }}
-                      >
-                        {index + 1}
-                      </span>
-                      <span className="pt-1 text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
-                        <BidiText locale={locale}>{step}</BidiText>
-                      </span>
-                    </span>
-                  </li>
-                );
-              })}
-            </ol>
+            <StepList steps={copy.structureSteps} locale={locale} />
           </section>
 
           {/* Фото событий (HE-гейт по altHe) */}

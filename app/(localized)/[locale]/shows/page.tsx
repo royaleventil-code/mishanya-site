@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 import { Theater } from "lucide-react";
 import { SHOWS, SHOWS_PAGE_COPY } from "@/data/shows";
 import { BidiText } from "@/components/BidiText";
+import { EmphasisText } from "@/components/EmphasisText";
+import { accentAt, mirrorAngle } from "@/components/AccentPalette";
 import { SiteFooter } from "@/components/home/SiteFooter";
 import { LiteYouTube } from "@/components/LiteYouTube";
 import { PublicHeader } from "@/components/PublicHeader";
@@ -95,6 +97,7 @@ export default async function ShowsPage({ params }: Props) {
 
   const dict = getDictionary(locale);
   const waHref = whatsappLink(copy.waMessage);
+  const cardAngle = mirrorAngle(158, locale);
   // экранируем «<»: текст с "</script>" не должен ломать inline-скрипт
   const jsonLd = JSON.stringify(showsJsonLd(locale)).replace(/</g, "\\u003c");
 
@@ -130,8 +133,9 @@ export default async function ShowsPage({ params }: Props) {
 
           <div className="mt-4 space-y-3 text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
             {copy.intro.map((paragraph, index) => (
-              <p key={index}>
-                <BidiText locale={locale}>{paragraph}</BidiText>
+              // первый абзац - лид: крупнее остальных, чтобы взгляд зацепился
+              <p key={index} className={index === 0 ? "text-[17px] leading-relaxed" : undefined}>
+                <EmphasisText locale={locale}>{paragraph}</EmphasisText>
               </p>
             ))}
           </div>
@@ -141,21 +145,33 @@ export default async function ShowsPage({ params }: Props) {
             <h2 className="mb-3 text-base font-semibold">
               <BidiText locale={locale}>{copy.audiencesTitle}</BidiText>
             </h2>
-            <ul className="grid gap-3 sm:grid-cols-3">
-              {copy.audiences.map((item) => (
+            <ul className="grid gap-4 sm:grid-cols-3">
+              {copy.audiences.map((item, audienceIndex) => (
                 <li
                   key={item.title}
-                  className="flex flex-col rounded-2xl p-4"
-                  style={{ background: "rgba(255,255,255,0.55)", border: "1px solid rgba(0,0,0,0.06)" }}
+                  className="relative flex flex-col overflow-hidden rounded-[26px] border border-white/70 p-5 ring-1 ring-white/70 shadow-[0_18px_44px_rgba(15,15,20,0.09)] transition-transform duration-500 hover:-translate-y-1"
+                  style={{
+                    background: `linear-gradient(${cardAngle}deg, ${accentAt(audienceIndex)}14 0%, #ffffff 60%)`,
+                  }}
                 >
-                  <h3 className="text-[15px] font-semibold leading-snug">
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-x-0 top-0 h-1.5"
+                    style={{ background: accentAt(audienceIndex) }}
+                  />
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full blur-2xl"
+                    style={{ background: `${accentAt(audienceIndex)}29` }}
+                  />
+                  <h3 className="relative text-base font-bold leading-snug">
                     <BidiText locale={locale}>{item.title}</BidiText>
                   </h3>
                   <p className="mt-1 text-sm leading-snug text-[var(--color-ink-soft)]">
                     <BidiText locale={locale}>{item.text}</BidiText>
                   </p>
                   {item.linkHref && item.linkLabel && (
-                    <p className="mt-2 text-sm">
+                    <p className="relative mt-2 text-sm">
                       <Link
                         href={localePath(locale, item.linkHref)}
                         className="font-semibold text-[var(--color-ink)] underline-offset-4 hover:underline"
@@ -164,14 +180,18 @@ export default async function ShowsPage({ params }: Props) {
                       </Link>
                     </p>
                   )}
-                  <a
-                    href={whatsappLink(item.waMessage)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-3 inline-flex items-center justify-center rounded-full bg-[var(--color-whatsapp)] px-4 py-2.5 text-sm font-bold text-white transition active:scale-95"
-                  >
-                    <BidiText locale={locale}>{item.ctaLabel}</BidiText>
-                  </a>
+                  {/* mt-auto прижимает кнопку к низу: у карточек разный объём текста,
+                      без этого кнопки в ряду стоят на разной высоте */}
+                  <span className="relative mt-auto block pt-4">
+                    <a
+                      href={whatsappLink(item.waMessage)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex w-full items-center justify-center rounded-full bg-[var(--color-whatsapp)] px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_22px_rgba(37,211,102,0.35)] transition active:scale-95"
+                    >
+                      <BidiText locale={locale}>{item.ctaLabel}</BidiText>
+                    </a>
+                  </span>
                 </li>
               ))}
             </ul>
@@ -183,15 +203,19 @@ export default async function ShowsPage({ params }: Props) {
               <BidiText locale={locale}>{copy.repertoireTitle}</BidiText>
             </h2>
             <div className="space-y-5">
-              {SHOWS.map((show) => {
+              {SHOWS.map((show, showIndex) => {
                 const showCopy = show.copy[locale];
                 if (!showCopy.title) return null;
                 return (
                   <section
                     key={show.id}
-                    className="rounded-2xl p-4 sm:p-5"
-                    style={{ background: "rgba(255,255,255,0.55)", border: "1px solid rgba(0,0,0,0.06)" }}
+                    className="relative overflow-hidden rounded-[26px] border border-white/70 bg-white p-4 shadow-[0_14px_36px_rgba(15,15,20,0.08)] sm:p-5"
                   >
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute inset-x-0 top-0 h-1.5"
+                      style={{ background: accentAt(showIndex) }}
+                    />
                     <h3 className="text-lg font-bold leading-snug">
                       <BidiText locale={locale}>{showCopy.title}</BidiText>
                     </h3>
@@ -221,10 +245,11 @@ export default async function ShowsPage({ params }: Props) {
                     </div>
                     <ul className="mt-4 space-y-2 text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
                       {showCopy.highlights.map((item, index) => (
-                        <li key={index} className="flex gap-2">
+                        <li key={index} className="flex gap-2.5">
                           <span
                             aria-hidden
-                            className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-ink-soft)]"
+                            className="mt-[8px] h-1.5 w-1.5 shrink-0 rounded-full"
+                            style={{ background: accentAt(showIndex) }}
                           />
                           <BidiText locale={locale}>{item}</BidiText>
                         </li>
