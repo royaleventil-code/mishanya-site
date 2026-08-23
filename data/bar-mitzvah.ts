@@ -15,12 +15,11 @@ export type BarMitzvahPhoto = {
 /**
  * Медиа страницы бар/бат-мицвы:
  * - photos: реальные кадры событий (public/bar-mitzvah/), alt по содержимому кадра;
- * - videoId: ролик для LiteYouTube (появится позже);
  * - priceFrom: цены не публикуем - всегда null, пока владелец не решит иначе.
+ * Ролики берём из общей библиотеки data/event-videos.ts (набор "bar-mitzvah").
  */
 export const BAR_MITZVAH_MEDIA: {
   photos: BarMitzvahPhoto[];
-  videoId: string | null;
   priceFrom: number | null;
 } = {
   photos: [
@@ -46,8 +45,17 @@ export const BAR_MITZVAH_MEDIA: {
       altHe: "עיצוב אולם לבת מצווה: קומפוזיציית בלונים עם מספר 12 בזהב וכתר",
     },
   ],
-  videoId: null,
   priceFrom: null,
+};
+
+/**
+ * Промо-ролик в шапке - по одному на язык, оба на канале Мишани.
+ * Заставку берём свою (кадр с неоновым титром), а не автоматическую с ytimg:
+ * она брендированная и на нужном языке.
+ */
+export const BAR_MITZVAH_PROMO: Record<Locale, { videoId: string; poster: string }> = {
+  ru: { videoId: "5w_Jht9SXTA", poster: "/video/bar-mitzvah-ru.webp" },
+  he: { videoId: "G1DoR-uiSbo", poster: "/video/bar-mitzvah-he.webp" },
 };
 
 export type BarMitzvahPageCopy = {
@@ -71,6 +79,10 @@ export type BarMitzvahPageCopy = {
   structureSteps: readonly string[];
   /** Заголовок фото-блока. Пустой - заголовок не рендерится. */
   photosTitle: string;
+  /** Заголовок блока с видео. Пустой - заголовок не рендерится. */
+  videosTitle: string;
+  /** Описание промо-ролика: aria-label кнопки и alt заставки */
+  promoTitle: string;
   casesTitle: string;
   cases: readonly string[];
   faqTitle: string;
@@ -144,6 +156,8 @@ export const BAR_MITZVAH_COPY: Record<Locale, BarMitzvahPageCopy> = {
       "Текес уга с конфетти-пушками и финал с трёхметровым мишкой",
     ],
     photosTitle: "Как это выглядит",
+    videosTitle: "Видео с наших праздников",
+    promoTitle: "Промо-ролик бар-мицвы и бат-мицвы от «Мишаня в Стране Чудес»",
     casesTitle: "Проведённые события",
     cases: [
       "Бат-мицва с диджеем, «ТехноФаном» и сценой со спецэффектами - апрель 2025",
@@ -237,6 +251,8 @@ export const BAR_MITZVAH_COPY: Record<Locale, BarMitzvahPageCopy> = {
       "טקס עוגה עם תותחי קונפטי וסיום עם דובון בגובה 3 מטר",
     ],
     photosTitle: "ככה זה נראה",
+    videosTitle: "וידאו מהאירועים שלנו",
+    promoTitle: "סרטון תדמית של בר מצווה ובת מצווה מבית «מישניה בארץ הפלאות»",
     casesTitle: "אירועים שהופקו",
     cases: [
       "בת מצווה עם תקליטן, \"טכנופאן\" ובמה עם אפקטים מיוחדים - אפריל 2025",

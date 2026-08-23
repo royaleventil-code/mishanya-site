@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { BAR_MITZVAH_COPY } from "@/data/bar-mitzvah";
 import { BLOG_POSTS, hasBlogCopy } from "@/data/blog";
+import { BRIT_MILA_COPY } from "@/data/brit-mila";
 import { MUNICIPALITIES_COPY, BUSINESS_COPY } from "@/data/b2b";
 import { CHARITY_PAGE_COPY } from "@/data/charity";
 import { CITIES, hasCityCopy } from "@/data/cities";
@@ -147,6 +148,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/shows", priority: 0.8, hasCopy: (l) => Boolean(SHOWS_PAGE_COPY[l].h1) },
     { path: "/business", priority: 0.8, hasCopy: (l) => Boolean(BUSINESS_COPY[l].h1) },
     { path: "/bar-mitzvah", priority: 0.75, hasCopy: (l) => Boolean(BAR_MITZVAH_COPY[l].h1) },
+    { path: "/brit-mila", priority: 0.75, hasCopy: (l) => Boolean(BRIT_MILA_COPY[l].h1) },
     { path: "/videos", priority: 0.7, hasCopy: (l) => Boolean(VIDEOS_PAGE_COPY[l].h1) },
     { path: "/charity", priority: 0.6, hasCopy: (l) => Boolean(CHARITY_PAGE_COPY[l].h1) },
   ];

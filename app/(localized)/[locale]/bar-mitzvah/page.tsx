@@ -3,11 +3,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PartyPopper } from "lucide-react";
-import { BAR_MITZVAH_MEDIA, BAR_MITZVAH_COPY } from "@/data/bar-mitzvah";
+import { BAR_MITZVAH_MEDIA, BAR_MITZVAH_COPY, BAR_MITZVAH_PROMO } from "@/data/bar-mitzvah";
 import { BidiText } from "@/components/BidiText";
-import { SiteFooter } from "@/components/home/SiteFooter";
+import { EventVideoGallery } from "@/components/EventVideoGallery";
 import { LiteYouTube } from "@/components/LiteYouTube";
+import { SiteFooter } from "@/components/home/SiteFooter";
 import { PublicHeader } from "@/components/PublicHeader";
+import { getEventVideos, isoVideoDuration, resolveVideoId, videoWatchUrl } from "@/data/event-videos";
 import { getDictionary } from "@/lib/dictionaries";
 import { isLocale, localePath, type Locale } from "@/lib/i18n";
 import { createPageMetadata, siteUrl } from "@/lib/seo";
@@ -41,6 +43,25 @@ function barMitzvahJsonLd(locale: Locale) {
   const pageUrl = siteUrl(`/${locale}/bar-mitzvah`);
 
   return [
+    ...getEventVideos("bar-mitzvah").map((video) => {
+      const videoId = resolveVideoId(video, locale);
+      return {
+        "@context": "https://schema.org",
+        "@type": "VideoObject",
+        name: video.title[locale],
+        description: video.description[locale],
+        uploadDate: video.uploadDate,
+        duration: isoVideoDuration(video.durationSeconds),
+        thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+        // embedUrl только у роликов с разрешённым эмбедом - иначе разметка врёт
+        ...(video.embeddable
+          ? { embedUrl: `https://www.youtube-nocookie.com/embed/${videoId}` }
+          : {}),
+        url: videoWatchUrl(videoId),
+        // Язык озвучки: у промо мицвы есть ивритская версия, у остальных - только русская
+        inLanguage: video.videoIdByLocale?.[locale] ? locale : "ru",
+      };
+    }),
     {
       "@context": "https://schema.org",
       "@type": "Service",
@@ -85,6 +106,7 @@ export default async function BarMitzvahPage({ params }: Props) {
   const showPhotos =
     BAR_MITZVAH_MEDIA.photos.length > 0 &&
     (locale !== "he" || BAR_MITZVAH_MEDIA.photos.every((photo) => photo.altHe));
+  const videos = getEventVideos("bar-mitzvah");
   // экранируем «<»: текст с "</script>" не должен ломать inline-скрипт
   const jsonLd = JSON.stringify(barMitzvahJsonLd(locale)).replace(/</g, "\\u003c");
 
@@ -117,6 +139,16 @@ export default async function BarMitzvahPage({ params }: Props) {
           <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
             <BidiText locale={locale}>{copy.h1}</BidiText>
           </h1>
+
+          {/* Наш промо-ролик на языке страницы - вместо картинки в шапке */}
+          <div className="mt-4">
+            <LiteYouTube
+              videoId={BAR_MITZVAH_PROMO[locale].videoId}
+              poster={BAR_MITZVAH_PROMO[locale].poster}
+              title={copy.promoTitle}
+              sizes="(max-width: 640px) 92vw, 660px"
+            />
+          </div>
 
           <div className="mt-4 space-y-3 text-[15px] leading-relaxed text-[var(--color-ink-soft)]">
             {copy.intro.map((paragraph, index) => (
@@ -218,37 +250,40 @@ export default async function BarMitzvahPage({ params }: Props) {
             </ol>
           </section>
 
-          {/* Фото событий (HE-гейт: пока altHe пусты, на /he блок скрыт) + видео */}
-          {(showPhotos || BAR_MITZVAH_MEDIA.videoId) && (
+          {/* Фото событий (HE-гейт: пока altHe пусты, на /he блок скрыт) */}
+          {showPhotos && (
             <section className="mt-8">
-              {showPhotos && (
-                <>
-                  {copy.photosTitle && (
-                    <h2 className="mb-3 text-base font-semibold">
-                      <BidiText locale={locale}>{copy.photosTitle}</BidiText>
-                    </h2>
-                  )}
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {BAR_MITZVAH_MEDIA.photos.map((photo) => (
-                      <Image
-                        key={photo.src}
-                        src={photo.src}
-                        alt={locale === "he" && photo.altHe ? photo.altHe : photo.alt}
-                        width={photo.width}
-                        height={photo.height}
-                        sizes="(max-width: 640px) 90vw, 340px"
-                        className="w-full rounded-2xl object-cover"
-                        loading="lazy"
-                      />
-                    ))}
-                  </div>
-                </>
+              {copy.photosTitle && (
+                <h2 className="mb-3 text-base font-semibold">
+                  <BidiText locale={locale}>{copy.photosTitle}</BidiText>
+                </h2>
               )}
-              {BAR_MITZVAH_MEDIA.videoId && (
-                <div className="mt-4">
-                  <LiteYouTube videoId={BAR_MITZVAH_MEDIA.videoId} title={copy.h1} />
-                </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {BAR_MITZVAH_MEDIA.photos.map((photo) => (
+                  <Image
+                    key={photo.src}
+                    src={photo.src}
+                    alt={locale === "he" && photo.altHe ? photo.altHe : photo.alt}
+                    width={photo.width}
+                    height={photo.height}
+                    sizes="(max-width: 640px) 90vw, 340px"
+                    className="w-full rounded-2xl object-cover"
+                    loading="lazy"
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Видео с YouTube: превью статичное, iframe грузится только после клика */}
+          {videos.length > 0 && (
+            <section className="mt-8">
+              {copy.videosTitle && (
+                <h2 className="mb-3 text-base font-semibold">
+                  <BidiText locale={locale}>{copy.videosTitle}</BidiText>
+                </h2>
               )}
+              <EventVideoGallery videos={videos} locale={locale} />
             </section>
           )}
 

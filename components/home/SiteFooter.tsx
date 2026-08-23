@@ -8,6 +8,7 @@ import { SHOWS_PAGE_COPY } from "@/data/shows";
 import { VIDEOS_PAGE_COPY } from "@/data/videos";
 import { CHARITY_PAGE_COPY } from "@/data/charity";
 import { BAR_MITZVAH_COPY } from "@/data/bar-mitzvah";
+import { BRIT_MILA_COPY } from "@/data/brit-mila";
 import { BLOG_UI } from "@/data/blog";
 import { BidiText } from "@/components/BidiText";
 import { getDictionary } from "@/lib/dictionaries";
@@ -203,6 +204,7 @@ export function SiteFooter({ locale = "ru" }: { locale?: Locale }) {
           { href: "/business", label: BUSINESS_COPY[locale].breadcrumb },
           { href: "/shows", label: SHOWS_PAGE_COPY[locale].breadcrumb },
           { href: "/bar-mitzvah", label: BAR_MITZVAH_COPY[locale].breadcrumb },
+          { href: "/brit-mila", label: BRIT_MILA_COPY[locale].breadcrumb },
           { href: "/videos", label: VIDEOS_PAGE_COPY[locale].breadcrumb },
           { href: "/charity", label: CHARITY_PAGE_COPY[locale].breadcrumb },
         ].filter((link) => link.label);
