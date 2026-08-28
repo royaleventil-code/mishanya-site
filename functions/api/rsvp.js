@@ -3,6 +3,7 @@ import {
   sanitizeManageToken,
   sanitizeRsvpSlug,
   validateRsvpEventPayload,
+  validateRsvpInvitationHeadlinesPayload,
   validateRsvpResponsePayload,
 } from "../../shared/rsvp-core.js";
 import {
@@ -140,6 +141,32 @@ async function saveResponse(env, request, raw, secret) {
   return json({ status: "saved" });
 }
 
+async function updateInvitationHeadlines(env, request, raw, secret) {
+  const checked = validateRsvpInvitationHeadlinesPayload(raw);
+  if (checked.error) return json({ error: checked.error }, 400);
+
+  const authorization = request.headers.get("Authorization") || "";
+  const token = sanitizeManageToken(authorization.replace(/^Bearer\s+/i, ""));
+  if (!token) return json({ error: "unauthorized" }, 401);
+  const tokenHash = await phoneHash(`rsvp-manage:${token}`, secret);
+  const event = await env.GIFT_DB.prepare(
+    "SELECT id, public_slug, payload_ciphertext, status FROM rsvp_events WHERE manage_token_hash = ? LIMIT 1",
+  ).bind(tokenHash).first();
+  if (!event || event.status !== "open") return json({ error: "event_not_found" }, 404);
+
+  const payload = await decryptPayload(event.payload_ciphertext, secret);
+  const updatedPayload = { ...payload };
+  if (Object.keys(checked.value).length) updatedPayload.invitationHeadlines = checked.value;
+  else delete updatedPayload.invitationHeadlines;
+
+  const encrypted = await encryptPayload(updatedPayload, secret);
+  const updatedAt = new Date().toISOString();
+  await env.GIFT_DB.prepare(
+    "UPDATE rsvp_events SET payload_ciphertext = ?, updated_at = ? WHERE id = ?",
+  ).bind(encrypted, updatedAt, event.id).run();
+  return json({ status: "saved", event: publicEvent(updatedPayload, event.public_slug) });
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context;
   const secret = dataSecret(env);
@@ -158,6 +185,9 @@ export async function onRequestPost(context) {
   if (!allowed) return json({ error: "rate_limited" }, 429);
   if (raw.action === "create") return createEvent(env, request, raw, secret);
   if (raw.action === "respond") return saveResponse(env, request, raw, secret);
+  if (raw.action === "update_invitation_headlines") {
+    return updateInvitationHeadlines(env, request, raw, secret);
+  }
   return json({ error: "invalid_action" }, 400);
 }
 

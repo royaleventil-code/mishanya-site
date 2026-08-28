@@ -12,7 +12,9 @@ const HEBREW_NAME_OVERRIDES = Object.freeze({
   даниил: "דניאל",
   даниэль: "דניאל",
   илья: "איליה",
+  майэль: "מיאל",
   мария: "מריה",
+  мариэль: "מריאל",
   маша: "מאשה",
   миша: "מישה",
   олег: "אולג",
@@ -21,6 +23,8 @@ const HEBREW_NAME_OVERRIDES = Object.freeze({
   сергей: "סרגיי",
   софия: "סופיה",
   софья: "סופיה",
+  эден: "עדן",
+  эдэн: "עדן",
 });
 
 const CYRILLIC_TO_HEBREW = Object.freeze({
@@ -74,7 +78,49 @@ export function transliterateRsvpChildNameToHebrew(childName) {
   const source = String(childName || "").trim();
   if (!source || /\p{Script=Hebrew}/u.test(source)) return source;
   if (!/\p{Script=Cyrillic}/u.test(source)) return source;
-  return source.replace(/[А-ЯЁа-яё]+/gu, transliterateCyrillicWord);
+  const withHebrewConjunction = source.replace(/\s+и\s+(?=[А-ЯЁа-яё])/giu, " ו");
+  return withHebrewConjunction.replace(/[А-ЯЁа-яё]+/gu, transliterateCyrillicWord);
+}
+
+/**
+ * Bitrix has one child-name field, so joint birthdays arrive as one string.
+ * Only treat explicit separators as multiple celebrants to avoid guessing from
+ * compound names such as Анна-Мария.
+ *
+ * @param {string} childName
+ */
+export function hasMultipleRsvpCelebrants(childName) {
+  const source = String(childName || "").trim().replace(/\s+/gu, " ");
+  if (!source) return false;
+  return /(?:\s+(?:и|and)\s+|\s*[,;&+/]\s*|\s+ו(?=\p{L}))/iu.test(source);
+}
+
+/**
+ * @param {{ locale: "ru" | "he"; childName: string; childAge: number }} event
+ */
+export function formatDefaultRsvpInvitationHeadline(event) {
+  const childName = String(event.childName || "").trim();
+  if (hasMultipleRsvpCelebrants(childName)) {
+    return event.locale === "he"
+      ? `יום ההולדת של ${childName}!`
+      : `${childName} празднуют день рождения!`;
+  }
+  return event.locale === "he"
+    ? `${childName} חוגג/ת ${event.childAge}!`
+    : `${childName} исполняется ${event.childAge}!`;
+}
+
+/**
+ * @param {{
+ *   locale: "ru" | "he";
+ *   childName: string;
+ *   childAge: number;
+ *   invitationHeadlines?: Partial<Record<"ru" | "he", string>>;
+ * }} event
+ */
+export function formatRsvpInvitationHeadline(event) {
+  const customHeadline = String(event.invitationHeadlines?.[event.locale] || "").trim();
+  return customHeadline || formatDefaultRsvpInvitationHeadline(event);
 }
 
 /**
@@ -82,10 +128,12 @@ export function transliterateRsvpChildNameToHebrew(childName) {
  * @typedef {{
  *   locale: RsvpInvitationLocale;
  *   childName: string;
+ *   childAge?: number;
  *   startsAt: string;
  *   city: string;
  *   address: string;
  *   message?: string;
+ *   invitationHeadlines?: Partial<Record<RsvpInvitationLocale, string>>;
  * }} RsvpInvitationEvent
  */
 
@@ -169,7 +217,10 @@ export function buildRsvpGuestShareBody(event) {
     return `מזמינים אתכם לחגוג עם ${event.childName}! 🎉\n\n📅 ${date}\n📍 ${location}\n\nאנא עברו לקישור ועדכנו אם תוכלו להגיע:`;
   }
 
-  return `Приглашаем вас на праздник — ${event.childName} отмечает день рождения! 🎉\n\n📅 ${date}\n📍 ${location}\n\nПожалуйста, перейдите по ссылке и отметьте, сможете ли вы прийти:`;
+  const birthday = hasMultipleRsvpCelebrants(event.childName)
+    ? `${event.childName} празднуют день рождения`
+    : `${event.childName} отмечает день рождения`;
+  return `Приглашаем вас на праздник — ${birthday}! 🎉\n\n📅 ${date}\n📍 ${location}\n\nПожалуйста, перейдите по ссылке и отметьте, сможете ли вы прийти:`;
 }
 
 /**

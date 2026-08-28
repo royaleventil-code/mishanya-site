@@ -5,6 +5,7 @@ import {
   sanitizeManageToken,
   sanitizeRsvpSlug,
   validateRsvpEventPayload,
+  validateRsvpInvitationHeadlinesPayload,
   validateRsvpResponsePayload,
 } from "../shared/rsvp-core.js";
 
@@ -56,6 +57,24 @@ test("requires at least one attendee for yes response", () => {
     comment: "",
   });
   assert.equal(result.error, "invalid_headcount");
+});
+
+test("validates editable invitation headlines and treats empty values as automatic", () => {
+  const checked = validateRsvpInvitationHeadlinesPayload({
+    invitationHeadlines: {
+      ru: "  Майэль и Эден   празднуют день рождения! ",
+      he: "",
+    },
+  });
+  assert.equal(checked.error, undefined);
+  assert.deepEqual(checked.value, {
+    ru: "Майэль и Эден празднуют день рождения!",
+  });
+
+  assert.equal(
+    validateRsvpInvitationHeadlinesPayload({ invitationHeadlines: { ru: "я".repeat(141) } }).error,
+    "invalid_invitation_headlines",
+  );
 });
 
 test("clears headcount for a declined response", () => {

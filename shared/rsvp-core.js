@@ -82,6 +82,23 @@ export function validateRsvpEventPayload(raw, now = new Date()) {
   };
 }
 
+export function validateRsvpInvitationHeadlinesPayload(raw) {
+  if (!raw || typeof raw !== "object") return { error: "invalid_payload" };
+  const source = raw.invitationHeadlines;
+  if (!source || typeof source !== "object" || Array.isArray(source)) {
+    return { error: "invalid_invitation_headlines" };
+  }
+
+  const invitationHeadlines = {};
+  for (const locale of RSVP_LOCALES) {
+    const headline = cleanText(source[locale]);
+    if (headline.length > 140) return { error: "invalid_invitation_headlines" };
+    if (headline) invitationHeadlines[locale] = headline;
+  }
+
+  return { value: invitationHeadlines };
+}
+
 export function validateRsvpResponsePayload(raw) {
   if (!raw || typeof raw !== "object") return { error: "invalid_payload" };
   const eventSlug = sanitizeRsvpSlug(raw.eventSlug);

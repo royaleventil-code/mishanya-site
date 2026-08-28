@@ -1,15 +1,16 @@
 import { CalendarDays, Clock3, MapPin, PartyPopper } from "lucide-react";
 import type { PublicRsvpEvent } from "@/lib/rsvp";
-import { formatRsvpEventDate } from "@/shared/rsvp-invitation.js";
+import {
+  formatRsvpEventDate,
+  formatRsvpInvitationHeadline,
+} from "@/shared/rsvp-invitation.js";
 
 const COPY = {
   ru: {
     invitation: "Приглашение на праздник",
-    turns: (age: number) => `исполняется ${age}!`,
   },
   he: {
     invitation: "הזמנה לחגיגה",
-    turns: (age: number) => `חוגג/ת ${age}!`,
   },
 } as const;
 
@@ -36,7 +37,7 @@ export function RsvpInvitationDetails({
           </div>
           <p className="mt-5 text-xs font-bold uppercase tracking-[0.16em] text-[#c81d4a]">{copy.invitation}</p>
           <Heading className="rsvp-display mt-3 text-[2.65rem] font-extrabold sm:text-[3.35rem]">
-            {event.childName} {copy.turns(event.childAge)}
+            {formatRsvpInvitationHeadline(event)}
           </Heading>
           {event.message ? <p className="rsvp-caption mx-auto mt-4 max-w-lg whitespace-pre-line text-[0.98rem] font-medium leading-7">{event.message}</p> : null}
         </div>

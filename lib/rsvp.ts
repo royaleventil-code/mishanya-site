@@ -1,7 +1,9 @@
 import { parsePhoneNumberFromString } from "libphonenumber-js/max";
+import { validateRsvpInvitationHeadlinesPayload } from "@/shared/rsvp-core.js";
 
 export type RsvpLocale = "ru" | "he";
 export type RsvpStatus = "yes" | "no" | "maybe";
+export type RsvpInvitationHeadlines = Partial<Record<RsvpLocale, string>>;
 
 export type RsvpEventInput = {
   locale: RsvpLocale;
@@ -14,6 +16,7 @@ export type RsvpEventInput = {
   address: string;
   message: string;
   contactEnabled: boolean;
+  invitationHeadlines?: RsvpInvitationHeadlines;
 };
 
 export type PublicRsvpEvent = RsvpEventInput & {
@@ -280,4 +283,38 @@ export async function getManagedRsvpEvent(token: string): Promise<ManagedRsvpEve
       headers: { Authorization: `Bearer ${token}` },
     }),
   );
+}
+
+export async function updateRsvpInvitationHeadlines(
+  token: string,
+  invitationHeadlines: RsvpInvitationHeadlines,
+): Promise<PublicRsvpEvent> {
+  const checked = validateRsvpInvitationHeadlinesPayload({ invitationHeadlines });
+  if (checked.error) throw new Error(checked.error);
+  const normalizedHeadlines = (checked.value || {}) as RsvpInvitationHeadlines;
+
+  if (isLocalMode()) {
+    const store = loadStore();
+    ensureLocalPreviewEvent(store, token);
+    const record = store.events.find((event) => event.manageToken === token);
+    if (!record) throw new Error("event_not_found");
+    const nextData = { ...record.data };
+    if (Object.keys(normalizedHeadlines).length) nextData.invitationHeadlines = normalizedHeadlines;
+    else delete nextData.invitationHeadlines;
+    record.data = nextData;
+    saveStore(store);
+    return publicEvent(record);
+  }
+
+  const result = await responseJson<{ event: PublicRsvpEvent }>(
+    await fetch("/api/rsvp", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ action: "update_invitation_headlines", invitationHeadlines: normalizedHeadlines }),
+    }),
+  );
+  return result.event;
 }

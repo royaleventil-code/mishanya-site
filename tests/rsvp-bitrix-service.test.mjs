@@ -8,6 +8,7 @@ import {
   processRsvpDealUpdate,
   upsertSourceEvent,
 } from "../shared/rsvp-bitrix-service.js";
+import { decryptPayload, encryptPayload } from "../shared/gift-core.js";
 
 test("builds the approved client message exactly", () => {
   assert.equal(
@@ -79,6 +80,7 @@ function sourceEventDb() {
                 id: row.id,
                 public_slug: row.public_slug,
                 manage_token_ciphertext: row.manage_token_ciphertext,
+                payload_ciphertext: row.payload_ciphertext,
                 source_payload_hash: row.source_payload_hash,
                 created_at: row.created_at,
               } : null;
@@ -257,6 +259,12 @@ test("upserts one RSVP event per Bitrix deal and preserves its links", async () 
   const secret = "test-secret-that-is-long-enough-for-encryption";
   const created = await upsertSourceEvent(db, "18123", payload(), secret);
   const repeated = await upsertSourceEvent(db, "18123", payload(), secret);
+  const stored = [...db.events.values()][0];
+  const currentPayload = await decryptPayload(stored.payload_ciphertext, secret);
+  stored.payload_ciphertext = await encryptPayload({
+    ...currentPayload,
+    invitationHeadlines: { ru: "Маша зовёт вас на праздник!" },
+  }, secret);
   const updated = await upsertSourceEvent(db, "18123", payload({ childAge: 7 }), secret);
 
   assert.equal(db.events.size, 1);
@@ -264,9 +272,11 @@ test("upserts one RSVP event per Bitrix deal and preserves its links", async () 
   assert.equal(repeated.public_slug, created.public_slug);
   assert.equal(updated.public_slug, created.public_slug);
   assert.notEqual(updated.source_payload_hash, repeated.source_payload_hash);
-  const stored = [...db.events.values()][0];
   assert.ok(stored.manage_token_ciphertext);
   assert.equal(stored.source_id, "18123");
+  const updatedPayload = await decryptPayload(stored.payload_ciphertext, secret);
+  assert.equal(updatedPayload.childAge, 7);
+  assert.deepEqual(updatedPayload.invitationHeadlines, { ru: "Маша зовёт вас на праздник!" });
 });
 
 test("processes a closed deal twice without creating a duplicate event", async () => {

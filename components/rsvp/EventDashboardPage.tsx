@@ -9,6 +9,8 @@ import {
   PartyPopper,
   PencilLine,
   RefreshCw,
+  RotateCcw,
+  Save,
   ShieldAlert,
   UserRound,
   UsersRound,
@@ -19,15 +21,18 @@ import { RsvpInvitationDetails } from "@/components/rsvp/RsvpInvitationDetails";
 import { RsvpLoading, RsvpShell } from "@/components/rsvp/RsvpShell";
 import {
   getManagedRsvpEvent,
+  type RsvpInvitationHeadlines,
   type ManagedRsvpEvent,
   type RsvpLocale,
   type RsvpResponse,
   type RsvpStatus,
+  updateRsvpInvitationHeadlines,
 } from "@/lib/rsvp";
 import {
   buildRsvpGuestShareBody,
   buildRsvpGuestUrl,
   composeRsvpGuestShareText,
+  formatDefaultRsvpInvitationHeadline,
   localizeRsvpInvitationEvent,
 } from "@/shared/rsvp-invitation.js";
 
@@ -44,6 +49,15 @@ const COPY = {
     ],
     invitationTitle: "Ваше приглашение для гостей",
     invitationHint: "Так гости увидят информацию о празднике. Проверьте дату, время и место перед отправкой.",
+    headlineEditorTitle: "Изменить крупный текст на приглашении",
+    headlineEditorHint: "Сохранённый заголовок сразу увидят все гости. Редактирование доступно только по вашей приватной ссылке.",
+    russianHeadline: "Заголовок на русском",
+    hebrewHeadline: "Заголовок на иврите",
+    saveHeadline: "Сохранить заголовок",
+    savingHeadline: "Сохраняем…",
+    savedHeadline: "Сохранено — гости уже видят новый текст.",
+    headlineError: "Не удалось сохранить. Обновите страницу и попробуйте ещё раз.",
+    restoreHeadline: "Вернуть автоматический текст",
     languageHint: "Текст каждой версии можно изменить. Правки сохраняются на этом устройстве, а ссылка для гостей добавляется автоматически.",
     russianOption: "Русская версия",
     hebrewOption: "Версия на иврите",
@@ -240,6 +254,109 @@ function ShareLanguageCard({
   );
 }
 
+function InvitationHeadlineEditor({
+  event,
+  onSave,
+}: {
+  event: ManagedRsvpEvent["event"];
+  onSave: (headlines: RsvpInvitationHeadlines) => Promise<ManagedRsvpEvent["event"]>;
+}) {
+  const copy = COPY.ru;
+  const automatic = {
+    ru: formatDefaultRsvpInvitationHeadline(localizeRsvpInvitationEvent(event, "ru")),
+    he: formatDefaultRsvpInvitationHeadline(localizeRsvpInvitationEvent(event, "he")),
+  };
+  const savedValues = {
+    ru: event.invitationHeadlines?.ru || automatic.ru,
+    he: event.invitationHeadlines?.he || automatic.he,
+  };
+  const [drafts, setDrafts] = useState(savedValues);
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  const normalizedDrafts = {
+    ru: drafts.ru.trim().replace(/\s+/g, " "),
+    he: drafts.he.trim().replace(/\s+/g, " "),
+  };
+  const hasChanges = normalizedDrafts.ru !== savedValues.ru || normalizedDrafts.he !== savedValues.he;
+
+  const save = async () => {
+    if (!hasChanges) return;
+    setStatus("saving");
+    try {
+      await onSave({
+        ru: normalizedDrafts.ru === automatic.ru ? "" : normalizedDrafts.ru,
+        he: normalizedDrafts.he === automatic.he ? "" : normalizedDrafts.he,
+      });
+      setStatus("saved");
+    } catch {
+      setStatus("error");
+    }
+  };
+
+  const updateDraft = (locale: RsvpLocale, value: string) => {
+    setDrafts((current) => ({ ...current, [locale]: value }));
+    setStatus("idle");
+  };
+
+  return (
+    <div className="rsvp-grouped-surface mt-5 rounded-[1.4rem] p-4 sm:p-5">
+      <div className="flex items-start gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.9rem] bg-[#5e5ce6]/10 text-[#5e5ce6]"><PencilLine className="h-5 w-5" /></span>
+        <div>
+          <h3 className="text-lg font-bold text-zinc-950">{copy.headlineEditorTitle}</h3>
+          <p className="rsvp-caption mt-1 text-sm font-medium leading-6">{copy.headlineEditorHint}</p>
+        </div>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <label>
+          <span className="mb-2 block text-sm font-semibold text-zinc-800">{copy.russianHeadline}</span>
+          <input
+            value={drafts.ru}
+            onChange={(input) => updateDraft("ru", input.target.value)}
+            maxLength={140}
+            lang="ru"
+            className="rsvp-field h-13 w-full rounded-[1rem] px-4 text-base font-medium outline-none"
+          />
+        </label>
+        <label>
+          <span className="mb-2 block text-sm font-semibold text-zinc-800">{copy.hebrewHeadline}</span>
+          <input
+            value={drafts.he}
+            onChange={(input) => updateDraft("he", input.target.value)}
+            maxLength={140}
+            lang="he"
+            dir="rtl"
+            className="rsvp-field h-13 w-full rounded-[1rem] px-4 text-base font-medium outline-none"
+          />
+        </label>
+      </div>
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <button
+          type="button"
+          onClick={() => void save()}
+          disabled={!hasChanges || status === "saving"}
+          className="rsvp-pressable inline-flex min-h-12 items-center justify-center gap-2 rounded-[1rem] bg-[#5e5ce6] px-5 text-sm font-semibold text-white shadow-[0_9px_24px_rgba(94,92,230,0.2)] disabled:cursor-not-allowed disabled:opacity-45"
+        >
+          {status === "saving" ? <RefreshCw className="h-4 w-4 animate-spin motion-reduce:animate-none" /> : <Save className="h-4 w-4" />}
+          {status === "saving" ? copy.savingHeadline : copy.saveHeadline}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setDrafts(automatic);
+            setStatus("idle");
+          }}
+          className="rsvp-pressable inline-flex min-h-12 items-center justify-center gap-2 rounded-[1rem] bg-black/[0.06] px-4 text-sm font-semibold text-zinc-700 hover:bg-black/[0.09]"
+        >
+          <RotateCcw className="h-4 w-4" />{copy.restoreHeadline}
+        </button>
+        {status === "saved" ? <p role="status" className="text-sm font-semibold text-emerald-700">{copy.savedHeadline}</p> : null}
+        {status === "error" ? <p role="alert" className="text-sm font-semibold text-rose-700">{copy.headlineError}</p> : null}
+      </div>
+    </div>
+  );
+}
+
 export function EventDashboardPage() {
   const [data, setData] = useState<ManagedRsvpEvent | null>(null);
   const tokenRef = useRef("");
@@ -319,6 +436,11 @@ export function EventDashboardPage() {
     setCopiedLocale(linkLocale);
     window.setTimeout(() => setCopiedLocale(null), 1600);
   };
+  const saveInvitationHeadlines = async (headlines: RsvpInvitationHeadlines) => {
+    const event = await updateRsvpInvitationHeadlines(tokenRef.current, headlines);
+    setData((current) => (current ? { ...current, event } : current));
+    return event;
+  };
 
   return (
     <RsvpShell locale={locale}>
@@ -356,6 +478,12 @@ export function EventDashboardPage() {
         <article className="rsvp-material-strong mt-5 overflow-hidden rounded-[1.75rem]">
           <RsvpInvitationDetails event={russianEvent} headingLevel="h3" />
         </article>
+
+        <InvitationHeadlineEditor
+          key={[data.event.slug, data.event.childName, data.event.childAge].join("|")}
+          event={data.event}
+          onSave={saveInvitationHeadlines}
+        />
 
         <div className="mt-5">
           <div className="flex items-start gap-2.5 rounded-[1.15rem] bg-[#007aff]/[0.07] px-4 py-3 text-[#315f8f] ring-1 ring-[#007aff]/10">

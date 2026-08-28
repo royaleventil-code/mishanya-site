@@ -6,8 +6,11 @@ import {
   buildRsvpGuestShareText,
   composeRsvpGuestShareText,
   DEFAULT_RSVP_INVITATION_MESSAGES,
+  formatDefaultRsvpInvitationHeadline,
   formatRsvpEventDate,
   formatRsvpEventLocation,
+  formatRsvpInvitationHeadline,
+  hasMultipleRsvpCelebrants,
   localizeRsvpInvitationEvent,
   transliterateRsvpChildNameToHebrew,
 } from "../shared/rsvp-invitation.js";
@@ -40,6 +43,75 @@ test("builds the Hebrew version of the guest invitation", () => {
   assert.match(text, /📍 הרצל 10, חיפה/);
   assert.match(text, /עדכנו אם תוכלו להגיע/);
   assert.ok(text.endsWith(publicUrl));
+});
+
+test("uses plural birthday wording for two celebrants without showing one incorrect age", () => {
+  const jointBirthday = {
+    ...event,
+    childName: "Майэль и Эден",
+    childAge: 10,
+  };
+
+  assert.equal(hasMultipleRsvpCelebrants(jointBirthday.childName), true);
+  assert.equal(
+    formatRsvpInvitationHeadline(jointBirthday),
+    "Майэль и Эден празднуют день рождения!",
+  );
+  assert.match(
+    buildRsvpGuestShareBody(jointBirthday),
+    /^Приглашаем вас на праздник — Майэль и Эден празднуют день рождения! 🎉/,
+  );
+  assert.doesNotMatch(formatRsvpInvitationHeadline(jointBirthday), /10/);
+});
+
+test("keeps the age wording for one celebrant", () => {
+  assert.equal(
+    formatRsvpInvitationHeadline({ ...event, childAge: 9 }),
+    "Маша исполняется 9!",
+  );
+  assert.equal(hasMultipleRsvpCelebrants("Анна-Мария"), false);
+});
+
+test("uses a saved private-link headline only for its selected language", () => {
+  const customized = {
+    ...event,
+    childAge: 9,
+    invitationHeadlines: {
+      ru: "Ждём вас на двойном празднике!",
+      he: "מחכים לכם בחגיגה הכפולה!",
+    },
+  };
+
+  assert.equal(formatRsvpInvitationHeadline(customized), "Ждём вас на двойном празднике!");
+  assert.equal(
+    formatRsvpInvitationHeadline(localizeRsvpInvitationEvent(customized, "he")),
+    "מחכים לכם בחגיגה הכפולה!",
+  );
+  assert.equal(formatDefaultRsvpInvitationHeadline(customized), "Маша исполняется 9!");
+});
+
+test("uses a neutral Hebrew headline for two celebrants", () => {
+  const jointBirthday = {
+    ...event,
+    locale: "he",
+    childName: "מיאל ועדן",
+    childAge: 10,
+  };
+
+  assert.equal(hasMultipleRsvpCelebrants(jointBirthday.childName), true);
+  assert.equal(formatRsvpInvitationHeadline(jointBirthday), "יום ההולדת של מיאל ועדן!");
+});
+
+test("keeps a Russian conjunction as a Hebrew conjunction when localizing two names", () => {
+  const localized = localizeRsvpInvitationEvent({
+    ...event,
+    childName: "Майэль и Эден",
+    childAge: 10,
+  }, "he");
+
+  assert.equal(localized.childName, "מיאל ועדן");
+  assert.equal(hasMultipleRsvpCelebrants(localized.childName), true);
+  assert.equal(formatRsvpInvitationHeadline(localized), "יום ההולדת של מיאל ועדן!");
 });
 
 test("does not repeat the city when the full address already contains it", () => {

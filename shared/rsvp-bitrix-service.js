@@ -139,7 +139,8 @@ export async function updateRsvpBitrixSyncState(db, dealId, patch = {}) {
 
 async function findSourceEvent(db, dealId) {
   return db.prepare(
-    `SELECT id, public_slug, manage_token_ciphertext, source_payload_hash, created_at
+    `SELECT id, public_slug, manage_token_ciphertext, payload_ciphertext,
+            source_payload_hash, created_at
      FROM rsvp_events
      WHERE source_type = ? AND source_id = ?
      LIMIT 1`,
@@ -148,14 +149,19 @@ async function findSourceEvent(db, dealId) {
 
 async function updateExistingEvent(db, event, payload, payloadHash, secret) {
   if (event.source_payload_hash === payloadHash) return event;
-  const encrypted = await encryptPayload(payload, secret);
+  const currentPayload = await decryptPayload(event.payload_ciphertext, secret);
+  const invitationHeadlines = currentPayload?.invitationHeadlines;
+  const nextPayload = invitationHeadlines && typeof invitationHeadlines === "object"
+    ? { ...payload, invitationHeadlines }
+    : payload;
+  const encrypted = await encryptPayload(nextPayload, secret);
   const updatedAt = new Date().toISOString();
   await db.prepare(
     `UPDATE rsvp_events
      SET payload_ciphertext = ?, source_payload_hash = ?, updated_at = ?
      WHERE id = ?`,
   ).bind(encrypted, payloadHash, updatedAt, event.id).run();
-  return { ...event, source_payload_hash: payloadHash };
+  return { ...event, payload_ciphertext: encrypted, source_payload_hash: payloadHash };
 }
 
 async function createSourceEvent(db, dealId, payload, payloadHash, secret) {
