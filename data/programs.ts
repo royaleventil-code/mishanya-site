@@ -1057,7 +1057,7 @@ export const PROGRAMS: Program[] = [
     durationLabel: "2 часа",
     animators: 2,
     animatorsLabel: "2 аниматора",
-    priceFrom: 2000,
+    priceFrom: 2200,
     currency: "₪",
     maxKids: 35,
     languages: ["ru", "he"],

@@ -79,7 +79,7 @@ export const HEROES: Hero[] = [
   { id: "nu-pogodi-hare", name: "Ну погоди - Заяц", kind: "mascot", segments: [], languages: [] },
   { id: "nu-pogodi-wolf-hare", name: "Ну, погоди! Волк и Заяц", kind: "mascot", segments: ["all", "boy", "girl"], languages: ["ru", "he"], hiddenFor: [{ gender: "boy", minAge: 4 }, { gender: "girl", minAge: 4 }] },
   { id: "olaf", name: "Олаф снеговик", kind: "mascot", segments: ["all", "boy", "girl"], languages: ["ru", "he"], hiddenFor: [{ gender: "boy" }] },
-  { id: "pikachu-mascot", name: "Пикачу", kind: "mascot", segments: ["all", "boy", "girl"], languages: ["ru", "he"], hiddenFor: [{ gender: "boy", maxAge: 5 }, { gender: "girl", maxAge: 6 }] },
+  { id: "pikachu-mascot", name: "Пикачу", kind: "mascot", segments: ["all", "boy", "girl"], languages: ["ru", "he"] },
   { id: "sonic-mascot", name: "Соник", kind: "mascot", segments: ["all", "boy", "girl"], languages: ["ru", "he"] },
   { id: "stitch-mascot", name: "Стич", kind: "mascot", segments: ["all", "boy", "girl"], languages: ["ru", "he"] },
   { id: "tom", name: "Том", kind: "mascot", segments: [], languages: [] },

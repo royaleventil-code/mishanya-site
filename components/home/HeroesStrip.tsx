@@ -5,6 +5,7 @@ import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { BidiText } from "@/components/BidiText";
+import { PikachuPortrait } from "@/components/PikachuPortrait";
 import { getHeroImage } from "@/data/heroes";
 import { getDictionary } from "@/lib/dictionaries";
 import { type Locale } from "@/lib/i18n";
@@ -567,7 +568,9 @@ export function HeroesStrip({ locale = "ru" }: { locale?: Locale }) {
                         />
                       )}
                       <div className={FULL_BLEED_HERO_CARD_TEST ? "absolute inset-0" : "relative h-[330px] w-full sm:h-[430px]"}>
-                        <Image
+                        {h.id === "pikachu-mascot" ? (
+                          <PikachuPortrait className="h-full w-full p-6 transition-transform duration-500 group-hover:scale-[1.03]" />
+                        ) : <Image
                           src={img}
                           alt=""
                           fill
@@ -577,7 +580,7 @@ export function HeroesStrip({ locale = "ru" }: { locale?: Locale }) {
                               ? "scale-[1.16] object-contain drop-shadow-[0_26px_28px_rgba(31,16,92,0.3)] transition-transform duration-500 group-hover:scale-[1.22]"
                               : "object-contain drop-shadow-[0_24px_24px_rgba(31,16,92,0.34)] transition-transform duration-500 group-hover:scale-[1.04]"
                           }
-                        />
+                        />}
                       </div>
                       <div
                         className={
@@ -679,14 +682,16 @@ export function HeroesStrip({ locale = "ru" }: { locale?: Locale }) {
                   aria-hidden
                   className="absolute inset-x-[18%] bottom-[10%] h-[13%] rounded-full bg-black/28 blur-2xl"
                 />
-                <Image
+                {activeHero.id === "pikachu-mascot" ? (
+                  <PikachuPortrait alt={activeHero.name} className="h-full w-full px-12 sm:px-0" />
+                ) : <Image
                   src={activeHeroImage}
                   alt={activeHero.name}
                   fill
                   sizes="100vw"
                   priority
                   className="object-contain drop-shadow-[0_30px_48px_rgba(0,0,0,0.45)]"
-                />
+                />}
               </motion.div>
             </div>
 

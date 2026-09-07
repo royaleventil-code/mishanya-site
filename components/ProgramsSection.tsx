@@ -14,6 +14,7 @@ import { getLocalizedAddons } from "@/lib/localized-data";
 import { getWhatsAppMessages, whatsappLink } from "@/lib/whatsapp";
 import { formatProgramPriceLabel, formatShekelPrice, hasStartingPrice } from "@/lib/prices";
 import { getHeroEmoji, getHeroImage } from "@/data/heroes";
+import { PikachuPortrait } from "@/components/PikachuPortrait";
 
 type Props = {
   locale?: Locale;
@@ -181,6 +182,7 @@ const GIRL_MASCOT_HERO_IDS = {
     "minnie-mouse-mascot",
     "stitch-mascot",
     "sonic-mascot",
+    "pikachu-mascot",
     "tom-and-jerry",
     "minion",
     "masha-bear-inflatable",
@@ -200,6 +202,7 @@ const GIRL_MASCOT_HERO_IDS = {
     "tom-and-jerry",
     "minion",
     "sonic-mascot",
+    "pikachu-mascot",
     "dj-marshmello",
     "mickey-mouse-mascot",
     "masha-bear-inflatable",
@@ -1602,9 +1605,11 @@ function HeroSlotPanel({
                 </AnimatePresence>
                 <div
                   className="w-full h-[88px] flex items-center justify-center"
-                  style={{ filter: `drop-shadow(0 4px 12px ${accent}40)` }}
+                  style={h.id === "pikachu-mascot" ? undefined : { filter: `drop-shadow(0 4px 12px ${accent}40)` }}
                 >
-                  {getHeroImage(h.id) ? (
+                  {h.id === "pikachu-mascot" ? (
+                    <PikachuPortrait alt={h.name} className="w-full h-full" />
+                  ) : getHeroImage(h.id) ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={getHeroImage(h.id)!}
