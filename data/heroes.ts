@@ -168,7 +168,7 @@ export function getHeroImage(id: string): string | null {
     "nu-pogodi-wolf": "/heroes/nu-pogodi-wolf.png",
     "nu-pogodi-wolf-hare": "/heroes/nu-pogodi-wolf-hare.png",
     olaf: "/heroes/olaf.png",
-    "pikachu-mascot": "/heroes/pikachu-mascot.png",
+    "pikachu-mascot": "/heroes/pikachu-mascot-transparent.png",
     "sonic-mascot": "/heroes/sonic-mascot.png",
     "stitch-mascot": "/heroes/stitch-mascot.png",
     tom: "/heroes/tom.png",

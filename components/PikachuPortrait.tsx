@@ -8,7 +8,6 @@ export function PikachuPortrait({ alt = "", className }: { alt?: string; classNa
       role={alt ? "img" : undefined}
       aria-label={alt || undefined}
       aria-hidden={alt ? undefined : true}
-      style={{ mixBlendMode: "multiply" }}
     >
       {/* Frame the costume without the wide margins in the original photograph. */}
       <image href={getHeroImage("pikachu-mascot")!} width="1920" height="1080" />
