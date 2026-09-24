@@ -9,6 +9,15 @@ import {
   upsertSourceEvent,
 } from "../shared/rsvp-bitrix-service.js";
 import { decryptPayload, encryptPayload } from "../shared/gift-core.js";
+import { formatRsvpEventDate } from "../shared/rsvp-invitation.js";
+
+function timeMetadataResponse(url, useTimeZone = "N") {
+  if (String(url).includes("crm.deal.userfield.list.json")) return Response.json({ result: [{
+    FIELD_NAME: "UF_CRM_1645710833434", USER_TYPE_ID: "datetime", SETTINGS: { USE_TIMEZONE: useTimeZone },
+  }] });
+  if (String(url).includes("server.time.json")) return Response.json({ result: "2026-07-14T15:00:00+03:00" });
+  return null;
+}
 
 test("builds the approved client message exactly", () => {
   assert.equal(
@@ -279,7 +288,8 @@ test("upserts one RSVP event per Bitrix deal and preserves its links", async () 
   assert.deepEqual(updatedPayload.invitationHeadlines, { ru: "Маша зовёт вас на праздник!" });
 });
 
-test("processes a closed deal twice without creating a duplicate event", async () => {
+test("processes a closed deal twice without creating a duplicate event", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: new Date("2026-07-14T13:00:00Z") });
   const db = sourceEventDb();
   const originalFetch = globalThis.fetch;
   const deal = {
@@ -306,6 +316,8 @@ test("processes a closed deal twice without creating a duplicate event", async (
   const queuedMessages = [];
   let olchatStatus = 429;
   globalThis.fetch = async (url, init) => {
+    const timeMetadata = timeMetadataResponse(url);
+    if (timeMetadata) return timeMetadata;
     if (String(url).startsWith("https://olchat.example.test/")) {
       olchatCalls.push({
         method: init?.method,
@@ -469,6 +481,72 @@ test("processes a closed deal twice without creating a duplicate event", async (
     assert.equal(afterAccepted.clientMessageStatus, "accepted");
     assert.equal(queuedMessages.length, 2);
     assert.equal(olchatCalls.length, 2);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("refreshes a winter RSVP to 14:00 without changing links or resending its accepted message", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: new Date("2026-09-24T13:00:00Z") });
+  const db = sourceEventDb();
+  const secret = "test-secret-that-is-long-enough-for-encryption";
+  const created = await upsertSourceEvent(db, "18123", payload({ startsAt: "2026-11-06T11:00:00.000Z" }), secret);
+  const token = created.manage_token_ciphertext;
+  const generation = "e".repeat(64);
+  db.sync.set("18123", { bitrix_activity_id: "9001", message_generation: generation });
+  db.messages.set("18123:rsvp_client_invitation", { status: "accepted" });
+  const deal = {
+    ID: "18123", CATEGORY_ID: "0", STAGE_ID: "UC_HP4F3F", CONTACT_ID: "4854",
+    UF_CRM_1645710600299: "Маша", UF_CRM_6314CD391B643: "Маша",
+    UF_CRM_620BA6CC57523: "6", UF_CRM_620BA6CC427A3: "Herzl 10, Haifa",
+    UF_CRM_1645710833434: "2026-11-06T13:00:00+02:00",
+  };
+  const originalFetch = globalThis.fetch;
+  let useTimeZone = "N";
+  const calls = [];
+  globalThis.fetch = async (url) => {
+    calls.push(String(url));
+    const timeMetadata = timeMetadataResponse(url, useTimeZone);
+    if (timeMetadata) return timeMetadata;
+    if (String(url).includes("crm.deal.get.json")) return Response.json({ result: deal });
+    if (String(url).includes("crm.contact.get.json")) return Response.json({ result: {
+      ID: "4854", NAME: "Анна", PHONE: [{ VALUE: "+972548000000" }],
+    } });
+    if (String(url).includes("crm.activity.update.json")) return Response.json({ result: true });
+    throw new Error("Unexpected external action in RSVP time regression");
+  };
+  const env = {
+    GIFT_DB: db, GIFT_DATA_SECRET: secret,
+    BITRIX_WEBHOOK_URL: "https://example.bitrix24.com/rest/1/hidden",
+  };
+  const job = { dealId: "18123", messageGeneration: generation };
+  try {
+    for (let i = 0; i < 2; i++) {
+      const result = await processRsvpDealUpdate(env, job);
+      assert.equal(result.status, "synced");
+      assert.equal(result.clientMessageStatus, "accepted");
+      assert.equal(result.publicSlug, created.public_slug);
+      const row = [...db.events.values()][0];
+      const corrected = await decryptPayload(row.payload_ciphertext, secret);
+      assert.equal(corrected.startsAt, "2026-11-06T12:00:00.000Z");
+      assert.ok(formatRsvpEventDate(corrected).endsWith("· 14:00"));
+      assert.equal(row.id, created.id);
+      assert.equal(row.manage_token_ciphertext, token);
+      assert.equal(db.events.size, 1);
+    }
+    // A later settings change must be reread; timezone-aware values are not corrected twice.
+    useTimeZone = "Y";
+    deal.UF_CRM_1645710833434 = "2026-11-06T14:00:00+02:00";
+    calls.length = 0;
+    await processRsvpDealUpdate(env, job);
+    assert.equal(calls.some((url) => url.includes("server.time.json")), false);
+    const row = [...db.events.values()][0];
+    assert.equal((await decryptPayload(row.payload_ciphertext, secret)).startsAt, "2026-11-06T12:00:00.000Z");
+    const unchangedPayload = row.payload_ciphertext;
+    useTimeZone = "unknown";
+    await assert.rejects(processRsvpDealUpdate(env, job), /invalid_event_time_settings/);
+    assert.equal(row.payload_ciphertext, unchangedPayload);
+    assert.equal(db.messages.get("18123:rsvp_client_invitation").status, "accepted");
   } finally {
     globalThis.fetch = originalFetch;
   }

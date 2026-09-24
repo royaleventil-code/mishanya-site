@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { normalizeBitrixRsvpStartsAt } from "../shared/rsvp-bitrix-time.js";
+import { formatRsvpEventDate } from "../shared/rsvp-invitation.js";
 
 import {
   buildRsvpPayloadFromBitrix,
@@ -10,6 +12,7 @@ import {
 } from "../shared/rsvp-bitrix-core.js";
 
 const NOW = new Date("2026-07-14T08:00:00.000Z");
+const EVENT_TIME_CONTEXT = { useTimeZone: false, serverTime: "2026-07-14T11:00:00+03:00" };
 
 function closedDeal(overrides = {}) {
   return {
@@ -77,7 +80,7 @@ test("recognizes both closed-work pipelines and no other stage", () => {
 });
 
 test("maps a fresh deal and contact into the existing RSVP payload", () => {
-  const result = buildRsvpPayloadFromBitrix(closedDeal(), contact(), NOW);
+  const result = buildRsvpPayloadFromBitrix(closedDeal(), contact(), NOW, EVENT_TIME_CONTEXT);
   assert.equal(result.error, undefined);
   assert.equal(result.value.locale, "ru");
   assert.equal(result.value.organizerName, "Анна Леви");
@@ -87,6 +90,53 @@ test("maps a fresh deal and contact into the existing RSVP payload", () => {
   assert.equal(result.value.startsAt, "2026-08-28T13:00:00.000Z");
   assert.equal(result.value.city, "Herzl 10, Haifa");
   assert.equal(result.value.address, "Herzl 10, Haifa");
+});
+
+for (const [name, raw, expected, time] of [
+  ["winter birthday retains 14:00 from the timezone-disabled CRM field", "2026-11-06T13:00:00+02:00", "2026-11-06T12:00:00.000Z", "14:00"],
+  ["summer birthday stays at 14:00", "2026-08-28T14:00:00+03:00", "2026-08-28T11:00:00.000Z", "14:00"],
+  ["the day winter time starts retains 14:00", "2026-10-25T13:00:00+02:00", "2026-10-25T12:00:00.000Z", "14:00"],
+  ["a different REST user offset does not change the appointment", "2026-11-06T04:00:00-07:00", "2026-11-06T12:00:00.000Z", "14:00"],
+  ["a midnight appointment retains its CRM calendar date", "2026-11-05T23:30:00+02:00", "2026-11-05T22:30:00.000Z", "00:30"],
+]) {
+  test(name, () => {
+    const result = buildRsvpPayloadFromBitrix(closedDeal({ UF_CRM_1645710833434: raw }), contact(), NOW, EVENT_TIME_CONTEXT);
+    assert.equal(result.error, undefined);
+    assert.equal(result.value.startsAt, expected);
+    for (const locale of ["ru", "he"]) {
+      assert.ok(formatRsvpEventDate({ ...result.value, locale }).endsWith(`· ${time}`));
+    }
+  });
+}
+
+test("the same appointment stays fixed when imported in a different season", () => {
+  const raw = "2027-11-06T13:00:00+02:00";
+  for (const serverTime of ["2027-01-15T10:00:00+03:00", "2027-07-15T10:00:00+03:00"]) {
+    assert.deepEqual(normalizeBitrixRsvpStartsAt(raw, { useTimeZone: false, serverTime }), { value: "2027-11-06T12:00:00.000Z" });
+  }
+});
+
+test("the server offset is read from Bitrix rather than hard-coded", () => {
+  assert.deepEqual(normalizeBitrixRsvpStartsAt("2026-11-06T16:00:00+02:00", {
+    useTimeZone: false, serverTime: "2026-09-24T11:00:00Z",
+  }), { value: "2026-11-06T12:00:00.000Z" });
+});
+
+test("timezone-aware CRM fields preserve their original instant", () => {
+  assert.deepEqual(normalizeBitrixRsvpStartsAt("2026-11-06T14:00:00+02:00", { useTimeZone: true }), {
+    value: "2026-11-06T12:00:00.000Z",
+  });
+});
+
+test("missing or invalid time metadata cannot silently move an appointment", () => {
+  assert.equal(normalizeBitrixRsvpStartsAt("2026-11-06T13:00:00+02:00").error, "missing_event_time_context");
+  assert.equal(normalizeBitrixRsvpStartsAt("2026-11-06T13:00:00+02:00", { useTimeZone: false }).error, "invalid_bitrix_server_time");
+  assert.equal(normalizeBitrixRsvpStartsAt("2027-02-30T13:00:00+02:00", EVENT_TIME_CONTEXT).error, "invalid_date_timezone");
+});
+
+test("nonexistent and repeated Israel clock hours require clarification", () => {
+  assert.equal(normalizeBitrixRsvpStartsAt("2027-03-26T02:30:00+03:00", EVENT_TIME_CONTEXT).error, "nonexistent_event_time");
+  assert.equal(normalizeBitrixRsvpStartsAt("2026-10-25T00:30:00+02:00", EVENT_TIME_CONTEXT).error, "ambiguous_event_time");
 });
 
 test("fails closed when duplicate child-name fields disagree", () => {

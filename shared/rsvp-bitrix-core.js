@@ -1,5 +1,6 @@
 import { normalizeRsvpPhone, validateRsvpEventPayload } from "./rsvp-core.js";
 import { DEFAULT_RSVP_INVITATION_MESSAGES } from "./rsvp-invitation.js";
+import { BITRIX_RSVP_TIME_FIELD, normalizeBitrixRsvpStartsAt } from "./rsvp-bitrix-time.js";
 
 export const BITRIX_DEAL_UPDATE_EVENT = "ONCRMDEALUPDATE";
 export const BITRIX_CLOSED_STAGES = new Map([
@@ -128,7 +129,7 @@ function firstValidPhone(contact) {
     .find((phone) => normalizeRsvpPhone(phone)) || "";
 }
 
-export function buildRsvpPayloadFromBitrix(deal, contact, now = new Date()) {
+export function buildRsvpPayloadFromBitrix(deal, contact, now = new Date(), eventTimeContext) {
   if (!deal || typeof deal !== "object") return { error: "deal_not_found" };
   if (!isClosedBitrixDeal(deal)) return { error: "deal_not_closed" };
   if (isRecurringBitrixTemplate(deal)) return { error: "recurring_template" };
@@ -144,10 +145,8 @@ export function buildRsvpPayloadFromBitrix(deal, contact, now = new Date()) {
   const organizerName = cleanText([contact?.NAME, contact?.LAST_NAME].filter(Boolean).join(" "));
   if (!organizerName) return { error: "missing_organizer_name" };
 
-  const startsAt = cleanText(deal.UF_CRM_1645710833434);
-  if (!/T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/i.test(startsAt)) {
-    return { error: "invalid_date_timezone" };
-  }
+  const startsAt = normalizeBitrixRsvpStartsAt(cleanText(deal[BITRIX_RSVP_TIME_FIELD]), eventTimeContext);
+  if (startsAt.error) return { error: startsAt.error };
 
   const payload = {
     locale: "ru",
@@ -155,7 +154,7 @@ export function buildRsvpPayloadFromBitrix(deal, contact, now = new Date()) {
     organizerPhone: firstValidPhone(contact),
     childName,
     childAge: Number(deal.UF_CRM_620BA6CC57523),
-    startsAt,
+    startsAt: startsAt.value,
     city: address,
     address,
     message: RSVP_DEFAULT_MESSAGE_RU,
