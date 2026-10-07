@@ -7,6 +7,7 @@ import { CHARITY_PAGE_COPY } from "@/data/charity";
 import { CITIES, hasCityCopy } from "@/data/cities";
 import { HOLIDAYS, hasHolidayCopy } from "@/data/holidays";
 import { PROGRAMS } from "@/data/programs";
+import { NEW_YEAR_PROGRAMS } from "@/data/new-year";
 import { SHOWS_PAGE_COPY } from "@/data/shows";
 import { VENUES, hasVenueCopy } from "@/data/venues";
 import { VIDEOS_PAGE_COPY } from "@/data/videos";
@@ -179,6 +180,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
   );
 
   return [
+    ...LOCALES.flatMap((locale) => NEW_YEAR_PROGRAMS.map((program) => {
+      const path = `/holiday/new-year/${program.id}`;
+      return { url: localizedUrl(locale, path), lastModified, changeFrequency: "monthly" as const, priority: 0.8, alternates: alternates(path) };
+    })),
     ...baseEntries,
     ...programEntries,
     ...cityEntries,

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown, MessageCircle, X } from "lucide-react";
+import { ChevronDown, ChevronRight, MessageCircle, Snowflake, X } from "lucide-react";
 import { BidiText } from "@/components/BidiText";
 import { getDictionary } from "@/lib/dictionaries";
 import { localePath, type Locale } from "@/lib/i18n";
@@ -111,10 +111,10 @@ export function DevPriceMenu({ locale = "ru", theme = "light", trigger, autoOpen
               {dict.common.pricesDialogTitle}
             </div>
             <div className="mt-1 text-base font-black leading-tight">
-              {dict.common.chooseChildAge}
+              {dict.common.chooseProgramFormat}
             </div>
             <p className="mt-1.5 text-xs leading-5 text-[var(--color-ink-soft)]">
-              <BidiText locale={locale}>{dict.common.chooseChildAgeDescription}</BidiText>
+              <BidiText locale={locale}>{dict.common.chooseProgramFormatDescription}</BidiText>
             </p>
           </div>
           <button
@@ -160,6 +160,19 @@ export function DevPriceMenu({ locale = "ru", theme = "light", trigger, autoOpen
               ))}
             </div>
           </div>
+
+          <Link
+            href={localePath(locale, "/holiday/new-year")}
+            onClick={closeMenu}
+            className="group flex items-center gap-3 rounded-xl border border-[#c6e2f7] bg-[linear-gradient(135deg,#eef8ff,#e4f2ff)] p-3 text-[#09265b] transition hover:border-[#74acd9] hover:bg-[#e4f2ff] active:scale-[0.98]"
+          >
+            <Snowflake className="h-9 w-9 shrink-0 text-[#2679bd]" aria-hidden />
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-black leading-snug"><BidiText locale={locale}>{dict.common.newYearProgramsTitle}</BidiText></span>
+              <span className="mt-1 block text-xs leading-snug text-[#47617e]"><BidiText locale={locale}>{dict.common.newYearProgramsDescription}</BidiText></span>
+            </span>
+            <ChevronRight className={`h-5 w-5 shrink-0 ${locale === "he" ? "rotate-180" : ""}`} aria-hidden />
+          </Link>
 
           <a
             href={whatsappLink(waMessages.default)}

@@ -19,7 +19,8 @@ export function FloatingWhatsApp({ locale = "ru" }: { locale?: Locale }) {
   const dict = getDictionary(locale);
   const waMessages = getWhatsAppMessages(locale);
 
-  if (pathname.startsWith("/admin")) {
+  // New Year has its own CTA carrying the selected program and duration.
+  if (pathname.startsWith("/admin") || /^\/(ru|he)\/holiday\/new-year(?:\/|$)/.test(pathname)) {
     return null;
   }
 

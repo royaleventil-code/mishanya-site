@@ -11,6 +11,11 @@ export type Dictionary = {
   };
   common: {
     programs: string;
+    newYearPrograms: string;
+    newYearProgramsTitle: string;
+    newYearProgramsDescription: string;
+    chooseProgramFormat: string;
+    chooseProgramFormatDescription: string;
     allPrograms: string;
     allProgramsTitle: string;
     home: string;
@@ -218,6 +223,11 @@ export const DICTIONARIES = {
     },
     common: {
       programs: "Программы",
+      newYearPrograms: "Новогодние программы",
+      newYearProgramsTitle: "Новогодние программы 2027",
+      newYearProgramsDescription: "Фото, видео, отзывы и цены",
+      chooseProgramFormat: "Выберите праздник",
+      chooseProgramFormatDescription: "Выберите возраст для дня рождения или откройте новогодние программы.",
       allPrograms: "Все программы",
       allProgramsTitle: "Все программы Мишани",
       home: "Главная",
@@ -632,6 +642,11 @@ export const DICTIONARIES = {
     },
     common: {
       programs: "תוכניות",
+      newYearPrograms: "תוכניות השנה החדשה",
+      newYearProgramsTitle: "תוכניות השנה החדשה 2027",
+      newYearProgramsDescription: "תמונות, וידאו, חוות דעת ומחירים",
+      chooseProgramFormat: "בחרו את החגיגה שלכם",
+      chooseProgramFormatDescription: "בחרו גיל ליום הולדת או פתחו את תוכניות השנה החדשה.",
       allPrograms: "כל התוכניות",
       allProgramsTitle: "כל התוכניות של מישניה",
       home: "דף הבית",

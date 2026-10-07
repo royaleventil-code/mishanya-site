@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Snowflake } from "lucide-react";
 import { DevPriceMenu } from "@/components/DevPriceMenu";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { useAutoHideHeader } from "@/components/useAutoHideHeader";
@@ -24,6 +25,7 @@ export function PublicHeader({
     { href: localePath(locale, "/about"), label: dict.common.about },
     { href: localePath(locale, "/formats"), label: dict.common.formats },
     { href: localePath(locale, "/all"), label: dict.common.programs },
+    { href: localePath(locale, "/holiday/new-year"), label: dict.common.newYearPrograms },
     { href: localePath(locale, "/gallery"), label: dict.common.galleryShort },
     { href: localePath(locale, "/contacts"), label: dict.common.contacts },
   ];
@@ -52,7 +54,7 @@ export function PublicHeader({
           </Link>
         </div>
 
-        <nav className="hidden items-center gap-5 text-sm font-bold md:flex">
+        <nav className="hidden items-center gap-4 text-sm font-bold lg:flex">
           {nav.map((item) => (
             <Link
               key={item.href}
@@ -87,6 +89,11 @@ export function PublicHeader({
           <LanguageSwitch locale={locale} theme={theme} compact hrefOverrides={langHrefOverrides} />
         </div>
       </div>
+      <nav aria-label={dict.common.newYearPrograms} className="mx-auto max-w-6xl px-5 pb-3 sm:px-6 lg:hidden">
+        <Link href={localePath(locale, "/holiday/new-year")} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-[#c6e2f7] bg-[#eef8ff] px-3 text-xs font-bold text-[#155a8f] transition hover:bg-[#e4f2ff]">
+          <Snowflake className="h-4 w-4" aria-hidden />{dict.common.newYearPrograms}
+        </Link>
+      </nav>
     </header>
   );
 }

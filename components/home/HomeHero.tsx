@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronRight, MessageCircle } from "lucide-react";
+import { ChevronRight, MessageCircle, Snowflake } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { BidiText } from "@/components/BidiText";
 import { DevPriceMenu, hasSeenHomeProgramsPopup } from "@/components/DevPriceMenu";
@@ -66,6 +66,7 @@ export function HomeHero({ locale = "ru" }: { locale?: Locale }) {
   const [programsGuideDismissed, setProgramsGuideDismissed] = useState(false);
   const nav = [
     { href: localePath(locale, "/all"), label: dict.common.programs },
+    { href: localePath(locale, "/holiday/new-year"), label: dict.common.newYearPrograms },
     { href: localePath(locale, "/gallery"), label: dict.common.gallery },
     { href: localePath(locale, "/about"), label: dict.common.about },
     { href: localePath(locale, "/contacts"), label: dict.common.contacts },
@@ -194,7 +195,7 @@ export function HomeHero({ locale = "ru" }: { locale?: Locale }) {
             className="h-[86px] w-auto sm:h-24"
           />
         </Link>
-        <nav className="hidden items-center gap-6 text-sm font-bold text-zinc-700 md:flex">
+        <nav className="hidden items-center gap-5 text-sm font-bold text-zinc-700 lg:flex">
           {nav.map((item) => (
             <Link key={item.href} href={item.href} className="transition hover:text-zinc-950">
               {item.label}
@@ -203,6 +204,11 @@ export function HomeHero({ locale = "ru" }: { locale?: Locale }) {
         </nav>
         <LanguageSwitch locale={locale} compact />
       </header>
+      <nav aria-label={dict.common.newYearPrograms} className="relative z-20 mx-auto -mt-1 max-w-6xl px-5 sm:px-6 lg:hidden">
+        <Link href={localePath(locale, "/holiday/new-year")} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-[#c6e2f7] bg-white/90 px-3 text-xs font-bold text-[#155a8f] shadow-sm transition hover:bg-[#eef8ff]">
+          <Snowflake className="h-4 w-4" aria-hidden /><BidiText locale={locale}>{dict.common.newYearPrograms}</BidiText>
+        </Link>
+      </nav>
 
       {/* content */}
       <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-6 px-5 pb-14 pt-4 sm:px-6 md:grid-cols-2 md:gap-10 md:pb-24 md:pt-8">
