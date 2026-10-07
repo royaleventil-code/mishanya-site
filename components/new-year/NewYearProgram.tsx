@@ -20,7 +20,7 @@ export function NewYearProgram({ locale, program }: { locale: Locale; program: P
     <div className={s.detailGrid}>
       <div className={s.detailVisual}>
         <header className={s.programHeading}><h1>{program.name[locale]}</h1></header>
-        {program.photo ? <figure className={`${s.mainPhoto} ${program.mascot ? s.mainPhotoWithMascot : ""} ${program.id === "circus" ? s.circusPhoto : program.id === "ded-moroz" ? s.soloFrame : ""}`}>
+        {program.photo ? <figure className={`${s.mainPhoto} ${program.mascot ? s.mainPhotoWithMascot : ""} ${program.id === "circus" ? s.circusPhoto : program.id === "ded-moroz" ? s.soloFrame : program.id === "grinch" ? s.wideFrame : ""}`}>
           <WinterPhoto name={program.photo} alt={program.name[locale]} eager className={`${s.teamPhoto} ${program.id === "ded-moroz" ? s.soloPhoto : ""}`} sizes={program.mascot ? "(max-width: 520px) calc(66.67vw - 33.33px), (max-width: 700px) 314px, (max-width: 900px) calc(34.15vw - 39.3px), (max-width: 1120px) calc(34.15vw - 45.5px), 337px" : "(max-width: 520px) calc(100vw - 32px), (max-width: 700px) 488px, (max-width: 900px) calc(51.22vw - 41px), (max-width: 1120px) calc(51.22vw - 50.2px), 524px"} />
           {program.mascot && <WinterPhoto name={program.mascot} alt={he ? (program.mascot === "olaf" ? "אולף" : "הגרינץ׳") : (program.mascot === "olaf" ? "Олаф" : "Гринч")} className={s.detailMascot} eager sizes="(max-width: 520px) calc(33.33vw - 16.67px), (max-width: 700px) 157px, (max-width: 900px) calc(17.07vw - 19.7px), (max-width: 1120px) calc(17.07vw - 22.7px), 169px" />}
         </figure> : <div className={s.nightArtwork}><Snowflake size={48} aria-hidden /><p>{he ? "לילה של קסם" : "Ночь, полная чудес"}</p></div>}
@@ -59,7 +59,7 @@ export function NewYearProgram({ locale, program }: { locale: Locale; program: P
             <figcaption>{caption[locale]}</figcaption>
           </figure>)}</div>
         </section>}
-        <PastCelebrations locale={locale} compact />
+        <PastCelebrations locale={locale} compact videoId={program.video} />
         <NewYearReview locale={locale} />
         {program.mascot && <section className={s.gallery}>
           <h2>{he ? "הדמויות של החגיגה שלכם" : "Герои вашего праздника"}</h2>

@@ -19,8 +19,10 @@ test("performer photographs follow the supplied cast assignments", () => {
   assert.equal(newYearProgram("ded-moroz-snegurochka").photo, "denis-silver-pair");
   assert.equal(newYearProgram("olaf").photo, "denis-silver-pair");
   assert.equal(newYearProgram("olaf").mascot, "olaf");
-  assert.equal(newYearProgram("grinch").photo, "mishanya-blue-pair");
-  assert.equal(newYearProgram("grinch").mascot, "grinch");
+  // 2026-10-07: Mikhail chose one group photo with the Grinch as the main image.
+  assert.equal(newYearProgram("grinch").photo, "grinch-trio");
+  assert.deepEqual(newYearProgram("grinch").gallery.map((item) => item.photo), ["mishanya-blue-pair", "grinch"]);
+  assert.equal(newYearProgram("ded-moroz").video, "DaHgXCqYOjY");
 });
 
 test("every duration creates a localized WhatsApp message with the selected price", () => {

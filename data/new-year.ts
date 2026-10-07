@@ -11,6 +11,7 @@ export type NewYearProgram = {
   description: Copy;
   cast?: Copy;
   photo?: string;
+  video?: string;
   mascot?: string;
   gallery?: { photo: string; caption: Copy; wide?: boolean }[];
   options: NewYearOption[];
@@ -36,6 +37,7 @@ export const NEW_YEAR_PROGRAMS: NewYearProgram[] = [
     teaser: copy("Новогодние игры, хороводы и зимняя сказка", "משחקי חג, ריקודים במעגל ואגדת חורף"),
     description: copy("Дед Мороз приходит в гости, и начинается маленькое новогоднее приключение! Вместе с ребятами играем, водим зимние хороводы и разыгрываем добрую сказку, в которой дети сами становятся героями. А в финале наступает долгожданный момент — поздравления и вручение ваших подарков.", "דד מורוז מגיע לביקור, והרפתקת החג מתחילה! יחד עם הילדים נשחק במשחקי השנה החדשה, נרקוד במעגל ונציג אגדת חורף שבה הילדים עצמם הופכים לגיבורים. בסיום מגיע הרגע שכולם מחכים לו — ברכות וחלוקת המתנות שהכנתם."),
     photo: "solo-red-winter-v1",
+    video: "DaHgXCqYOjY",
     options: [{ minutes: 30, price: 1000 }],
     includes: [
       copy("Знакомство и личное поздравление — Дед Мороз приветствует ребят, общается с ними и приглашает вместе встретить праздник.", "היכרות וברכה אישית — דד מורוז מברך את הילדים, משוחח איתם ומזמין אותם לחגוג יחד."),
@@ -92,7 +94,11 @@ export const NEW_YEAR_PROGRAMS: NewYearProgram[] = [
     teaser: copy("Невероятное приключение и море эмоций", "הרפתקה חגיגית מלאה בהתרגשות"),
     hostLabel: copy("Дед Мороз — Мишаня", "מישניה בתפקיד דד מורוז"),
     description: copy("Авторское ведение Мишани: он лично проводит программу в образе Деда Мороза. Вместе со Снегурочкой и Гринчем вовлекает детей в игры, фокусы и новогоднее приключение.", "הנחיה בסגנון הייחודי של מישניה: הוא מנחה את התוכנית בעצמו, בדמותו של דד מורוז. יחד עם סנגורוצ׳קה והגרינץ׳ הוא מזמין את הילדים למשחקים, קסמים והרפתקה חגיגית."),
-    photo: "mishanya-blue-pair", mascot: "grinch",
+    photo: "grinch-trio",
+    gallery: [
+      { photo: "mishanya-blue-pair", caption: copy("Мишаня в образе Деда Мороза и Снегурочка", "מישניה בדמות דד מורוז וסנגורוצ׳קה") },
+      { photo: "grinch", caption: copy("Гринч", "הגרינץ׳") },
+    ],
     options: [{ minutes: 60, price: 2000, capacity: smallGroup }, { minutes: 90, price: 2500, capacity: largeGroup }],
     includes: [
       copy("Авторское ведение Мишани — Мишаня лично проводит программу в образе Деда Мороза.", "הנחיה בסגנון הייחודי של מישניה — מישניה מנחה את התוכנית בעצמו, בדמותו של דד מורוז."),
@@ -165,6 +171,7 @@ export const NEW_YEAR_PHOTO_SIZE: Record<string, [number, number]> = {
   "circus-cover-v1": [1000, 1250], "circus-ded-moroz": [1000, 666], "circus-performance": [682, 609],
   "circus-poodle-tree": [1000, 1333], "circus-umbrella": [772, 1365],
   "circus-poodle-trick": [681, 631],
+  "grinch-trio": [1000, 667],
 };
 
 // Real screenshots of New Year reviews verified on Facebook on 2026-09-23.

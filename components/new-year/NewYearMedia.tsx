@@ -15,9 +15,10 @@ export function WinterPhoto({ name, alt, className = "", eager = false, sizes = 
     decoding="async" className={className} />;
 }
 
-export function PastCelebrations({ locale, compact = false }: { locale: Locale; compact?: boolean }) {
+export function PastCelebrations({ locale, compact = false, videoId }: { locale: Locale; compact?: boolean; videoId?: string }) {
   const he = locale === "he";
-  const videos = compact ? NEW_YEAR_VIDEOS.slice(0, 1) : NEW_YEAR_VIDEOS;
+  const featured = NEW_YEAR_VIDEOS.find((video) => video.id === videoId) ?? NEW_YEAR_VIDEOS[0];
+  const videos = compact ? [featured] : NEW_YEAR_VIDEOS;
   return <section className={s.memories} aria-labelledby="memories-title" id="memories">
     <h2 id="memories-title" className={compact ? s.screenReaderOnly : undefined}>{he ? "ככה נראתה השמחה" : "Так выглядит радость"}</h2>
     <p className={s.sectionNote}>{he ? "וידאו מחגיגות קודמות שלנו" : "Видео с наших прошлых праздников"}</p>
