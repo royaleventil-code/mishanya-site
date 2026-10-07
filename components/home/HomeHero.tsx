@@ -204,11 +204,6 @@ export function HomeHero({ locale = "ru" }: { locale?: Locale }) {
         </nav>
         <LanguageSwitch locale={locale} compact />
       </header>
-      <nav aria-label={dict.common.newYearPrograms} className="relative z-20 mx-auto -mt-1 max-w-6xl px-5 sm:px-6 lg:hidden">
-        <Link href={localePath(locale, "/holiday/new-year")} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-[#c6e2f7] bg-white/90 px-3 text-xs font-bold text-[#155a8f] shadow-sm transition hover:bg-[#eef8ff]">
-          <Snowflake className="h-4 w-4" aria-hidden /><BidiText locale={locale}>{dict.common.newYearPrograms}</BidiText>
-        </Link>
-      </nav>
 
       {/* content */}
       <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-6 px-5 pb-14 pt-4 sm:px-6 md:grid-cols-2 md:gap-10 md:pb-24 md:pt-8">
@@ -246,7 +241,12 @@ export function HomeHero({ locale = "ru" }: { locale?: Locale }) {
             ))}
           </motion.div>
 
-          <motion.div variants={ctaRise} className="mt-7 flex flex-col gap-3 sm:flex-row">
+          <motion.nav variants={ctaRise} aria-label={dict.common.newYearPrograms} className="mt-7">
+            <Link href={localePath(locale, "/holiday/new-year")} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-[#c6e2f7] bg-white/90 px-5 py-3 text-sm font-black text-[#155a8f] shadow-sm transition hover:bg-[#eef8ff] active:scale-[0.98]">
+              <Snowflake className="h-4 w-4 shrink-0" aria-hidden /><BidiText locale={locale}>{dict.common.newYearPrograms}</BidiText>
+            </Link>
+          </motion.nav>
+          <motion.div variants={ctaRise} className="mt-3 flex flex-col gap-3 sm:flex-row">
             <DevPriceMenu
               locale={locale}
               autoOpenDelayMs={6000}
