@@ -13,6 +13,11 @@ export function NewYearProgram({ locale, program }: { locale: Locale; program: P
   const [selected, setSelected] = useState(0);
   const option = program.options[selected];
   const he = locale === "he";
+  const momentsTitle = he ? "רגעים מהמופע" : "Моменты нашего шоу";
+  const photoGalleries = [
+    { id: "program-photos", photos: program.moments ?? program.gallery, title: program.moments ? momentsTitle : program.galleryTitle?.[locale] ?? momentsTitle },
+    { id: "program-characters", photos: program.moments ? program.gallery : undefined, title: program.galleryTitle?.[locale] ?? momentsTitle },
+  ];
   const extended = option.minutes === 90 ? program.extended ?? [] : [];
   const href = whatsappLink(newYearMessage(program, option, locale));
   return <article className={s.programDetail}>
@@ -20,7 +25,7 @@ export function NewYearProgram({ locale, program }: { locale: Locale; program: P
     <div className={s.detailGrid}>
       <div className={s.detailVisual}>
         <header className={s.programHeading}><h1>{program.name[locale]}</h1></header>
-        {program.photo ? <figure className={`${s.mainPhoto} ${program.mascot ? s.mainPhotoWithMascot : ""} ${program.id === "circus" ? s.circusPhoto : program.id === "ded-moroz" ? s.soloFrame : program.id === "grinch" ? s.wideFrame : ""}`}>
+        {program.photo ? <figure className={`${s.mainPhoto} ${program.mascot ? s.mainPhotoWithMascot : ""} ${program.id === "circus" ? s.circusPhoto : ["ded-moroz", "ded-moroz-snegurochka", "olaf"].includes(program.id) ? s.soloFrame : program.id === "grinch" ? s.wideFrame : ""}`}>
           <WinterPhoto name={program.photo} alt={program.name[locale]} eager className={`${s.teamPhoto} ${program.id === "ded-moroz" ? s.soloPhoto : ""}`} sizes={program.mascot ? "(max-width: 520px) calc(66.67vw - 33.33px), (max-width: 700px) 314px, (max-width: 900px) calc(34.15vw - 39.3px), (max-width: 1120px) calc(34.15vw - 45.5px), 337px" : "(max-width: 520px) calc(100vw - 32px), (max-width: 700px) 488px, (max-width: 900px) calc(51.22vw - 41px), (max-width: 1120px) calc(51.22vw - 50.2px), 524px"} />
           {program.mascot && <WinterPhoto name={program.mascot} alt={he ? (program.mascot === "olaf" ? "אולף" : "הגרינץ׳") : (program.mascot === "olaf" ? "Олаф" : "Гринч")} className={s.detailMascot} eager sizes="(max-width: 520px) calc(33.33vw - 16.67px), (max-width: 700px) 157px, (max-width: 900px) calc(17.07vw - 19.7px), (max-width: 1120px) calc(17.07vw - 22.7px), 169px" />}
         </figure> : <div className={s.nightArtwork}><Snowflake size={48} aria-hidden /><p>{he ? "לילה של קסם" : "Ночь, полная чудес"}</p></div>}
@@ -50,15 +55,15 @@ export function NewYearProgram({ locale, program }: { locale: Locale; program: P
           {program.extended && option.minutes !== 90 && <p className={s.extendedNote}>{he ? "בתוכנית של 90 דקות: " : "В программе на 90 минут: "}{program.extended.map((item) => item[locale].toLocaleLowerCase()).join(he ? " ו" : " и ") }.</p>}
         </section>}
         <div className={s.desktopCta}><a className={s.whatsapp} href={href} target="_blank" rel="noopener noreferrer"><MessageCircle size={25} aria-hidden />{he ? "פשוט לכתוב בוואטסאפ" : "Просто написать в WhatsApp"}<ArrowRight size={19} className={s.directional} aria-hidden /></a><p className={s.ctaNote}>{he ? "נדבר על התאריך, השעה והעיר בהודעה" : "Дату, время и город обсудим в переписке"}</p></div>
-        {program.gallery && <section className={s.programGallery} aria-labelledby="program-photos-title">
-          <h2 id="program-photos-title"><Camera size={23} aria-hidden />{he ? "רגעים מהמופע" : "Моменты нашего шоу"}</h2>
-          <div className={s.programGalleryGrid}>{program.gallery.map(({ photo, caption, wide }) => <figure key={photo} className={wide ? s.wideGalleryPhoto : undefined}>
+        {photoGalleries.map(({ id, photos, title }) => photos && <section key={id} id={id} className={s.programGallery} aria-labelledby={`${id}-title`}>
+          <h2 id={`${id}-title`}><Camera size={23} aria-hidden />{title}</h2>
+          <div className={s.programGalleryGrid}>{photos.map(({ photo, caption, wide }, i) => <figure key={photo} className={wide ? s.wideGalleryPhoto : undefined}>
             <a href={`/new-year/${photo}-1000.webp`} target="_blank" rel="noopener noreferrer" aria-label={he ? `פתיחת תמונה: ${caption.he}` : `Открыть фото: ${caption.ru}`}>
-              <WinterPhoto name={photo} alt={caption[locale]} sizes={wide ? "(max-width: 520px) calc(100vw - 32px), (max-width: 700px) 488px, (max-width: 1120px) 46vw, 500px" : "(max-width: 520px) calc(50vw - 22px), (max-width: 700px) 238px, (max-width: 1120px) 22vw, 244px"} />
+              <WinterPhoto name={photo} alt={caption[locale]} eager={i === 0} sizes={wide ? "(max-width: 520px) calc(100vw - 32px), (max-width: 700px) 488px, (max-width: 900px) calc(48.78vw - 39.02px), (max-width: 1120px) calc(48.78vw - 47.8px), 499px" : "(max-width: 520px) calc(50vw - 22px), (max-width: 700px) 238px, (max-width: 900px) calc(24.39vw - 25.51px), (max-width: 1120px) calc(24.39vw - 29.9px), 243px"} />
             </a>
             <figcaption>{caption[locale]}</figcaption>
           </figure>)}</div>
-        </section>}
+        </section>)}
         <PastCelebrations locale={locale} compact videoId={program.video} />
         <NewYearReview locale={locale} />
         {program.mascot && <section className={s.gallery}>

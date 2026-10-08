@@ -13,7 +13,9 @@ export type NewYearProgram = {
   photo?: string;
   video?: string;
   mascot?: string;
+  galleryTitle?: Copy;
   gallery?: { photo: string; caption: Copy; wide?: boolean }[];
+  moments?: { photo: string; caption: Copy; wide?: boolean }[];
   options: NewYearOption[];
   includes: Copy[];
   includesTitle?: Copy;
@@ -55,7 +57,16 @@ export const NEW_YEAR_PROGRAMS: NewYearProgram[] = [
     shortName: copy("Дед Мороз и Снегурочка", "דד מורוז וסנגורוצ׳קה"),
     teaser: copy("Классическая программа для всей семьи", "חגיגה קלאסית לכל המשפחה"),
     description: copy("Любимые герои приходят в гости, чтобы вместе с детьми петь, играть и создавать новогодние воспоминания.", "הדמויות האהובות מגיעות לשיר ולשחק עם הילדים, וליצור זיכרונות חג משפחתיים."),
-    photo: "denis-silver-pair",
+    photo: "ded-moroz-snegurochka",
+    gallery: [
+      { photo: "silver-games-3236", caption: copy("Новогодние игры с Дедом Морозом и Снегурочкой", "משחקי חג עם דד מורוז וסנגורוצ׳קה"), wide: true },
+      { photo: "silver-conversation-0086", caption: copy("Общение с Дедом Морозом", "שיחה עם דד מורוז") },
+      { photo: "silver-children-0015", caption: copy("Снегурочка и маленькие участники праздника", "סנגורוצ׳קה והמשתתפים הקטנים בחגיגה") },
+      { photo: "silver-gift-7297", caption: copy("Фото на память с Дедом Морозом и Снегурочкой", "תמונה למזכרת עם דד מורוז וסנגורוצ׳קה"), wide: true },
+      { photo: "silver-confetti-0030", caption: copy("Радость в серебряном конфетти", "שמחה בקונפטי כסוף"), wide: true },
+      { photo: "silver-costumes-full-9582", caption: copy("Серебряные костюмы Деда Мороза и Снегурочки", "התלבושות הכסופות של דד מורוז וסנגורוצ׳קה") },
+      { photo: "silver-costumes-detail-9556", caption: copy("Детали серебряных новогодних костюмов", "פרטים מהתלבושות הכסופות לשנה החדשה") },
+    ],
     options: [{ minutes: 30, price: 1200, capacity: smallGroup }, { minutes: 60, price: 1500, capacity: smallGroup }],
     includes: [
       copy("Встреча с Дедом Морозом и Снегурочкой — знакомимся с ребятами, поздравляем с Новым годом и приглашаем в зимнюю сказку.", "מפגש עם דד מורוז וסנגורוצ׳קה — מכירים את הילדים, מברכים אותם לשנה החדשה ומזמינים אותם לאגדת חורף."),
@@ -73,7 +84,16 @@ export const NEW_YEAR_PROGRAMS: NewYearProgram[] = [
     shortName: copy("Дед Мороз, Снегурочка и Олаф", "דד מורוז, סנגורוצ׳קה ואולף"),
     teaser: copy("Ещё больше игр, волшебства и смеха", "עוד משחקים, קסמים וצחוק"),
     description: copy("К Деду Морозу и Снегурочке присоединяется Олаф — для шумного, весёлого праздника с играми и серебряным конфетти.", "אולף מצטרף לדד מורוז ולסנגורוצ׳קה לחגיגה שמחה עם משחקים וקונפטי כסוף."),
-    photo: "denis-silver-pair", mascot: "olaf",
+    photo: "ded-moroz-snegurochka-olaf",
+    moments: [
+      { photo: "olaf-meeting-2362", caption: copy("Встреча со Снегурочкой и Олафом", "מפגש עם סנגורוצ׳קה ואולף") },
+      { photo: "olaf-games-0015", caption: copy("Игры со Снегурочкой", "משחקים עם סנגורוצ׳קה") },
+    ],
+    galleryTitle: copy("Герои вашего праздника", "הדמויות של החגיגה שלכם"),
+    gallery: [
+      { photo: "ded-moroz-snegurochka", caption: copy("Дед Мороз и Снегурочка", "דד מורוז וסנגורוצ׳קה") },
+      { photo: "olaf", caption: copy("Олаф", "אולף") },
+    ],
     options: [{ minutes: 60, price: 1700, capacity: smallGroup }, { minutes: 90, price: 2300, capacity: copy("до 30 детей", "עד 30 ילדים") }],
     includes: [
       copy("Встреча с любимыми героями — Дед Мороз и Снегурочка поздравляют ребят, а появление Олафа добавляет празднику улыбок и забавных моментов.", "מפגש עם הדמויות האהובות — דד מורוז וסנגורוצ׳קה מברכים את הילדים, והופעתו של אולף מוסיפה חיוכים ורגעים משעשעים לחגיגה."),
@@ -162,6 +182,17 @@ export const newYearPath = (locale: Locale, id?: string) => `/${locale}/holiday/
 export const NEW_YEAR_HERO_PHOTO = "ensemble-photo-collage-v2";
 
 export const NEW_YEAR_PHOTO_SIZE: Record<string, [number, number]> = {
+  "ded-moroz-snegurochka": [1000,750],
+  "silver-games-3236": [1000,667],
+  "silver-conversation-0086": [1000,1500],
+  "silver-children-0015": [1000,1333],
+  "silver-gift-7297": [1000,668],
+  "silver-confetti-0030": [1000,1333],
+  "silver-costumes-full-9582": [1000,1333],
+  "silver-costumes-detail-9556": [1000,1333],
+  "ded-moroz-snegurochka-olaf": [1000,750],
+  "olaf-meeting-2362": [1000,1328],
+  "olaf-games-0015": [1000,1333],
   "ensemble-photo-collage-v2": [1000, 900],
   "ensemble-photo-collage": [1000, 900],
   "solo-red-winter-v1": [800, 600],

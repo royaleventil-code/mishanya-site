@@ -16,9 +16,9 @@ test("approved 2026 offers retain Sergey's explicit solo correction", () => {
 
 test("performer photographs follow the supplied cast assignments", () => {
   assert.equal(newYearProgram("ded-moroz").photo, "solo-red-winter-v1");
-  assert.equal(newYearProgram("ded-moroz-snegurochka").photo, "denis-silver-pair");
-  assert.equal(newYearProgram("olaf").photo, "denis-silver-pair");
-  assert.equal(newYearProgram("olaf").mascot, "olaf");
+  assert.equal(newYearProgram("ded-moroz-snegurochka").photo, "ded-moroz-snegurochka");
+  assert.equal(newYearProgram("olaf").photo, "ded-moroz-snegurochka-olaf");
+  assert.deepEqual(newYearProgram("olaf").gallery.map((item) => item.photo), ["ded-moroz-snegurochka", "olaf"]);
   // 2026-10-07: Mikhail chose one group photo with the Grinch as the main image.
   assert.equal(newYearProgram("grinch").photo, "grinch-trio");
   assert.deepEqual(newYearProgram("grinch").gallery.map((item) => item.photo), ["mishanya-blue-pair", "grinch"]);
