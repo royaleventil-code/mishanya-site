@@ -14,6 +14,40 @@ import {
 
 const now = new Date("2026-07-12T12:00:00.000Z");
 
+test("phone-only submissions produce a lead without invented profile or birthday fields", () => {
+  for (const language of ["ru", "he"]) {
+    const result = validateGiftPayload({
+      language,
+      giftCode: "discount-200",
+      phone: "  +972 (50) 123-45-67  ",
+    }, now);
+    assert.equal(result.error, undefined);
+    assert.equal(result.value.phone, "+972 (50) 123-45-67");
+    assert.deepEqual(result.value.children, []);
+
+    const fields = buildLeadFields(result.value, {
+      id: "phone-only-claim",
+      submittedAt: now.toISOString(),
+    }, "REPEAT_SALE");
+    assert.equal(fields.TITLE, "QR-код с праздника");
+    assert.equal(fields.STATUS_ID, "NEW");
+    assert.equal(fields.SOURCE_ID, "REPEAT_SALE");
+    assert.equal(fields.UF_CRM_1784446465040, "Скидка 200 ₪");
+    assert.deepEqual(fields.PHONE, [{ VALUE: "+972 (50) 123-45-67", VALUE_TYPE: "WORK" }]);
+    for (const field of [
+      "NAME", "BIRTHDATE", "UF_CRM_1649234588017", "UF_CRM_1644332749977",
+      "UF_CRM_1644328015350", "UF_CRM_1644327962757", "UF_CRM_1644329391894",
+    ]) {
+      assert.equal(Object.hasOwn(fields, field), false, field);
+    }
+    assert.match(fields.COMMENTS, /Подарок: Скидка 200 ₪/);
+    assert.doesNotMatch(fields.COMMENTS, /Ведущий|ребёнок|undefined|null/);
+  }
+  assert.equal(validateGiftPayload({
+    language: "ru", giftCode: "discount-200", phone: "   ",
+  }, now).error, "invalid_phone");
+});
+
 test("phone accepts any non-empty format without normalization", () => {
   const basePayload = {
     language: "ru",
@@ -194,7 +228,7 @@ test("name, city, and phone accept any non-empty Unicode text without length lim
   assert.equal(result.value.phone, longText);
 });
 
-test("host selection is required and limited to the approved list", () => {
+test("legacy host selection is optional and limited to the approved list when provided", () => {
   const payload = {
     language: "ru",
     sourceCode: "banner-01",
@@ -205,7 +239,7 @@ test("host selection is required and limited to the approved list", () => {
     children: [{ gender: "boy", ageTurning: 7, birthdayDay: 20, birthdayMonth: 8 }],
   };
 
-  assert.equal(validateGiftPayload(payload, now).error, "invalid_host");
+  assert.equal(validateGiftPayload(payload, now).error, undefined);
   assert.equal(
     validateGiftPayload({ ...payload, hostCode: "other-host" }, now).error,
     "invalid_host",
@@ -413,6 +447,75 @@ test("Bitrix sync repairs source and wait-until on an existing QR lead and verif
       },
     });
     assert.match(calls[3].url, /crm\.lead\.get\.json$/);
+    assert.equal(responses.length, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("Bitrix sync creates a phone-only lead and does not assign a birthday reminder", async () => {
+  const payload = validateGiftPayload({
+    language: "ru", sourceCode: "banner-01", giftCode: "discount-200", phone: "0502345678",
+  }, now).value;
+  const responses = [
+    [{ STATUS_ID: "REPEAT_SALE" }],
+    [],
+    { LEAD: [42] },
+    55177,
+    { ID: "55177", SOURCE_ID: "REPEAT_SALE", UF_CRM_1644332749977: "" },
+  ];
+  const calls = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url: String(url), body: JSON.parse(String(options.body)) });
+    return Response.json({ result: responses.shift() });
+  };
+  try {
+    const result = await syncBitrix(payload, {
+      id: "claim-phone-only", submittedAt: now.toISOString(),
+    }, {
+      BITRIX_WEBHOOK_URL: "https://example.test/rest/1/token",
+      BITRIX_QR_SOURCE_ID: "REPEAT_SALE",
+    });
+    assert.deepEqual(result, { status: "created", leadId: 55177 });
+    assert.match(calls[3].url, /crm\.lead\.add\.json$/);
+    const fields = calls[3].body.fields;
+    assert.deepEqual(fields.PHONE, [{ VALUE: "0502345678", VALUE_TYPE: "WORK" }]);
+    assert.equal(Object.hasOwn(fields, "BIRTHDATE"), false);
+    assert.equal(Object.hasOwn(fields, "UF_CRM_1644332749977"), false);
+    assert.match(fields.COMMENTS, /Лиды: 42/);
+    assert.equal(calls.some((call) => call.url.includes("crm.lead.update")), false);
+    assert.equal(responses.length, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("retrying a phone-only claim repairs its source without clearing an existing reminder", async () => {
+  const payload = validateGiftPayload({
+    language: "he", giftCode: "discount-200", phone: "0502345678",
+  }, now).value;
+  const responses = [
+    [{ STATUS_ID: "REPEAT_SALE" }],
+    [{ ID: "55177", SOURCE_ID: "OLD_SOURCE", UF_CRM_1644332749977: "2027-05-01" }],
+    true,
+    { ID: "55177", SOURCE_ID: "REPEAT_SALE", UF_CRM_1644332749977: "2027-05-01" },
+  ];
+  const calls = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url: String(url), body: JSON.parse(String(options.body)) });
+    return Response.json({ result: responses.shift() });
+  };
+  try {
+    const result = await syncBitrix(payload, {
+      id: "claim-phone-only-existing", submittedAt: now.toISOString(),
+    }, {
+      BITRIX_WEBHOOK_URL: "https://example.test/rest/1/token",
+      BITRIX_QR_SOURCE_ID: "REPEAT_SALE",
+    });
+    assert.deepEqual(result, { status: "created", leadId: 55177 });
+    assert.deepEqual(calls[2].body, { id: 55177, fields: { SOURCE_ID: "REPEAT_SALE" } });
     assert.equal(responses.length, 0);
   } finally {
     globalThis.fetch = originalFetch;

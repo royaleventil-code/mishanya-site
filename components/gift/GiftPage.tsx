@@ -5,49 +5,22 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   CalendarDays,
   Check,
-  ChevronDown,
   Gift,
   LoaderCircle,
-  MapPin,
   Phone,
-  UserRound,
   X,
 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 type Language = "ru" | "he";
 type GiftCode = "discount-200" | "confetti" | "bubbles";
-type ChildGender = "boy" | "girl";
-type ChildGenderChoice = "" | ChildGender;
-type HostCode =
-  | "mishanya"
-  | "artur-magician"
-  | "artur-mad-professor"
-  | "hanna"
-  | "ira"
-  | "zhenya"
-  | "leon"
-  | "unknown";
 type SubmitState = "idle" | "submitting" | "success" | "existing" | "error";
-
-type GiftPayloadChild = {
-  gender: ChildGender;
-  ageTurning: number;
-  birthdayDay: number;
-  birthdayMonth: number;
-  nextBirthday: string;
-};
 
 type GiftPayload = {
   language: Language;
   sourceCode: string;
   giftCode: GiftCode;
-  clientName: string;
   phone: string;
-  city: string;
-  hostCode: HostCode;
-  children: GiftPayloadChild[];
-  primaryChildIndex: number;
   turnstileToken?: string;
   website?: string;
 };
@@ -79,9 +52,6 @@ declare global {
   }
 }
 
-const AGES = Array.from({ length: 10 }, (_, index) => index + 1);
-const MONTHS = Array.from({ length: 12 }, (_, index) => index + 1);
-const BIRTHDAY_DAYS = Array.from({ length: 31 }, (_, index) => index + 1);
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim();
 
 const COPY = {
@@ -90,7 +60,7 @@ const COPY = {
     eyebrow: "Подарок с праздника",
     title: "Вы можете забрать подарок — скидку 200\u00a0₪",
     intro:
-      "Скидка действует на программу будущего праздника. Закрепим её за вашим номером телефона, подтвердим в WhatsApp и один раз напомним ближе ко дню рождения ребёнка.",
+      "Скидка действует на программу будущего праздника. Укажите только номер телефона — закрепим за ним скидку и подтвердим в WhatsApp.",
     promise: "Скидка действует 12 месяцев",
     claimDiscount: "Забрать скидку 200 шек.",
     gifts: {
@@ -108,50 +78,20 @@ const COPY = {
       },
     },
     stepTwo: "Закрепите скидку",
-    stepTwoHint: "Все поля обязательны",
+    stepTwoHint: "Нужен только номер телефона",
     closeForm: "Закрыть форму",
-    clientName: "Имя клиента",
-    clientNamePlaceholder: "Как к вам обращаться?",
     phone: "Номер телефона / WhatsApp",
     phonePlaceholder: "Введите ваш номер телефона",
     phoneHint: "Введите номер в любом удобном формате",
-    city: "Город",
-    cityPlaceholder: "Например, Хайфа",
-    host: "Кто был ведущим на празднике?",
-    hostPlaceholder: "Выберите ведущего",
-    childDetails: "О ребёнке",
-    gender: "Пол",
-    genderBoy: "Мальчик",
-    genderGirl: "Девочка",
-    age: "Возраст",
-    ageHint: "От 1 до 10 лет",
-    month: "Месяц рождения",
-    day: "Число рождения",
-    months: [
-      "Январь",
-      "Февраль",
-      "Март",
-      "Апрель",
-      "Май",
-      "Июнь",
-      "Июль",
-      "Август",
-      "Сентябрь",
-      "Октябрь",
-      "Ноябрь",
-      "Декабрь",
-    ],
     consent:
-      "Нажимая «Закрепить скидку», вы соглашаетесь на сохранение указанных данных, подтверждение скидки сообщением в WhatsApp и одно напоминание ближе ко дню рождения ребёнка. Мы используем данные только для этих обращений.",
+      "Нажимая «Закрепить скидку», вы соглашаетесь на сохранение номера телефона и подтверждение скидки сообщением в WhatsApp.",
     submit: "Закрепить скидку",
     submitting: "Закрепляем скидку…",
-    invalidHost: "Выберите, кто был ведущим на празднике",
-    invalidBirthday: "Выберите пол, возраст, месяц и число рождения",
-    verificationPending: "Подтвердите, что форму заполняет человек",
+    invalidPhone: "Введите номер телефона",
     formError: "Не удалось сохранить подарок. Попробуйте ещё раз.",
     successTitle: "Скидка сохранена",
     successText:
-      "Спасибо! Скидка 200 ₪ закреплена за вами. Мы подтвердим её сообщением в WhatsApp и один раз напомним ближе ко дню рождения ребёнка.",
+      "Спасибо! Скидка 200 ₪ закреплена за вашим номером. Мы подтвердим её сообщением в WhatsApp.",
     existingTitle: "Подарок уже закреплён",
     existingText: (giftName: string) =>
       `За вашим номером уже закреплён подарок: «${giftName}».`,
@@ -163,7 +103,7 @@ const COPY = {
     eyebrow: "מתנה מהאירוע",
     title: "מחכה לכם מתנה — הנחה של 200\u00a0₪",
     intro:
-      "ההנחה תקפה לתוכנית ליום ההולדת הבא. נשמור אותה לפי מספר הטלפון שלכם, נאשר ב-WhatsApp ונשלח תזכורת אחת לקראת יום ההולדת של הילד או הילדה.",
+      "ההנחה תקפה לתוכנית ליום ההולדת הבא. הזינו רק מספר טלפון — נשמור את ההנחה לפי המספר ונאשר ב-WhatsApp.",
     promise: "ההנחה בתוקף ל-12 חודשים",
     claimDiscount: "לקבלת הנחה של 200 ₪",
     gifts: {
@@ -181,50 +121,20 @@ const COPY = {
       },
     },
     stepTwo: "שמרו את ההנחה",
-    stepTwoHint: "כל השדות הם חובה",
+    stepTwoHint: "צריך רק מספר טלפון",
     closeForm: "סגירת הטופס",
-    clientName: "שם ההורה",
-    clientNamePlaceholder: "איך לפנות אליכם?",
     phone: "מספר טלפון / WhatsApp",
     phonePlaceholder: "הזינו את מספר הטלפון שלכם",
     phoneHint: "אפשר להזין את המספר בכל פורמט שנוח לכם",
-    city: "עיר",
-    cityPlaceholder: "לדוגמה, חיפה",
-    host: "מי היה המפעיל או המפעילה באירוע?",
-    hostPlaceholder: "בחרו מפעיל או מפעילה",
-    childDetails: "פרטי הילד/ה",
-    gender: "מין",
-    genderBoy: "בן",
-    genderGirl: "בת",
-    age: "גיל",
-    ageHint: "מגיל שנה עד 10",
-    month: "חודש לידה",
-    day: "יום בחודש",
-    months: [
-      "ינואר",
-      "פברואר",
-      "מרץ",
-      "אפריל",
-      "מאי",
-      "יוני",
-      "יולי",
-      "אוגוסט",
-      "ספטמבר",
-      "אוקטובר",
-      "נובמבר",
-      "דצמבר",
-    ],
     consent:
-      "בלחיצה על „שמירת ההנחה“ אתם מסכימים לשמירת הפרטים שמסרתם, לקבלת הודעת WhatsApp לאישור ההנחה ולתזכורת אחת לקראת יום ההולדת של הילד/ה. נשתמש בפרטים רק לצורך הפניות האלה.",
+      "בלחיצה על „שמירת ההנחה“ אתם מסכימים לשמירת מספר הטלפון ולקבלת הודעת WhatsApp לאישור ההנחה.",
     submit: "שמירת ההנחה",
     submitting: "שומרים את ההנחה…",
-    invalidHost: "בחרו מי היה המפעיל או המפעילה באירוע",
-    invalidBirthday: "בחרו מין, גיל, חודש ויום לידה",
-    verificationPending: "אשרו שהטופס נשלח על ידי אדם",
+    invalidPhone: "הזינו מספר טלפון",
     formError: "לא הצלחנו לשמור את המתנה. נסו שוב.",
     successTitle: "ההנחה נשמרה",
     successText:
-      "תודה! ההנחה של 200 ₪ נשמרה עבורכם. נאשר אותה בהודעת WhatsApp ונשלח תזכורת אחת לקראת יום ההולדת של הילד/ה.",
+      "תודה! ההנחה של 200 ₪ נשמרה לפי מספר הטלפון שלכם. נאשר אותה בהודעת WhatsApp.",
     existingTitle: "כבר שמורה מתנה",
     existingText: (giftName: string) =>
       `למספר הטלפון שלכם כבר שמורה מתנה: „${giftName}“.`,
@@ -235,207 +145,10 @@ const COPY = {
 
 const OFFER_GIFT: GiftCode = "discount-200";
 const KNOWN_GIFT_CODES = new Set<GiftCode>(["discount-200", "confetti", "bubbles"]);
-const HOST_OPTIONS: Array<{ code: HostCode; labels: Record<Language, string> }> = [
-  { code: "mishanya", labels: { ru: "Мишаня", he: "מישניה" } },
-  { code: "artur-magician", labels: { ru: "Артур Фокусник", he: "ארתור הקוסם" } },
-  {
-    code: "artur-mad-professor",
-    labels: { ru: "Артур Сумасшедший Профессор", he: "ארתור הפרופסור המשוגע" },
-  },
-  { code: "hanna", labels: { ru: "Ханна", he: "חנה" } },
-  { code: "ira", labels: { ru: "Ира", he: "אירה" } },
-  { code: "zhenya", labels: { ru: "Женя", he: "ז׳ניה" } },
-  { code: "leon", labels: { ru: "Леон", he: "ליאון" } },
-  {
-    code: "unknown",
-    labels: { ru: "Не знаю, кто ведущий", he: "לא יודע/ת מי היה המפעיל או המפעילה" },
-  },
-];
 function sanitizeSource(value: string | null) {
   if (!value) return "party-qr";
   const clean = value.trim().toLowerCase();
   return /^[a-z0-9_-]{1,64}$/.test(clean) ? clean : "party-qr";
-}
-
-function formatDate(year: number, month: number, day: number) {
-  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-}
-
-function nextBirthday(day: number, month: number, today = new Date()) {
-  const currentYear = today.getFullYear();
-  const todayStart = new Date(currentYear, today.getMonth(), today.getDate());
-
-  for (let year = currentYear; year <= currentYear + 4; year += 1) {
-    const safeDay = month === 2 && day === 29 && new Date(year, 1, 29).getMonth() !== 1 ? 28 : day;
-    const candidate = new Date(year, month - 1, safeDay);
-    if (
-      candidate.getMonth() === month - 1 &&
-      candidate.getDate() === safeDay &&
-      candidate >= todayStart
-    ) {
-      return formatDate(year, month, safeDay);
-    }
-  }
-
-  return null;
-}
-
-function birthdayDayLimit(monthValue: string) {
-  const month = Number(monthValue);
-  if (!Number.isInteger(month) || month < 1 || month > 12) return 31;
-  if (month === 2) return 29;
-  if ([4, 6, 9, 11].includes(month)) return 30;
-  return 31;
-}
-
-function childPayload(
-  gender: ChildGender,
-  ageValue: string,
-  monthValue: string,
-  dayValue: string,
-): GiftPayloadChild | null {
-  const ageTurning = Number(ageValue);
-  const month = Number(monthValue);
-  const day = Number(dayValue);
-  if (!Number.isInteger(ageTurning) || ageTurning < 1 || ageTurning > 10) return null;
-  if (!Number.isInteger(month) || month < 1 || month > 12) return null;
-  if (!Number.isInteger(day) || day < 1 || day > birthdayDayLimit(monthValue)) return null;
-  const birthday = nextBirthday(day, month);
-  if (!birthday) return null;
-  return {
-    gender,
-    ageTurning,
-    birthdayDay: day,
-    birthdayMonth: month,
-    nextBirthday: birthday,
-  };
-}
-
-function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <span className="mb-2 block text-sm font-black text-zinc-900">{children}</span>;
-}
-
-function ChoiceButton({
-  selected,
-  onClick,
-  children,
-}: {
-  selected: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      onClick={onClick}
-      className={`min-h-11 rounded-xl border px-2 text-sm font-black transition-[background-color,border-color,color,box-shadow,transform] duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5e5ce6] ${
-        selected
-          ? "border-zinc-950 bg-zinc-950 text-white shadow-sm"
-          : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-900"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function ChildDetailsPicker({
-  gender,
-  age,
-  month,
-  day,
-  onGenderChange,
-  onAgeChange,
-  onMonthChange,
-  onDayChange,
-  copy,
-}: {
-  gender: ChildGenderChoice;
-  age: string;
-  month: string;
-  day: string;
-  onGenderChange: (value: ChildGender) => void;
-  onAgeChange: (value: string) => void;
-  onMonthChange: (value: string) => void;
-  onDayChange: (value: string) => void;
-  copy: (typeof COPY)[Language];
-}) {
-  const availableDays = BIRTHDAY_DAYS.slice(0, birthdayDayLimit(month));
-
-  return (
-    <section className="mt-6 rounded-[22px] border border-zinc-200 bg-[#fffdf8] p-4 sm:p-5">
-      <h3 className="text-base font-black text-zinc-950">{copy.childDetails}</h3>
-
-      <fieldset className="mt-4">
-        <legend className="text-sm font-black text-zinc-900">{copy.gender}</legend>
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          {(
-            [
-              ["boy", copy.genderBoy],
-              ["girl", copy.genderGirl],
-            ] as const
-          ).map(([value, label]) => (
-            <ChoiceButton
-              key={value}
-              selected={gender === value}
-              onClick={() => onGenderChange(value)}
-            >
-              {label}
-            </ChoiceButton>
-          ))}
-        </div>
-      </fieldset>
-
-      <fieldset className="mt-5">
-        <legend className="flex w-full items-baseline justify-between gap-3 text-sm font-black text-zinc-900">
-          <span>{copy.age}</span>
-          <span className="text-xs font-semibold text-zinc-500">{copy.ageHint}</span>
-        </legend>
-        <div className="mt-2 grid grid-cols-5 gap-2">
-          {AGES.map((value) => (
-            <ChoiceButton
-              key={value}
-              selected={age === String(value)}
-              onClick={() => onAgeChange(String(value))}
-            >
-              {value}
-            </ChoiceButton>
-          ))}
-        </div>
-      </fieldset>
-
-      <fieldset className="mt-5">
-        <legend className="text-sm font-black text-zinc-900">{copy.month}</legend>
-        <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
-          {MONTHS.map((value, index) => (
-            <ChoiceButton
-              key={value}
-              selected={month === String(value)}
-              onClick={() => onMonthChange(String(value))}
-            >
-              {copy.months[index]}
-            </ChoiceButton>
-          ))}
-        </div>
-      </fieldset>
-
-      <fieldset className="mt-5">
-        <legend className="text-sm font-black text-zinc-900">{copy.day}</legend>
-        <div className="mt-2 grid grid-cols-7 gap-2">
-          {availableDays.map((value) => (
-            <ChoiceButton
-              key={value}
-              selected={day === String(value)}
-              onClick={() => onDayChange(String(value))}
-            >
-              {value}
-            </ChoiceButton>
-          ))}
-        </div>
-      </fieldset>
-    </section>
-  );
 }
 
 async function localGiftSubmit(payload: GiftPayload): Promise<GiftSubmitResponse> {
@@ -472,14 +185,7 @@ export function GiftPage() {
   const [sourceCode, setSourceCode] = useState("party-qr");
   const [pageContextReady, setPageContextReady] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
-  const [clientName, setClientName] = useState("");
   const [phone, setPhone] = useState("");
-  const [city, setCity] = useState("");
-  const [hostCode, setHostCode] = useState<HostCode | "">("");
-  const [childGender, setChildGender] = useState<ChildGenderChoice>("");
-  const [childAge, setChildAge] = useState("");
-  const [birthdayMonth, setBirthdayMonth] = useState("");
-  const [birthdayDay, setBirthdayDay] = useState("");
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [resultGift, setResultGift] = useState<GiftCode | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -490,7 +196,7 @@ export function GiftPage() {
   const formStartedRef = useRef(false);
   const claimButtonRef = useRef<HTMLButtonElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
-  const clientNameInputRef = useRef<HTMLInputElement>(null);
+  const phoneInputRef = useRef<HTMLInputElement>(null);
   const submittingRef = useRef(false);
   const turnstileContainerRef = useRef<HTMLDivElement>(null);
   const turnstileWidgetRef = useRef<string | null>(null);
@@ -545,7 +251,7 @@ export function GiftPage() {
     document.body.style.overflow = "hidden";
     document.documentElement.style.overflow = "hidden";
 
-    const focusTimer = window.setTimeout(() => clientNameInputRef.current?.focus(), 40);
+    const focusTimer = window.setTimeout(() => phoneInputRef.current?.focus(), 40);
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         if (!submittingRef.current) setFormOpen(false);
@@ -702,30 +408,19 @@ export function GiftPage() {
     setSubmitState("submitting");
     setErrorMessage("");
 
-    if (!hostCode) {
+    const submittedPhone = String(new FormData(event.currentTarget).get("tel") || "").trim();
+    if (!submittedPhone) {
       setSubmitState("error");
-      setErrorMessage(copy.invalidHost);
+      setErrorMessage(copy.invalidPhone);
+      phoneInputRef.current?.focus();
       return;
     }
 
-    const child = childGender
-      ? childPayload(childGender, childAge, birthdayMonth, birthdayDay)
-      : null;
-    if (!child) {
-      setSubmitState("error");
-      setErrorMessage(copy.invalidBirthday);
-      return;
-    }
     const payload: GiftPayload = {
       language,
       sourceCode,
       giftCode: OFFER_GIFT,
-      clientName: clientName.trim(),
-      phone: phone.trim(),
-      city: city.trim(),
-      hostCode,
-      children: [child],
-      primaryChildIndex: 0,
+      phone: submittedPhone,
       turnstileToken: turnstileToken || undefined,
       website,
     };
@@ -886,17 +581,19 @@ export function GiftPage() {
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby="gift-form-title"
+                    aria-describedby="gift-form-hint"
                     tabIndex={-1}
                     initial={reduceMotion ? false : { opacity: 0, scale: 0.98, y: 8 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.985, y: 4 }}
                     transition={{ duration: reduceMotion ? 0 : 0.2, ease: "easeOut" }}
-                    className="h-[calc(100dvh-1rem)] w-full max-w-3xl overflow-hidden rounded-[28px] bg-white shadow-2xl ring-1 ring-black/10 sm:h-[calc(100dvh-3rem)] sm:max-h-[900px] sm:rounded-[30px]"
+                    className="w-full max-w-md overflow-hidden rounded-[28px] bg-white shadow-2xl ring-1 ring-black/10 sm:rounded-[30px]"
                   >
                 <form
                   onSubmit={handleSubmit}
                   onFocusCapture={markFormStarted}
-                  className="h-full overflow-x-hidden overflow-y-auto overscroll-contain p-5 sm:p-8"
+                  autoComplete="on"
+                  className="max-h-[calc(100dvh-1rem)] overflow-x-hidden overflow-y-auto overscroll-contain p-5 sm:max-h-[calc(100dvh-3rem)] sm:p-8"
                 >
                   <div className="absolute -start-[10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
                     <label htmlFor="gift-website">Website</label>
@@ -915,7 +612,7 @@ export function GiftPage() {
                       <h2 id="gift-form-title" className="text-2xl font-black tracking-tight sm:text-3xl">
                         {copy.stepTwo}
                       </h2>
-                      <p className="mt-1 text-sm text-[var(--color-ink-soft)]">{copy.stepTwoHint}</p>
+                      <p id="gift-form-hint" className="mt-1 text-sm text-[var(--color-ink-soft)]">{copy.stepTwoHint}</p>
                     </div>
                     <button
                       type="button"
@@ -928,114 +625,35 @@ export function GiftPage() {
                     </button>
                   </div>
 
-                  <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                    <label>
-                      <FieldLabel>{copy.clientName}</FieldLabel>
-                      <span className="relative block">
-                        <UserRound className="pointer-events-none absolute start-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
-                        <input
-                          ref={clientNameInputRef}
-                          value={clientName}
-                          onChange={(event) => setClientName(event.target.value)}
-                          autoComplete="name"
-                          placeholder={copy.clientNamePlaceholder}
-                          dir="auto"
-                          required
-                          className="h-13 w-full rounded-2xl border border-zinc-200 bg-white ps-12 pe-4 text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-zinc-400 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10"
-                        />
-                      </span>
+                  <div className="mt-6">
+                    <label htmlFor="gift-phone" className="mb-2 block text-sm font-black text-zinc-900">
+                      {copy.phone}
                     </label>
-                    <div>
-                      <label htmlFor="gift-phone">
-                        <FieldLabel>{copy.phone}</FieldLabel>
-                      </label>
-                      <span className="relative block" dir="ltr">
-                        <Phone className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
-                        <input
-                          id="gift-phone"
-                          type="text"
-                          autoComplete="tel"
-                          value={phone}
-                          onChange={(event) => setPhone(event.target.value)}
-                          placeholder={copy.phonePlaceholder}
-                          dir="auto"
-                          aria-describedby="gift-phone-hint"
-                          required
-                          className="h-13 w-full rounded-2xl border border-zinc-200 bg-white pl-12 pr-4 text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-zinc-400 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10"
-                        />
-                      </span>
-                      <span
-                        id="gift-phone-hint"
-                        className="mt-1.5 block text-xs font-medium text-zinc-500"
-                      >
-                        {copy.phoneHint}
-                      </span>
-                    </div>
-                  </div>
-
-                  <label className="mt-4 block">
-                    <FieldLabel>{copy.city}</FieldLabel>
-                    <span className="relative block">
-                      <MapPin className="pointer-events-none absolute start-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
+                    <span className="relative block" dir="ltr">
+                      <Phone className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
                       <input
-                        value={city}
-                        onChange={(event) => setCity(event.target.value)}
-                        autoComplete="address-level2"
-                        placeholder={copy.cityPlaceholder}
-                        dir="auto"
+                        ref={phoneInputRef}
+                        id="gift-phone"
+                        name="tel"
+                        type="tel"
+                        inputMode="tel"
+                        autoComplete="tel"
+                        value={phone}
+                        onChange={(event) => {
+                          setPhone(event.target.value);
+                          setErrorMessage("");
+                        }}
+                        placeholder={copy.phonePlaceholder}
+                        dir="ltr"
+                        aria-describedby="gift-phone-hint"
                         required
-                        className="h-13 w-full rounded-2xl border border-zinc-200 bg-white ps-12 pe-4 text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-zinc-400 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10"
+                        className="h-13 w-full rounded-2xl border border-zinc-200 bg-white pl-12 pr-4 text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-zinc-400 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10"
                       />
                     </span>
-                  </label>
-
-                  <label className="relative mt-4 block">
-                    <FieldLabel>{copy.host}</FieldLabel>
-                    <select
-                      value={hostCode}
-                      onChange={(event) => {
-                        setHostCode(event.target.value as HostCode | "");
-                        setErrorMessage("");
-                      }}
-                      required
-                      className="h-13 w-full appearance-none rounded-2xl border border-zinc-200 bg-white px-4 pe-10 text-base font-semibold outline-none transition-[border-color,box-shadow] duration-150 focus:border-[#5e5ce6] focus:ring-4 focus:ring-[#5e5ce6]/10"
-                    >
-                      <option value="">{copy.hostPlaceholder}</option>
-                      {HOST_OPTIONS.map((host) => (
-                        <option key={host.code} value={host.code}>
-                          {host.labels[language]}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute end-3 bottom-[18px] h-4 w-4 text-zinc-400" />
-                  </label>
-
-                  <ChildDetailsPicker
-                    gender={childGender}
-                    age={childAge}
-                    month={birthdayMonth}
-                    day={birthdayDay}
-                    onGenderChange={(value) => {
-                      setChildGender(value);
-                      setErrorMessage("");
-                    }}
-                    onAgeChange={(value) => {
-                      setChildAge(value);
-                      setErrorMessage("");
-                    }}
-                    onMonthChange={(value) => {
-                      if (Number(birthdayDay) > birthdayDayLimit(value)) {
-                        setBirthdayDay("");
-                      }
-                      setBirthdayMonth(value);
-                      setErrorMessage("");
-                    }}
-                    onDayChange={(value) => {
-                      setBirthdayDay(value);
-                      setErrorMessage("");
-                    }}
-                    copy={copy}
-                  />
+                    <span id="gift-phone-hint" className="mt-1.5 block text-xs font-medium text-zinc-500">
+                      {copy.phoneHint}
+                    </span>
+                  </div>
 
                   {errorMessage ? (
                     <p className="mt-5 rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-700" role="alert">
@@ -1051,13 +669,7 @@ export function GiftPage() {
 
                   <button
                     type="submit"
-                    disabled={
-                      submitState === "submitting" ||
-                      !childGender ||
-                      !childAge ||
-                      !birthdayMonth ||
-                      !birthdayDay
-                    }
+                    disabled={submitState === "submitting"}
                     className="mt-6 flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-zinc-950 px-6 text-base font-black text-white shadow-[0_12px_30px_rgba(15,15,20,0.22)] transition-[background-color,transform,opacity] duration-100 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5e5ce6]"
                   >
                     {submitState === "submitting" ? (

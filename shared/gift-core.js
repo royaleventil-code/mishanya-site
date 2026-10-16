@@ -74,20 +74,18 @@ export function validateGiftPayload(raw, now = new Date()) {
   const city = String(raw.city || "").trim();
   const hostCode = String(raw.hostCode || "").trim();
   const phone = String(raw.phone || "").trim();
-  if (!clientName) return { error: "invalid_name" };
-  if (!city) return { error: "invalid_city" };
-  if (!HOST_CODES.has(hostCode)) return { error: "invalid_host" };
+  if (hostCode && !HOST_CODES.has(hostCode)) return { error: "invalid_host" };
   if (!phone) return { error: "invalid_phone" };
+  const submittedChildren = raw.children ?? [];
   if (
-    !Array.isArray(raw.children) ||
-    raw.children.length < 1 ||
-    raw.children.length > MAX_GIFT_CHILDREN
+    !Array.isArray(submittedChildren) ||
+    submittedChildren.length > MAX_GIFT_CHILDREN
   ) {
     return { error: "invalid_children" };
   }
 
   const children = [];
-  for (const item of raw.children) {
+  for (const item of submittedChildren) {
     const gender = item?.gender;
     const ageTurning = Number(item?.ageTurning);
     const birthdayDay = Number(item?.birthdayDay);
@@ -276,11 +274,13 @@ export function buildLeadNote(payload, claim, duplicates = {}) {
     [`Дата анкеты: ${dateTimeLabel(claim.submittedAt)}`],
     [
       `Подарок: ${GIFT_LABELS[payload.giftCode]}`,
-      `Ведущий на празднике: ${HOST_LABELS[payload.hostCode]}`,
+      ...(HOST_LABELS[payload.hostCode]
+        ? [`Ведущий на празднике: ${HOST_LABELS[payload.hostCode]}`]
+        : []),
     ],
   ];
 
-  if (payload.children.length > 1) {
+  if (payload.children?.length > 1) {
     const additionalChildren = payload.children
       .filter((_child, index) => index !== payload.primaryChildIndex)
       .map((child, index) => additionalChildLabel(child, index));
@@ -315,10 +315,10 @@ export function giftWaitUntilIso(birthdayIso) {
 
 export function buildLeadFields(payload, claim, sourceId, duplicates = {}) {
   if (!sourceId) throw new Error("BITRIX_QR_SOURCE_ID is not configured");
-  const primary = payload.children[payload.primaryChildIndex];
+  const primary = payload.children?.[payload.primaryChildIndex ?? 0];
   return {
-    TITLE: `${SOURCE_NAME} - ${payload.clientName}`,
-    NAME: payload.clientName,
+    TITLE: payload.clientName ? `${SOURCE_NAME} - ${payload.clientName}` : SOURCE_NAME,
+    ...(payload.clientName ? { NAME: payload.clientName } : {}),
     PHONE: [{ VALUE: payload.phone, VALUE_TYPE: "WORK" }],
     ASSIGNED_BY_ID: RESPONSIBLE_SERGEY,
     STATUS_ID: NEW_LEAD_STAGE,
@@ -328,12 +328,14 @@ export function buildLeadFields(payload, claim, sourceId, duplicates = {}) {
     UTM_SOURCE: "party-qr",
     UTM_MEDIUM: "qr",
     UTM_CAMPAIGN: payload.sourceCode,
-    BIRTHDATE: primary.nextBirthday,
-    UF_CRM_1649234588017: primary.nextBirthday,
-    [WAIT_UNTIL_FIELD]: giftWaitUntilIso(primary.nextBirthday),
-    UF_CRM_1644328015350: payload.city,
-    UF_CRM_1644327962757: primary.gender === "boy" ? 44 : 46,
-    UF_CRM_1644329391894: primary.ageTurning,
+    ...(primary ? {
+      BIRTHDATE: primary.nextBirthday,
+      UF_CRM_1649234588017: primary.nextBirthday,
+      [WAIT_UNTIL_FIELD]: giftWaitUntilIso(primary.nextBirthday),
+      UF_CRM_1644327962757: primary.gender === "boy" ? 44 : 46,
+      UF_CRM_1644329391894: primary.ageTurning,
+    } : {}),
+    ...(payload.city ? { UF_CRM_1644328015350: payload.city } : {}),
     UF_CRM_1666781395585: BIRTHDAY_TYPE,
     [SELECTED_GIFT_FIELD]: GIFT_LABELS[payload.giftCode],
     COMMENTS: buildLeadNote(payload, claim, duplicates),
@@ -398,7 +400,7 @@ function assertLeadTracking(lead, leadId, sourceId, waitUntil) {
   if (actual.sourceId !== sourceId) {
     throw new Error(`Bitrix lead ${leadId} source mismatch: ${actual.sourceId || "empty"}`);
   }
-  if (actual.waitUntil !== waitUntil) {
+  if (waitUntil !== null && actual.waitUntil !== waitUntil) {
     throw new Error(`Bitrix lead ${leadId} wait-until mismatch: ${actual.waitUntil || "empty"}`);
   }
 }
@@ -409,7 +411,7 @@ async function ensureLeadTracking(env, leadId, sourceId, waitUntil, knownLead = 
   );
   const fields = {};
   if (current.sourceId !== sourceId) fields.SOURCE_ID = sourceId;
-  if (current.waitUntil !== waitUntil) fields[WAIT_UNTIL_FIELD] = waitUntil;
+  if (waitUntil !== null && current.waitUntil !== waitUntil) fields[WAIT_UNTIL_FIELD] = waitUntil;
 
   if (Object.keys(fields).length) {
     await bitrixCall(env, "crm.lead.update", { id: leadId, fields });
@@ -424,8 +426,8 @@ export async function syncBitrix(payload, claim, env) {
   const sourceId = String(env.BITRIX_QR_SOURCE_ID || "").trim();
   if (!sourceId) throw new Error("BITRIX_QR_SOURCE_ID is not configured");
   await assertBitrixSourceExists(env, sourceId);
-  const primary = payload.children[payload.primaryChildIndex];
-  const waitUntil = giftWaitUntilIso(primary.nextBirthday);
+  const primary = payload.children?.[payload.primaryChildIndex ?? 0];
+  const waitUntil = primary ? giftWaitUntilIso(primary.nextBirthday) : null;
   const existingClaimLead = await findLeadByClaim(env, claim.id);
   if (existingClaimLead) {
     await ensureLeadTracking(env, existingClaimLead.id, sourceId, waitUntil, existingClaimLead);
