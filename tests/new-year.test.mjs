@@ -4,7 +4,7 @@ import { NEW_YEAR_PROGRAMS, newYearMessage, newYearPath, newYearProgram } from "
 
 test("approved 2026 offers retain Sergey's explicit solo correction", () => {
   assert.deepEqual(NEW_YEAR_PROGRAMS.map(p => [p.id, p.options.map(o => [o.minutes ?? null, o.price])]), [
-    ["ded-moroz", [[30, 1000]]],
+    ["ded-moroz", [[20, 800], [30, 1000]]],
     ["ded-moroz-snegurochka", [[30, 1200], [60, 1500]]],
     ["olaf", [[60, 1700], [90, 2300]]],
     ["grinch", [[60, 2000], [90, 2500]]],
