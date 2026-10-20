@@ -1452,7 +1452,7 @@ export const CITIES: readonly City[] = [
   },
   {
     id: "bnei-brak",
-    programIds: ["start", "standart", "mishanya", "magician", "chemistry", "circus", "foam", "vip"],
+    programIds: ["start", "standart", "mishanya", "magician", "chemistry", "foam", "circus", "vip"],
     copy: {
       ru: {
         name: "Бней-Брак",

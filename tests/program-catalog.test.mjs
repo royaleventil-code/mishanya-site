@@ -63,8 +63,8 @@ test("core programs stay first in the requested catalog order", () => {
     "standart",
     "super-heroes",
     "mishanya",
-    "foam",
     "chemistry",
+    "foam",
   ]);
 });
 
