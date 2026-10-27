@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, ChevronRight, Gift, Heart, Snowflake, Star } from "lucide-react";
+import { ArrowRight, Gift, Heart, Snowflake, Star } from "lucide-react";
 import { NEW_YEAR_HERO_PHOTO, NEW_YEAR_PROGRAMS, newYearPath } from "@/data/new-year";
 import { siteUrl } from "@/lib/seo";
 import { whatsappLink } from "@/lib/whatsapp";
@@ -49,8 +49,8 @@ export function NewYearHome({ locale }: { locale: Locale }) {
             <span className={s.cardCopy}><h3>{program.shortName[locale]}</h3>{!compact && <p>{program.teaser[locale]}</p>}
               {program.hostLabel && <span className={s.hostBadge}>{program.hostLabel[locale]}</span>}
               <span className={s.cardPrice}>{(i === 0 || i === 4) && <>{first.minutes} {he ? "דק׳" : "мин"} · </>}{(i > 0 && i < 5) ? (he ? "החל מ־" : "от ") : ""}<bdi>{first.price} ₪</bdi></span>
+              <span className={s.cardDetails}>{he ? "לפרטים נוספים" : "Подробнее"}<ArrowRight size={16} className={s.directional} aria-hidden /></span>
             </span>
-            <span className={s.cardArrow}><ChevronRight size={21} className={s.directional} aria-hidden /></span>
           </Link></li>;
         })}
       </ul>
