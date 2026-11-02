@@ -22,6 +22,7 @@ type GiftPayload = {
   sourceCode: string;
   giftCode: GiftCode;
   phone: string;
+  clientName: string;
   city: string;
   children: {
     gender: "boy" | "girl";
@@ -98,11 +99,14 @@ const COPY = {
     phone: "Ваш номер WhatsApp",
     phonePlaceholder: "Например, 050 123 4567",
     phoneHint: "Для программы и подтверждения скидки",
+    clientName: "Ваше имя",
+    clientNamePlaceholder: "Например, Анна",
     consent:
       "Нажимая кнопку, вы соглашаетесь на сохранение данных анкеты и получение программы и подтверждения скидки в WhatsApp.",
     submit: "Закрепить скидку 200 ₪",
     submitting: "Закрепляем скидку…",
     invalidPhone: "Введите номер телефона",
+    invalidClientName: "Укажите ваше имя",
     invalidCity: "Укажите город, в котором будет праздник",
     incompleteForm: "Укажите пол, возраст и день рождения ребёнка",
     invalidBirthday: "В выбранном месяце нет такого дня. Проверьте дату рождения.",
@@ -149,11 +153,14 @@ const COPY = {
     phone: "מספר ה-WhatsApp שלכם",
     phonePlaceholder: "למשל, 050 123 4567",
     phoneHint: "לשליחת תוכנית ולאישור ההנחה",
+    clientName: "השם שלכם",
+    clientNamePlaceholder: "למשל, אנה",
     consent:
       "בלחיצה על הכפתור אתם מסכימים לשמירת פרטי הטופס ולקבלת תוכנית ואישור ההנחה ב-WhatsApp.",
     submit: "שמירת הנחה של 200 ₪",
     submitting: "שומרים את ההנחה…",
     invalidPhone: "הזינו מספר טלפון",
+    invalidClientName: "הזינו את שמכם",
     invalidCity: "ציינו את העיר שבה תתקיים החגיגה",
     incompleteForm: "בחרו ילד או ילדה, גיל ותאריך יום הולדת",
     invalidBirthday: "היום שבחרתם אינו קיים בחודש הזה. בדקו את תאריך יום ההולדת.",
@@ -222,6 +229,7 @@ export function GiftPage() {
   const [sourceCode, setSourceCode] = useState("party-qr");
   const [pageContextReady, setPageContextReady] = useState(false);
   const [phone, setPhone] = useState("");
+  const [clientName, setClientName] = useState("");
   const [city, setCity] = useState("");
   const [citySuggestionsOpen, setCitySuggestionsOpen] = useState(false);
   const [activeCityIndex, setActiveCityIndex] = useState(-1);
@@ -238,6 +246,7 @@ export function GiftPage() {
   const pageTrackedRef = useRef(false);
   const formStartedRef = useRef(false);
   const phoneInputRef = useRef<HTMLInputElement>(null);
+  const clientNameInputRef = useRef<HTMLInputElement>(null);
   const cityInputRef = useRef<HTMLInputElement>(null);
   const turnstileContainerRef = useRef<HTMLDivElement>(null);
   const turnstileWidgetRef = useRef<string | null>(null);
@@ -410,6 +419,13 @@ export function GiftPage() {
       phoneInputRef.current?.focus();
       return;
     }
+    const submittedClientName = String(formData.get("clientName") || "").trim();
+    if (!submittedClientName) {
+      setSubmitState("error");
+      setErrorMessage(copy.invalidClientName);
+      clientNameInputRef.current?.focus();
+      return;
+    }
     const submittedGender = String(formData.get("gender") || "");
     const submittedAge = Number(formData.get("age"));
     const submittedDay = Number(formData.get("birthdayDay"));
@@ -446,6 +462,7 @@ export function GiftPage() {
       sourceCode,
       giftCode: OFFER_GIFT,
       phone: submittedPhone,
+      clientName: submittedClientName,
       city: submittedCity,
       children: [{
         gender: submittedGender,
@@ -639,6 +656,27 @@ export function GiftPage() {
                       <span id="gift-phone-hint" className="mt-1.5 block text-xs font-medium text-zinc-500">
                         {copy.phoneHint}
                       </span>
+                    </div>
+
+                    <div>
+                      <label htmlFor="gift-client-name" className="mb-2 block text-sm font-black text-zinc-900">
+                        {copy.clientName}
+                      </label>
+                      <input
+                        ref={clientNameInputRef}
+                        id="gift-client-name"
+                        name="clientName"
+                        type="text"
+                        autoComplete="given-name"
+                        value={clientName}
+                        onChange={(event) => {
+                          setClientName(event.target.value);
+                          setErrorMessage("");
+                        }}
+                        placeholder={copy.clientNamePlaceholder}
+                        required
+                        className={FIELD_CLASS}
+                      />
                     </div>
 
                     <fieldset>

@@ -14,7 +14,7 @@ import {
 
 const now = new Date("2026-07-12T12:00:00.000Z");
 
-test("the short birthday form fills program fields without requiring a parent name or host", () => {
+test("legacy birthday submissions without a parent name or host remain supported", () => {
   for (const [language, city, gender, expectedGender] of [
     ["ru", "  Бат Ям  ", "boy", 44],
     ["he", "  בת ים  ", "girl", 46],
@@ -39,6 +39,21 @@ test("the short birthday form fills program fields without requiring a parent na
     assert.equal(fields.UF_CRM_1784446465040, "Скидка 200 ₪");
     assert.equal(Object.hasOwn(fields, "NAME"), false);
     assert.doesNotMatch(fields.COMMENTS, /Ведущий|undefined|null/);
+  }
+});
+
+test("the current form trims and maps the client name to Bitrix in both languages", () => {
+  for (const [language, clientName] of [["ru", "  Анна  "], ["he", "  אנה  "]]) {
+    const result = validateGiftPayload({
+      language, giftCode: "discount-200", phone: "0502345678", clientName,
+    }, now);
+    assert.equal(result.error, undefined);
+    assert.equal(result.value.clientName, clientName.trim());
+    const fields = buildLeadFields(result.value, {
+      id: "client-name-form", submittedAt: now.toISOString(),
+    }, "REPEAT_SALE");
+    assert.equal(fields.NAME, clientName.trim());
+    assert.equal(fields.TITLE, `QR-код с праздника - ${clientName.trim()}`);
   }
 });
 

@@ -76,6 +76,8 @@ export function validateGiftPayload(raw, now = new Date()) {
   const phone = String(raw.phone || "").trim();
   if (hostCode && !HOST_CODES.has(hostCode)) return { error: "invalid_host" };
   if (!phone) return { error: "invalid_phone" };
+  // Older cached forms omit the name; the current form always supplies it.
+  if (Object.hasOwn(raw, "clientName") && !clientName) return { error: "invalid_client_name" };
   const submittedChildren = raw.children ?? [];
   if (
     !Array.isArray(submittedChildren) ||

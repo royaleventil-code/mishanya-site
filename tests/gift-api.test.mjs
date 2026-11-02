@@ -43,12 +43,15 @@ function contextFor(payload, existingClaim = null) {
   return { context: { request, env }, state, secret };
 }
 
-test("gift endpoint preserves all five short-form answers in the encrypted queue", async () => {
-  for (const [language, city, gender] of [["ru", "Нетания", "boy"], ["he", "נתניה", "girl"]]) {
+test("gift endpoint preserves the client name and all birthday answers in the encrypted queue", async () => {
+  for (const [language, clientName, city, gender] of [
+    ["ru", "  Анна  ", "Нетания", "boy"],
+    ["he", "  אנה  ", "נתניה", "girl"],
+  ]) {
     const child = { gender, ageTurning: 6, birthdayDay: 29, birthdayMonth: 2 };
     const { context, state, secret } = contextFor({
       language, sourceCode: "banner-01", giftCode: "discount-200",
-      phone: " 050 234 5678 ", city, children: [child],
+      phone: " 050 234 5678 ", clientName, city, children: [child],
     });
     const response = await onRequestPost(context);
     assert.equal(response.status, 202);
@@ -59,9 +62,22 @@ test("gift endpoint preserves all five short-form answers in the encrypted queue
     assert.equal(stored.children.length, 1);
     for (const [key, value] of Object.entries(child)) assert.equal(stored.children[0][key], value);
     assert.match(stored.children[0].nextBirthday, /^\d{4}-02-(28|29)$/);
-    assert.equal(stored.clientName, "");
+    assert.equal(stored.clientName, clientName.trim());
     assert.equal(stored.hostCode, "");
     assert.equal(stored.language, language);
+  }
+});
+
+test("a supplied empty client name is rejected without storing or queuing a claim", async () => {
+  for (const clientName of ["", "   ", null]) {
+    const { context, state } = contextFor({
+      language: "ru", giftCode: "discount-200", phone: "0502345678", clientName,
+    });
+    const response = await onRequestPost(context);
+    assert.equal(response.status, 400);
+    assert.equal((await response.json()).error, "invalid_client_name");
+    assert.equal(state.inserts, 0);
+    assert.deepEqual(state.queued, []);
   }
 });
 
