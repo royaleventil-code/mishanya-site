@@ -54,6 +54,10 @@ async function bitrixCall(env, method, params) {
   return data.result;
 }
 
+export async function readRsvpDealSnapshot(env, dealId) {
+  return bitrixCall(env, "crm.deal.get", { id: dealId });
+}
+
 async function readDealContext(env, dealId) {
   const deal = await bitrixCall(env, "crm.deal.get", { id: dealId });
   if (!deal) return { deal: null, contact: null };

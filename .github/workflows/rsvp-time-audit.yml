@@ -1,0 +1,42 @@
+name: Audit current RSVP event times
+
+on:
+  workflow_dispatch:
+    inputs:
+      recipient_public_key:
+        description: Public key for the private audit report
+        required: true
+        type: string
+      operation:
+        description: Read-only audit or explicitly authorized time repairs
+        type: choice
+        options: [audit, repair]
+        default: audit
+      repairs_json:
+        description: Exact deal IDs, timestamp changes and link digests; no customer names or links
+        required: false
+        type: string
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Verify audit safeguards
+        run: node --test tests/rsvp-time-audit.test.mjs tests/rsvp-time-repair-only.test.mjs
+      - name: Read invitations and encrypt the private report
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          RSVP_RECIPIENT_KEY: ${{ inputs.recipient_public_key }}
+          RSVP_OPERATION: ${{ inputs.operation }}
+          RSVP_REPAIRS_JSON: ${{ inputs.repairs_json }}
+        run: node scripts/run-rsvp-time-audit.mjs

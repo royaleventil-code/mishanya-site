@@ -1,4 +1,5 @@
 import { decryptPayload, readClaimById, syncBitrix } from "../shared/gift-core.js";
+import { repairRsvpEventTime } from "../shared/rsvp-time-repair.js";
 import {
   processRsvpDealUpdate,
   processRsvpClientMessageSend,
@@ -163,6 +164,20 @@ const giftSyncWorker = {
 
   async queue(batch, env) {
     for (const message of batch.messages) {
+      if (message.body?.type === "rsvp_repair_event_time") {
+        try {
+          await repairRsvpEventTime(env, message.body);
+          message.ack();
+        } catch (error) {
+          if (error?.retryable === false) {
+            console.error("rsvp_time_repair_blocked:" + errorMessage(error));
+            message.ack();
+          } else {
+            message.retry({ delaySeconds: queueRetryDelay(error, message.attempts) });
+          }
+        }
+        continue;
+      }
       if (message.body?.type === "rsvp_send_initial_message") {
         try {
           await processRsvpClientMessageSend(env, message.body);
