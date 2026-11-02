@@ -33,6 +33,7 @@ import {
   buildRsvpGuestUrl,
   composeRsvpGuestShareText,
   formatDefaultRsvpInvitationHeadline,
+  formatRsvpEventDate,
   localizeRsvpInvitationEvent,
 } from "@/shared/rsvp-invitation.js";
 
@@ -190,9 +191,14 @@ function StatCard({ label, value, detail, tone }: { label: string; value: number
 
 const SHARE_DRAFT_KEY_PREFIX = "mishanya-rsvp:share-draft:v1";
 
-function initialShareDraft(storageKey: string, defaultBody: string) {
+function initialShareDraft(storageKey: string, legacyStorageKey: string, defaultBody: string, eventDate: string) {
   try {
-    return window.localStorage.getItem(storageKey) ?? defaultBody;
+    const saved = window.localStorage.getItem(storageKey);
+    if (saved !== null) return saved;
+    // Older drafts had no schedule attached. Retain them only when their date
+    // already matches the current invitation; leave the old copy in storage.
+    const legacy = window.localStorage.getItem(legacyStorageKey);
+    return legacy?.includes(eventDate) ? legacy : defaultBody;
   } catch {
     return defaultBody;
   }
@@ -214,15 +220,15 @@ function ShareLanguageCard({
   shareLabel: string;
 }) {
   const defaultBody = buildRsvpGuestShareBody(event);
-  const storageKey = `${SHARE_DRAFT_KEY_PREFIX}:${event.slug}:${locale}`;
-  const [messageBody, setMessageBody] = useState(() => initialShareDraft(storageKey, defaultBody));
+  const legacyStorageKey = `${SHARE_DRAFT_KEY_PREFIX}:${event.slug}:${locale}`;
+  const storageKey = `${legacyStorageKey}:${event.startsAt}`;
+  const [messageBody, setMessageBody] = useState(() => initialShareDraft(storageKey, legacyStorageKey, defaultBody, formatRsvpEventDate(event)));
   const isHebrew = locale === "he";
 
   const updateMessage = (value: string) => {
     setMessageBody(value);
     try {
-      if (value === defaultBody) window.localStorage.removeItem(storageKey);
-      else window.localStorage.setItem(storageKey, value);
+      window.localStorage.setItem(storageKey, value);
     } catch {
       // The editor still works for the current page when storage is unavailable.
     }
@@ -491,8 +497,8 @@ export function EventDashboardPage() {
             <p className="text-sm font-medium leading-6">{copy.languageHint}</p>
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <ShareLanguageCard key={`${data.event.slug}-ru`} locale="ru" event={russianEvent} publicUrl={russianUrl} optionLabel={copy.russianOption} editorLabel={copy.russianEditor} shareLabel={copy.shareRussian} />
-            <ShareLanguageCard key={`${data.event.slug}-he`} locale="he" event={hebrewEvent} publicUrl={hebrewUrl} optionLabel={copy.hebrewOption} editorLabel={copy.hebrewEditor} shareLabel={copy.shareHebrew} />
+            <ShareLanguageCard key={`${data.event.slug}-ru-${data.event.startsAt}`} locale="ru" event={russianEvent} publicUrl={russianUrl} optionLabel={copy.russianOption} editorLabel={copy.russianEditor} shareLabel={copy.shareRussian} />
+            <ShareLanguageCard key={`${data.event.slug}-he-${data.event.startsAt}`} locale="he" event={hebrewEvent} publicUrl={hebrewUrl} optionLabel={copy.hebrewOption} editorLabel={copy.hebrewEditor} shareLabel={copy.shareHebrew} />
           </div>
         </div>
       </section>

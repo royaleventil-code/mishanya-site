@@ -129,7 +129,7 @@ function firstValidPhone(contact) {
     .find((phone) => normalizeRsvpPhone(phone)) || "";
 }
 
-export function buildRsvpPayloadFromBitrix(deal, contact, now = new Date(), eventTimeContext) {
+export function buildRsvpPayloadFromBitrix(deal, contact, now = new Date()) {
   if (!deal || typeof deal !== "object") return { error: "deal_not_found" };
   if (!isClosedBitrixDeal(deal)) return { error: "deal_not_closed" };
   if (isRecurringBitrixTemplate(deal)) return { error: "recurring_template" };
@@ -145,7 +145,7 @@ export function buildRsvpPayloadFromBitrix(deal, contact, now = new Date(), even
   const organizerName = cleanText([contact?.NAME, contact?.LAST_NAME].filter(Boolean).join(" "));
   if (!organizerName) return { error: "missing_organizer_name" };
 
-  const startsAt = normalizeBitrixRsvpStartsAt(cleanText(deal[BITRIX_RSVP_TIME_FIELD]), eventTimeContext);
+  const startsAt = normalizeBitrixRsvpStartsAt(cleanText(deal[BITRIX_RSVP_TIME_FIELD]));
   if (startsAt.error) return { error: startsAt.error };
 
   const payload = {

@@ -1,11 +1,5 @@
 export const BITRIX_RSVP_TIME_FIELD = "UF_CRM_1645710833434";
 const MINUTE = 60_000;
-const DAY = 24 * 60 * MINUTE;
-const israelClock = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "Asia/Jerusalem",
-  year: "numeric", month: "2-digit", day: "2-digit",
-  hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
-});
 
 function parseTimestamp(value) {
   const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?(Z|[+-]\d{2}:\d{2})$/i.exec(String(value || "").trim());
@@ -20,41 +14,18 @@ function parseTimestamp(value) {
   if (date.getUTCFullYear() !== Number(year) || date.getUTCMonth() + 1 !== Number(month)
     || date.getUTCDate() !== Number(day) || date.getUTCHours() !== Number(hour)
     || date.getUTCMinutes() !== Number(minute) || date.getUTCSeconds() !== Number(second)) return null;
-  return { instant: wall - offset * MINUTE, offset };
-}
-
-function israelWallTime(instant) {
-  const parts = Object.fromEntries(israelClock.formatToParts(instant).map(({ type, value }) => [type, value]));
-  return Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day),
-    Number(parts.hour), Number(parts.minute), Number(parts.second), new Date(instant).getUTCMilliseconds());
+  return { instant: wall - offset * MINUTE };
 }
 
 /**
- * USE_TIMEZONE=N fields represent the wall clock shown in the deal, not an
- * appointment instant. Bitrix still serializes them with a user's UTC offset.
- * Recover the server wall clock first, then interpret it on the event's date
- * in Israel. server.time supplies the portal's storage offset; never use the
- * browser's/current Israel offset or add one hour to every imported event.
+ * The offset in the fresh REST timestamp already identifies the event instant.
+ * Preserve it, just as automation/deal_event_time.py does for Calendar. Field
+ * USE_TIMEZONE and today's server.time offset must not reinterpret that instant:
+ * doing so moves winter invitations by an hour. The invitation formatter alone
+ * converts this UTC value to Asia/Jerusalem on the event's date.
  */
-export function normalizeBitrixRsvpStartsAt(value, context) {
+export function normalizeBitrixRsvpStartsAt(value) {
   const parsed = parseTimestamp(value);
   if (!parsed) return { error: "invalid_date_timezone" };
-  if (typeof context?.useTimeZone !== "boolean") return { error: "missing_event_time_context" };
-  if (context.useTimeZone) return { value: new Date(parsed.instant).toISOString() };
-
-  const server = parseTimestamp(context.serverTime);
-  if (!server) return { error: "invalid_bitrix_server_time" };
-  const wall = parsed.instant + server.offset * MINUTE;
-
-  // Check both sides of a clock transition. A nonexistent/repeated local hour
-  // needs an explicit decision, rather than silently choosing another time.
-  const offsets = new Set([-DAY, 0, DAY].map((delta) => {
-    const probe = wall + delta;
-    return israelWallTime(probe) - probe;
-  }));
-  const matches = [...offsets].map((offset) => wall - offset)
-    .filter((instant) => israelWallTime(instant) === wall);
-  if (!matches.length) return { error: "nonexistent_event_time" };
-  if (matches.length > 1) return { error: "ambiguous_event_time" };
-  return { value: new Date(matches[0]).toISOString() };
+  return { value: new Date(parsed.instant).toISOString() };
 }

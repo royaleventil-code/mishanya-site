@@ -12,7 +12,6 @@ import {
 } from "../shared/rsvp-bitrix-core.js";
 
 const NOW = new Date("2026-07-14T08:00:00.000Z");
-const EVENT_TIME_CONTEXT = { useTimeZone: false, serverTime: "2026-07-14T11:00:00+03:00" };
 
 function closedDeal(overrides = {}) {
   return {
@@ -80,7 +79,7 @@ test("recognizes both closed-work pipelines and no other stage", () => {
 });
 
 test("maps a fresh deal and contact into the existing RSVP payload", () => {
-  const result = buildRsvpPayloadFromBitrix(closedDeal(), contact(), NOW, EVENT_TIME_CONTEXT);
+  const result = buildRsvpPayloadFromBitrix(closedDeal(), contact(), NOW);
   assert.equal(result.error, undefined);
   assert.equal(result.value.locale, "ru");
   assert.equal(result.value.organizerName, "Анна Леви");
@@ -93,14 +92,15 @@ test("maps a fresh deal and contact into the existing RSVP payload", () => {
 });
 
 for (const [name, raw, expected, time] of [
-  ["winter birthday retains 14:00 from the timezone-disabled CRM field", "2026-11-06T13:00:00+02:00", "2026-11-06T12:00:00.000Z", "14:00"],
+  ["Leonel's winter invitation keeps the agreed 17:30", "2026-11-11T17:30:00+02:00", "2026-11-11T15:30:00.000Z", "17:30"],
+  ["winter server hours are converted to Israel time once", "2026-12-11T15:00:00+03:00", "2026-12-11T12:00:00.000Z", "14:00"],
   ["summer birthday stays at 14:00", "2026-08-28T14:00:00+03:00", "2026-08-28T11:00:00.000Z", "14:00"],
-  ["the day winter time starts retains 14:00", "2026-10-25T13:00:00+02:00", "2026-10-25T12:00:00.000Z", "14:00"],
-  ["a different REST user offset does not change the appointment", "2026-11-06T04:00:00-07:00", "2026-11-06T12:00:00.000Z", "14:00"],
-  ["a midnight appointment retains its CRM calendar date", "2026-11-05T23:30:00+02:00", "2026-11-05T22:30:00.000Z", "00:30"],
+  ["the day winter time starts retains 14:00", "2026-10-25T15:00:00+03:00", "2026-10-25T12:00:00.000Z", "14:00"],
+  ["a different REST user offset does not change the appointment", "2026-11-06T05:00:00-07:00", "2026-11-06T12:00:00.000Z", "14:00"],
+  ["a midnight appointment retains its Israel calendar date", "2026-11-05T22:30:00Z", "2026-11-05T22:30:00.000Z", "00:30"],
 ]) {
   test(name, () => {
-    const result = buildRsvpPayloadFromBitrix(closedDeal({ UF_CRM_1645710833434: raw }), contact(), NOW, EVENT_TIME_CONTEXT);
+    const result = buildRsvpPayloadFromBitrix(closedDeal({ UF_CRM_1645710833434: raw }), contact(), NOW);
     assert.equal(result.error, undefined);
     assert.equal(result.value.startsAt, expected);
     for (const locale of ["ru", "he"]) {
@@ -109,34 +109,29 @@ for (const [name, raw, expected, time] of [
   });
 }
 
-test("the same appointment stays fixed when imported in a different season", () => {
-  const raw = "2027-11-06T13:00:00+02:00";
-  for (const serverTime of ["2027-01-15T10:00:00+03:00", "2027-07-15T10:00:00+03:00"]) {
-    assert.deepEqual(normalizeBitrixRsvpStartsAt(raw, { useTimeZone: false, serverTime }), { value: "2027-11-06T12:00:00.000Z" });
+test("the same instant stays fixed across REST offsets and old field metadata", () => {
+  for (const raw of ["2026-11-11T17:30:00+02:00", "2026-11-11T18:30:00+03:00", "2026-11-11T15:30:00Z"]) {
+    for (const context of [undefined, { useTimeZone: true },
+      { useTimeZone: false, serverTime: "2026-07-14T11:00:00+03:00" },
+      { useTimeZone: false, serverTime: "2026-11-02T10:00:00+02:00" }]) {
+      assert.deepEqual(normalizeBitrixRsvpStartsAt(raw, context), { value: "2026-11-11T15:30:00.000Z" });
+    }
   }
 });
 
-test("the server offset is read from Bitrix rather than hard-coded", () => {
-  assert.deepEqual(normalizeBitrixRsvpStartsAt("2026-11-06T16:00:00+02:00", {
-    useTimeZone: false, serverTime: "2026-09-24T11:00:00Z",
-  }), { value: "2026-11-06T12:00:00.000Z" });
+test("invalid timestamps cannot silently move an appointment", () => {
+  for (const raw of ["", "2026-11-11T17:30:00", "2027-02-30T13:00:00+02:00", "2026-11-11T17:30:00+02:99"]) {
+    assert.equal(normalizeBitrixRsvpStartsAt(raw).error, "invalid_date_timezone");
+  }
 });
 
-test("timezone-aware CRM fields preserve their original instant", () => {
-  assert.deepEqual(normalizeBitrixRsvpStartsAt("2026-11-06T14:00:00+02:00", { useTimeZone: true }), {
-    value: "2026-11-06T12:00:00.000Z",
-  });
+test("explicit offsets distinguish repeated Israel hours at the winter transition", () => {
+  assert.deepEqual(normalizeBitrixRsvpStartsAt("2026-10-25T01:30:00+03:00"), { value: "2026-10-24T22:30:00.000Z" });
+  assert.deepEqual(normalizeBitrixRsvpStartsAt("2026-10-25T01:30:00+02:00"), { value: "2026-10-24T23:30:00.000Z" });
 });
 
-test("missing or invalid time metadata cannot silently move an appointment", () => {
-  assert.equal(normalizeBitrixRsvpStartsAt("2026-11-06T13:00:00+02:00").error, "missing_event_time_context");
-  assert.equal(normalizeBitrixRsvpStartsAt("2026-11-06T13:00:00+02:00", { useTimeZone: false }).error, "invalid_bitrix_server_time");
-  assert.equal(normalizeBitrixRsvpStartsAt("2027-02-30T13:00:00+02:00", EVENT_TIME_CONTEXT).error, "invalid_date_timezone");
-});
-
-test("nonexistent and repeated Israel clock hours require clarification", () => {
-  assert.equal(normalizeBitrixRsvpStartsAt("2027-03-26T02:30:00+03:00", EVENT_TIME_CONTEXT).error, "nonexistent_event_time");
-  assert.equal(normalizeBitrixRsvpStartsAt("2026-10-25T00:30:00+02:00", EVENT_TIME_CONTEXT).error, "ambiguous_event_time");
+test("spring transition timestamps retain their explicit instant", () => {
+  assert.deepEqual(normalizeBitrixRsvpStartsAt("2027-03-26T03:30:00+03:00"), { value: "2027-03-26T00:30:00.000Z" });
 });
 
 test("fails closed when duplicate child-name fields disagree", () => {

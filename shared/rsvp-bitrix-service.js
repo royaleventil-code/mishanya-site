@@ -8,7 +8,6 @@ import {
 } from "./rsvp-bitrix-core.js";
 import { createOpaqueToken } from "./rsvp-core.js";
 import { decryptPayload, encryptPayload, phoneHash } from "./gift-core.js";
-import { BITRIX_RSVP_TIME_FIELD } from "./rsvp-bitrix-time.js";
 
 const MAX_TOKEN_ATTEMPTS = 5;
 const WRITEBACK_LEASE_MS = 2 * 60 * 1000;
@@ -55,18 +54,6 @@ async function bitrixCall(env, method, params) {
   return data.result;
 }
 
-async function readEventTimeContext(env) {
-  const fields = await bitrixCall(env, "crm.deal.userfield.list", {
-    filter: { FIELD_NAME: BITRIX_RSVP_TIME_FIELD },
-  });
-  const field = Array.isArray(fields) ? fields.find((item) => item.FIELD_NAME === BITRIX_RSVP_TIME_FIELD) : null;
-  if (field?.USER_TYPE_ID !== "datetime" || !["Y", "N"].includes(field.SETTINGS?.USE_TIMEZONE)) {
-    throw new Error("invalid_event_time_settings");
-  }
-  if (field.SETTINGS.USE_TIMEZONE === "Y") return { useTimeZone: true };
-  return { useTimeZone: false, serverTime: await bitrixCall(env, "server.time", {}) };
-}
-
 async function readDealContext(env, dealId) {
   const deal = await bitrixCall(env, "crm.deal.get", { id: dealId });
   if (!deal) return { deal: null, contact: null };
@@ -78,10 +65,7 @@ async function readDealContext(env, dealId) {
   }
   if (!contactId) return { deal, contact: null };
   const contact = await bitrixCall(env, "crm.contact.get", { id: contactId });
-  const eventTimeContext = contact && isClosedBitrixDeal(deal) && !isRecurringBitrixTemplate(deal)
-    ? await readEventTimeContext(env)
-    : undefined;
-  return { deal, contact, eventTimeContext };
+  return { deal, contact };
 }
 
 function publicOrigin(env) {
@@ -899,7 +883,7 @@ export async function processRsvpClientMessageSend(env, job) {
     throw error;
   }
 
-  const { deal, contact, eventTimeContext } = await readDealContext(env, dealId);
+  const { deal, contact } = await readDealContext(env, dealId);
   if (!deal || !isClosedBitrixDeal(deal) || isRecurringBitrixTemplate(deal)) {
     if (["accepted", "sent"].includes(state.status)) return { status: state.status };
     await cancelScheduledClientMessage(
@@ -916,7 +900,7 @@ export async function processRsvpClientMessageSend(env, job) {
     return { status: "failed", error: "missing_contact" };
   }
 
-  const checked = buildRsvpPayloadFromBitrix(deal, contact, new Date(), eventTimeContext);
+  const checked = buildRsvpPayloadFromBitrix(deal, contact);
   if (checked.error) {
     await cancelScheduledClientMessage(env.GIFT_DB, dealId, "failed", scheduleToken, scheduleToken);
     return { status: "failed", error: checked.error };
@@ -978,7 +962,7 @@ export async function processRsvpDealUpdate(env, job, attempts = 1) {
     lastAttemptAt: attemptedAt,
   });
 
-  const { deal, contact, eventTimeContext } = await readDealContext(env, dealId);
+  const { deal, contact } = await readDealContext(env, dealId);
   if (!deal) {
     if (isLatestMessageGeneration) {
       await cancelScheduledClientMessage(
@@ -1034,7 +1018,7 @@ export async function processRsvpDealUpdate(env, job, attempts = 1) {
     return { status: "invalid", error: "missing_contact" };
   }
 
-  const checked = buildRsvpPayloadFromBitrix(deal, contact, new Date(), eventTimeContext);
+  const checked = buildRsvpPayloadFromBitrix(deal, contact);
   if (checked.error) {
     if (isLatestMessageGeneration) {
       await cancelScheduledClientMessage(
