@@ -30,7 +30,8 @@ export async function repairRsvpTime19484({
       body: JSON.stringify({ sql, params }),
     });
     const body = await response.json();
-    requireCondition(response.ok && body.success && body.result?.[0]?.success !== false, "d1_query_failed");
+    requireCondition(response.ok && body.success && body.result?.[0]?.success !== false,
+      `d1_query_failed_http_${response.status}_${body.errors?.map((error) => error.code).join("_") || "unknown"}`);
     return body.result[0].results || [];
   }
   async function readState() {
@@ -110,7 +111,7 @@ export async function repairRsvpTime19484({
   throw new Error("invitation_sync_not_confirmed_before_timeout");
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (typeof process !== "undefined" && process.argv?.[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
     const result = await repairRsvpTime19484({ token: process.env.CLOUDFLARE_API_TOKEN, apply: process.argv.includes("--apply") });
     console.log(JSON.stringify(result));

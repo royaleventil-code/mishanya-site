@@ -1,0 +1,22 @@
+name: Repair and verify Leonel invitation time
+
+on:
+  workflow_dispatch:
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify repair safeguards
+        run: node --test tests/rsvp-time-repair.test.mjs tests/rsvp-time-repair-runner.test.mjs
+      - name: Repair with the database binding and remove the temporary worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node scripts/run-rsvp-time-repair-19484.mjs
