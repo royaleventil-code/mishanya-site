@@ -43,6 +43,28 @@ function contextFor(payload, existingClaim = null) {
   return { context: { request, env }, state, secret };
 }
 
+test("gift endpoint preserves all five short-form answers in the encrypted queue", async () => {
+  for (const [language, city, gender] of [["ru", "Нетания", "boy"], ["he", "נתניה", "girl"]]) {
+    const child = { gender, ageTurning: 6, birthdayDay: 29, birthdayMonth: 2 };
+    const { context, state, secret } = contextFor({
+      language, sourceCode: "banner-01", giftCode: "discount-200",
+      phone: " 050 234 5678 ", city, children: [child],
+    });
+    const response = await onRequestPost(context);
+    assert.equal(response.status, 202);
+    assert.deepEqual(state.queued, [{ claimId: state.claim.id }]);
+    const stored = await decryptPayload(state.claim.payload_ciphertext, secret);
+    assert.equal(stored.phone, "050 234 5678");
+    assert.equal(stored.city, city);
+    assert.equal(stored.children.length, 1);
+    for (const [key, value] of Object.entries(child)) assert.equal(stored.children[0][key], value);
+    assert.match(stored.children[0].nextBirthday, /^\d{4}-02-(28|29)$/);
+    assert.equal(stored.clientName, "");
+    assert.equal(stored.hostCode, "");
+    assert.equal(stored.language, language);
+  }
+});
+
 test("gift endpoint encrypts and queues a phone-only submission in both languages", async () => {
   for (const language of ["ru", "he"]) {
     const { context, state, secret } = contextFor({

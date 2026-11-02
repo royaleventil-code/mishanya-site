@@ -14,6 +14,34 @@ import {
 
 const now = new Date("2026-07-12T12:00:00.000Z");
 
+test("the short birthday form fills program fields without requiring a parent name or host", () => {
+  for (const [language, city, gender, expectedGender] of [
+    ["ru", "  Бат Ям  ", "boy", 44],
+    ["he", "  בת ים  ", "girl", 46],
+  ]) {
+    const result = validateGiftPayload({
+      language, sourceCode: "banner-01", giftCode: "discount-200",
+      phone: " 050 234 5678 ", city,
+      children: [{ gender, ageTurning: 7, birthdayDay: 15, birthdayMonth: 12 }],
+    }, now);
+    assert.equal(result.error, undefined);
+    const fields = buildLeadFields(result.value, {
+      id: "short-birthday-form", submittedAt: now.toISOString(),
+    }, "REPEAT_SALE");
+    assert.equal(fields.UF_CRM_1644328015350, city.trim());
+    assert.equal(fields.UF_CRM_1644327962757, expectedGender);
+    assert.equal(fields.UF_CRM_1644329391894, 7);
+    assert.equal(fields.UF_CRM_1649234588017, "2026-12-15");
+    assert.equal(fields.BIRTHDATE, "2026-12-15");
+    assert.deepEqual(fields.PHONE, [{ VALUE: "050 234 5678", VALUE_TYPE: "WORK" }]);
+    assert.equal(fields.STATUS_ID, "NEW");
+    assert.equal(fields.SOURCE_ID, "REPEAT_SALE");
+    assert.equal(fields.UF_CRM_1784446465040, "Скидка 200 ₪");
+    assert.equal(Object.hasOwn(fields, "NAME"), false);
+    assert.doesNotMatch(fields.COMMENTS, /Ведущий|undefined|null/);
+  }
+});
+
 test("phone-only submissions produce a lead without invented profile or birthday fields", () => {
   for (const language of ["ru", "he"]) {
     const result = validateGiftPayload({
