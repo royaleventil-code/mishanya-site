@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, animate, motion, useMotionValue } from "framer-motion";
 import { Banknote, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, MapPin, MessageCircle, Users, X } from "lucide-react";
@@ -15,6 +15,7 @@ import { getWhatsAppMessages, whatsappLink } from "@/lib/whatsapp";
 import { formatProgramPriceLabel, formatShekelPrice, hasStartingPrice } from "@/lib/prices";
 import { getHeroEmoji, getHeroImage } from "@/data/heroes";
 import { PikachuPortrait } from "@/components/PikachuPortrait";
+import { QuestCatalogEntry } from "@/components/quests/QuestCatalogEntry";
 
 type Props = {
   locale?: Locale;
@@ -453,17 +454,20 @@ export function ProgramsSection({ locale = "ru", segment, accent, programs, hero
 
       {/* Programs grid */}
       <div className="mt-8 grid sm:grid-cols-2 gap-4">
-        {visiblePrograms.map((p) => (
-          <ProgramCard
-            key={p.id}
-            program={p}
-            locale={locale}
-            accent={accent}
-            segment={segment}
-            audience={audience}
-            onOpen={() => openProgram(p.id)}
-          />
+        {visiblePrograms.map((p, index) => (
+          <Fragment key={p.id}>
+            <ProgramCard
+              program={p}
+              locale={locale}
+              accent={accent}
+              segment={segment}
+              audience={audience}
+              onOpen={() => openProgram(p.id)}
+            />
+            {index === 1 && <QuestCatalogEntry key={`quests-${audience?.age ?? "all"}`} locale={locale} age={audience?.age} accent={accent} />}
+          </Fragment>
         ))}
+        {visiblePrograms.length < 2 && <QuestCatalogEntry key={`quests-${audience?.age ?? "all"}`} locale={locale} age={audience?.age} accent={accent} />}
         {visiblePrograms.length === 0 && (
           <div className="sm:col-span-2 text-center py-12 text-[var(--color-ink-soft)] text-sm">
             {dict.catalog.labels.noPrograms}
