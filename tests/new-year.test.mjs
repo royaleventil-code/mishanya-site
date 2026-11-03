@@ -8,7 +8,7 @@ test("approved 2026 offers retain Sergey's explicit solo correction", () => {
     ["ded-moroz-snegurochka", [[30, 1200], [60, 1500]]],
     ["olaf", [[60, 1700], [90, 2300]]],
     ["grinch", [[60, 2000], [90, 2500]]],
-    ["circus", [[45, 1600]]],
+    ["circus", [[45, 1800]]],
     ["new-year-night", [[null, 3500]]],
   ]);
   assert.equal(newYearProgram("circus").options[0].from, true);
@@ -38,7 +38,7 @@ test("every duration creates a localized WhatsApp message with the selected pric
 
 test("circus preserves the from-price; night does not promise an unknown duration or cast", () => {
   const circus = newYearProgram("circus");
-  assert.ok(newYearMessage(circus, circus.options[0], "ru").includes("от 1600 ₪"));
+  assert.ok(newYearMessage(circus, circus.options[0], "ru").includes("от 1800 ₪"));
   const night = newYearProgram("new-year-night");
   assert.equal(night.cast, undefined);
   assert.equal(night.options[0].minutes, undefined);
