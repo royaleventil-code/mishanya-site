@@ -2,8 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { NEW_YEAR_PROGRAMS, newYearMessage, newYearPath, newYearProgram } from "../data/new-year.ts";
 
-test("approved 2026 offers retain Sergey's explicit solo correction", () => {
+test("the catalog lists the fixed video price and all approved in-person offers", () => {
   assert.deepEqual(NEW_YEAR_PROGRAMS.map(p => [p.id, p.options.map(o => [o.minutes ?? null, o.price])]), [
+    ["video-greeting", [[null, 299]]],
     ["ded-moroz", [[20, 800], [30, 1000]]],
     ["ded-moroz-snegurochka", [[30, 1200], [60, 1500]]],
     ["olaf", [[60, 1700], [90, 2300]]],
@@ -15,6 +16,7 @@ test("approved 2026 offers retain Sergey's explicit solo correction", () => {
 });
 
 test("performer photographs follow the supplied cast assignments", () => {
+  assert.equal(newYearProgram("video-greeting").photo, "video-greeting-seated");
   assert.equal(newYearProgram("ded-moroz").photo, "solo-red-winter-v1");
   assert.equal(newYearProgram("ded-moroz-snegurochka").photo, "ded-moroz-snegurochka");
   assert.equal(newYearProgram("olaf").photo, "ded-moroz-snegurochka-olaf");
@@ -28,12 +30,18 @@ test("performer photographs follow the supplied cast assignments", () => {
 test("every duration creates a localized WhatsApp message with the selected price", () => {
   for (const program of NEW_YEAR_PROGRAMS) for (const option of program.options) for (const locale of ["ru", "he"]) {
     const message = newYearMessage(program, option, locale);
-    assert.ok(message.includes(program.name[locale]));
+    assert.ok(message.toLocaleLowerCase(locale).includes(program.name[locale].toLocaleLowerCase(locale)));
     assert.ok(message.includes(`${option.price} ₪`));
     if (option.minutes) assert.ok(message.includes(`${option.minutes} ${locale === "ru" ? "минут" : "דקות"}`));
     assert.doesNotMatch(message, /Возраст ребёнка:|Город:|Дата:|Время:|undefined/);
     assert.equal(newYearPath(locale, program.id), `/${locale}/holiday/new-year/${program.id}`);
   }
+});
+
+test("the video greeting inquiry asks what to send for personalization", () => {
+  const greeting = newYearProgram("video-greeting");
+  assert.match(newYearMessage(greeting, greeting.options[0], "ru"), /Какие фотографии и данные нужно прислать/);
+  assert.match(newYearMessage(greeting, greeting.options[0], "he"), /אילו תמונות ופרטים צריך לשלוח/);
 });
 
 test("circus preserves the from-price; night does not promise an unknown duration or cast", () => {

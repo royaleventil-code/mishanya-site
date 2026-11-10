@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Gift, Heart, Snowflake, Star } from "lucide-react";
-import { NEW_YEAR_HERO_PHOTO, NEW_YEAR_PROGRAMS, newYearPath } from "@/data/new-year";
+import { NEW_YEAR_HERO_PHOTO, NEW_YEAR_PROGRAMS, NEW_YEAR_VIDEO_GREETING_ID, newYearPath } from "@/data/new-year";
 import { siteUrl } from "@/lib/seo";
 import { whatsappLink } from "@/lib/whatsapp";
 import type { Locale } from "@/lib/i18n";
@@ -37,18 +37,21 @@ export function NewYearHome({ locale }: { locale: Locale }) {
       <div className={s.sectionTitle}><Snowflake size={22} aria-hidden /><h2 id="programs-title">{he ? "תוכניות השנה החדשה" : "Новогодние программы"} <span className={s.catalogYear}>2027</span></h2><Snowflake size={22} aria-hidden /></div>
       <p className={s.sectionNote}>{he ? "דמויות אהובות. רגעים אמיתיים. חגיגה שזוכרים." : "Любимые герои. Настоящие эмоции. Праздник, который запомнится."}</p>
       <ul className={s.programGrid}>
-        {NEW_YEAR_PROGRAMS.map((program, i) => {
+        {NEW_YEAR_PROGRAMS.map((program) => {
           const first = program.options[0];
-          const compact = !program.photo;
-          return <li key={program.id}><Link href={newYearPath(locale, program.id)} className={`${s.programCard} ${compact ? s.compactCard : ""}`}>
-            {compact ? <span className={s.programIcon}><Snowflake size={35} aria-hidden /></span> :
+          const photo = program.cardPhoto ?? program.photo;
+          const solo = program.id === "ded-moroz";
+          const showDuration = first.minutes && (solo || program.options.length === 1);
+          const from = first.from || (!showDuration && program.options.length > 1);
+          return <li key={program.id} className={program.id === NEW_YEAR_VIDEO_GREETING_ID ? s.featuredProgram : undefined}><Link href={newYearPath(locale, program.id)} className={`${s.programCard} ${photo ? "" : s.compactCard}`}>
+            {photo ?
               <span className={`${s.cardPicture} ${program.mascot ? s.cardPictureWithMascot : ""}`}>
-                <WinterPhoto name={program.photo!} alt="" className={`${s.cardMainPhoto} ${i === 0 ? s.soloPhoto : ""} ${program.id === "circus" ? s.circusCardPhoto : ""}`} sizes={program.mascot ? "(max-width: 360px) 70px, (max-width: 700px) 78px, (max-width: 900px) 75px, 102px" : "(max-width: 360px) 108px, (max-width: 700px) 120px, (max-width: 900px) 115px, 155px"} />
+                <WinterPhoto name={photo} alt="" className={`${s.cardMainPhoto} ${solo ? s.soloPhoto : ""} ${program.id === "circus" ? s.circusCardPhoto : ""}`} sizes={program.mascot ? "(max-width: 360px) 70px, (max-width: 700px) 78px, (max-width: 900px) 75px, 102px" : "(max-width: 360px) 108px, (max-width: 700px) 120px, (max-width: 900px) 115px, 155px"} />
                 {program.mascot && <WinterPhoto name={program.mascot} alt="" className={s.cardMascot} sizes="(max-width: 360px) 35px, (max-width: 700px) 39px, (max-width: 900px) 38px, 51px" />}
-              </span>}
-            <span className={s.cardCopy}><h3>{program.shortName[locale]}</h3>{!compact && <p>{program.teaser[locale]}</p>}
+              </span> : <span className={s.programIcon}><Snowflake size={35} aria-hidden /></span>}
+            <span className={s.cardCopy}><h3>{program.shortName[locale]}</h3>{photo && <p>{program.teaser[locale]}</p>}
               {program.hostLabel && <span className={s.hostBadge}>{program.hostLabel[locale]}</span>}
-              <span className={s.cardPrice}>{(i === 0 || i === 4) && <>{first.minutes} {he ? "דק׳" : "мин"} · </>}{(i > 0 && i < 5) ? (he ? "החל מ־" : "от ") : ""}<bdi>{first.price} ₪</bdi></span>
+              <span className={s.cardPrice}>{showDuration && <>{first.minutes} {he ? "דק׳" : "мин"} · </>}{from && (he ? "החל מ־" : "от ")}<bdi>{first.price} ₪</bdi></span>
               <span className={s.cardDetails}>{he ? "לפרטים נוספים" : "Подробнее"}<ArrowRight size={16} className={s.directional} aria-hidden /></span>
             </span>
           </Link></li>;

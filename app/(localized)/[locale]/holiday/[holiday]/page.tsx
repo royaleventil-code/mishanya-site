@@ -74,7 +74,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const fromPrice = Math.min(...NEW_YEAR_PROGRAMS.flatMap((program) => program.options.map((option) => option.price)));
     return createPageMetadata({
       title: locale === "ru" ? `Новогодние программы 2027 в Израиле от ${fromPrice} ₪ | Мишаня` : `תוכניות נובי גוד 2027 בישראל החל מ־${fromPrice} ₪ | מישניה`,
-      description: locale === "ru" ? "Дед Мороз, Снегурочка, Олаф и Гринч. Выберите новогоднюю программу: фото, видео, отзывы и цены. Детали обсудим в WhatsApp." : "דד מורוז, סנגורוצ׳קה, אולף והגרינץ׳. תוכניות נובי גוד עם תמונות, וידאו, חוות דעת ומחירים. נדבר על הפרטים בוואטסאפ.",
+      description: locale === "ru" ? "Именное видеопоздравление от Деда Мороза и выездные новогодние программы со Снегурочкой, Олафом и Гринчем. Фото, отзывы и цены." : "ברכת וידאו אישית מדד מורוז והופעות נובי גוד עם סנגורוצ׳קה, אולף והגרינץ׳. תמונות, חוות דעת ומחירים.",
       path: `/${locale}/holiday/new-year`, locale,
       image: `/new-year/${NEW_YEAR_HERO_PHOTO}-1000.webp`, imageWidth, imageHeight,
     });

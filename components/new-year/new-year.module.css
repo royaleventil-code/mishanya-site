@@ -77,6 +77,9 @@
 .compactCard { min-height: 90px; }
 .compactCard .cardCopy { padding-inline-start: 0; }
 .programIcon { color: var(--winter-blue); width: 80px; flex: 0 0 80px; display: grid; place-items: center; }
+.featuredProgram { grid-column: 1 / -1; }
+.featuredProgram .programCard { background: #fff9f0; border-color: #e8d8c4; }
+.featuredProgram .cardMainPhoto { object-position: center; }
 .values { display: flex; justify-content: center; gap: 74px; padding: 30px 12px 38px; }
 .values span { text-align: center; line-height: 1.35; font-size: 14px; }
 .values svg { width: 26px; height: 26px; margin: 0 auto 8px; stroke-width: 1.6; }
@@ -183,8 +186,71 @@
 .mobileClosing { margin: 26px 0 8px; font-size: 13px; color: var(--winter-muted); text-align: center; }
 .mobileClosing a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 8px; color: var(--winter-blue); font-weight: 700; }
 .mobileCta { display: none; }
+.greetingPage {
+  background-image: linear-gradient(180deg, #f5faff40, #f5faffd9 66%, #f5faff), url('/new-year/winter-1000.webp');
+  background-size: 100% 560px;
+  background-position: center top;
+}
+.greetingHero, .greetingOrder {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(24px, 4vw, 48px);
+  align-items: center;
+}
+.greetingCopy .eyebrow { display: flex; }
+.greetingCopy h1 {
+  margin: 10px 0 13px;
+  font-size: clamp(27px, 3.7vw, 46px);
+  letter-spacing: -.03em;
+  overflow-wrap: anywhere;
+}
+.greetingDescription { max-width: 44ch; color: var(--winter-muted); font-size: 17px; }
+.greetingPrice { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-top: 14px; }
+.greetingPrice strong { font-size: clamp(30px, 4vw, 40px); line-height: 1.15; color: var(--winter-blue); }
+.greetingPrice span { color: var(--winter-muted); font-size: 14px; }
+.greetingCopy .desktopCta { max-width: 335px; }
+.greetingPhoto { margin: 0; min-width: 0; }
+.greetingPhoto img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 5px solid #fff;
+  border-radius: 24px;
+  background: var(--winter-soft);
+  box-shadow: 0 10px 30px #1d52841a;
+}
+.greetingPhoto figcaption { margin-top: 7px; color: var(--winter-muted); font-size: 12px; text-align: center; }
+.greetingOrder { margin-top: clamp(32px, 5vw, 62px); }
+.greetingSteps { display: grid; gap: 12px; margin: 16px 0 0; padding: 0; list-style: none; }
+.greetingSteps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid #d6e6f4;
+  border-radius: 16px;
+  background: #ffffffd9;
+}
+.greetingSteps li > span {
+  display: grid;
+  place-items: center;
+  flex: 0 0 31px;
+  height: 31px;
+  border-radius: 50%;
+  background: var(--winter-soft);
+  color: var(--winter-blue);
+  font-weight: 800;
+}
+.greetingSteps h3 { font-size: 16px; }
+.greetingSteps p { color: var(--winter-muted); font-size: 14px; margin-top: 4px; }
 .page:dir(rtl) .directional { transform: rotate(180deg); }
 
+@media (min-width: 701px) {
+  .featuredProgram .cardCopy { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 20px; padding-inline: 24px; }
+  .featuredProgram .cardDetails { grid-column: 2; grid-row: 1 / span 3; align-self: center; margin-top: 0; }
+  .greetingOrder > .greetingPhoto { grid-column: 1; grid-row: 1; }
+  .greetingOrder > div { grid-column: 2; }
+}
 @media (hover: hover) {
   .programCard:hover { transform: translateY(-3px); box-shadow: 0 12px 26px #24588512; }
   .programCard:hover .cardDetails { background: #0d549c; }
@@ -282,6 +348,11 @@
   .detailPage { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
   :global(body):has(.detailPage) { --a11y-offset: 100px; }
   .detailPage .footer { padding-bottom: 40px; }
+  .greetingPage { background-size: 100% 420px; }
+  .greetingHero, .greetingOrder { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .greetingDescription { font-size: 15px; }
+  .greetingPhoto img { border-width: 4px; border-radius: 19px; }
+  .greetingOrder h2 { text-align: center; }
 }
 @media (max-width: 360px) {
   .sectionTitle h2 { font-size: 34px; }

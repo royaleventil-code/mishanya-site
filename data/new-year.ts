@@ -11,6 +11,7 @@ export type NewYearProgram = {
   description: Copy;
   cast?: Copy;
   photo?: string;
+  cardPhoto?: string;
   video?: string;
   mascot?: string;
   galleryTitle?: Copy;
@@ -28,10 +29,25 @@ const smallGroup = copy("до 10 детей", "עד 10 ילדים");
 const largeGroup = copy("до 30 детей", "עד 30 ילדים");
 const giftGiving = copy("Вручение ваших подарков Дедом Морозом — вы выбираете и готовите подарки заранее, а перед началом программы передаёте их нашим артистам. Дед Мороз празднично вручает их гостям. Сами подарки в стоимость программы не входят.", "חלוקת המתנות שלכם על ידי דד מורוז — אתם בוחרים ומכינים את המתנות מראש ומעבירים אותן לאמנים שלנו לפני תחילת התוכנית. דד מורוז מעניק אותן לאורחים באווירה חגיגית. המתנות עצמן אינן כלולות במחיר התוכנית.");
 
+export const NEW_YEAR_VIDEO_GREETING_ID = "video-greeting";
+
 // Source: presentation 2026, superseded by Sergey's direct corrections.
 // On 2026-10-18 Sergey confirmed Arthur's solo offers: 20 min / 800 ₪ and 30 min / 1000 ₪.
 // Performer assignments come from Sergey's supplied photographs, not the old deck.
 export const NEW_YEAR_PROGRAMS: NewYearProgram[] = [
+  {
+    id: NEW_YEAR_VIDEO_GREETING_ID,
+    name: copy("Видеопоздравление от Деда Мороза", "ברכת וידאו מדד מורוז"),
+    shortName: copy("Видеопоздравление от Деда Мороза", "ברכת וידאו מדד מורוז"),
+    teaser: copy("Именное видео с фотографиями ребёнка", "סרטון אישי עם השם והתמונות של הילד או הילדה"),
+    description: copy(
+      "Дед Мороз назовёт ребёнка по имени, а его фотографии появятся в новогодней истории. Включите готовый ролик под ёлкой и сохраните его на память.",
+      "דד מורוז יפנה לילד או לילדה בשם הפרטי, והתמונות ישתלבו בסיפור חגיגי לשנה החדשה. את הסרטון המוכן תוכלו להקרין ליד עץ החג ולשמור למזכרת.",
+    ),
+    photo: "video-greeting-seated",
+    options: [{ price: 299 }],
+    includes: [],
+  },
   {
     id: "ded-moroz",
     name: copy("Дед Мороз", "דד מורוז"),
@@ -161,6 +177,7 @@ export const NEW_YEAR_PROGRAMS: NewYearProgram[] = [
     id: "new-year-night",
     name: copy("Новогодняя ночь", "ליל השנה החדשה"),
     shortName: copy("Новогодняя ночь", "ליל השנה החדשה"),
+    cardPhoto: "new-year-night-family-circle",
     teaser: copy("Индивидуальная программа для вашего праздника", "תוכנית בהתאמה אישית לחגיגה שלכם"),
     description: copy("Встретьте Новый год так, как хочется именно вам! Уютный вечер в кругу семьи, праздник для детей, вечеринка с друзьями или корпоратив — мы подстроим программу под ваших гостей, настроение и пожелания. Создадим праздник, в котором будет интересно и детям, и взрослым.", "קבלו את השנה החדשה בדיוק כמו שאתם אוהבים! ערב משפחתי חמים, חגיגה לילדים, מסיבה עם חברים או אירוע חברה — נתאים את התוכנית לאורחים, לאווירה ולרצונות שלכם. ניצור חגיגה שתעניין ותשמח גם ילדים וגם מבוגרים."),
     options: [{ price: 3500 }],
@@ -182,6 +199,9 @@ export const newYearPath = (locale: Locale, id?: string) => `/${locale}/holiday/
 export const NEW_YEAR_HERO_PHOTO = "ensemble-photo-collage-v2";
 
 export const NEW_YEAR_PHOTO_SIZE: Record<string, [number, number]> = {
+  "new-year-night-family-circle": [600, 600],
+  "video-greeting-seated": [1000, 667],
+  "video-greeting-album": [1000, 667],
   "ded-moroz-snegurochka": [1000,750],
   "silver-games-3236": [1000,667],
   "silver-conversation-0086": [1000,1500],
@@ -227,6 +247,11 @@ export const NEW_YEAR_VIDEOS = [
 export function newYearMessage(program: NewYearProgram, option: NewYearOption, locale: Locale): string {
   const duration = option.minutes ? (locale === "ru" ? `${option.minutes} минут` : `${option.minutes} דקות`) : "";
   const price = `${option.from ? (locale === "ru" ? "от " : "החל מ־") : ""}${option.price} ₪`;
+  if (program.id === NEW_YEAR_VIDEO_GREETING_ID) {
+    return locale === "ru"
+      ? `Здравствуйте! Хочу заказать видеопоздравление от Деда Мороза за ${price}. Какие фотографии и данные нужно прислать?`
+      : `שלום! אשמח להזמין ברכת וידאו מדד מורוז במחיר ${price}. אילו תמונות ופרטים צריך לשלוח?`;
+  }
   return locale === "ru"
     ? ["Здравствуйте! Хочу новогодний праздник.", `Программа: ${program.name.ru}`, [duration, price].filter(Boolean).join(" · "), "Помогите, пожалуйста, обсудить детали."].join("\n")
     : ["שלום! אני רוצה חגיגת שנה חדשה.", `תוכנית: ${program.name.he}`, [duration, price].filter(Boolean).join(" · "), "אשמח לדבר על הפרטים."].join("\n");

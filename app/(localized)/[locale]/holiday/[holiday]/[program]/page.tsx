@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { NEW_YEAR_PROGRAMS, NEW_YEAR_PHOTO_SIZE, newYearPath, newYearProgram } from "@/data/new-year";
+import { NEW_YEAR_PROGRAMS, NEW_YEAR_PHOTO_SIZE, NEW_YEAR_VIDEO_GREETING_ID, newYearPath, newYearProgram } from "@/data/new-year";
 import { isLocale } from "@/lib/i18n";
 import { createPageMetadata, siteUrl } from "@/lib/seo";
 import { NewYearShell } from "@/components/new-year/NewYearShell";
 import { NewYearProgram } from "@/components/new-year/NewYearProgram";
+import { NewYearVideoGreeting } from "@/components/new-year/NewYearVideoGreeting";
 
 type Props = { params: Promise<{ locale: string; holiday: string; program: string }> };
 export const dynamicParams = false;
@@ -42,6 +43,8 @@ export default async function ProgramPage({ params }: Props) {
   };
   return <NewYearShell locale={locale} programId={id}>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
-    <NewYearProgram key={id} locale={locale} program={program} />
+    {id === NEW_YEAR_VIDEO_GREETING_ID
+      ? <NewYearVideoGreeting locale={locale} program={program} />
+      : <NewYearProgram key={id} locale={locale} program={program} />}
   </NewYearShell>;
 }

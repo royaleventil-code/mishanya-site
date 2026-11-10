@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { Caveat } from "next/font/google";
 import { Menu, Heart, Snowflake } from "lucide-react";
-import { newYearPath } from "@/data/new-year";
+import { NEW_YEAR_VIDEO_GREETING_ID, newYearPath } from "@/data/new-year";
 import type { Locale } from "@/lib/i18n";
 import s from "./new-year.module.css";
 
@@ -11,15 +11,18 @@ const handwriting = Caveat({ subsets: ["latin", "cyrillic"], weight: "500", disp
 export function NewYearShell({ locale, programId, children }: { locale: Locale; programId?: string; children: React.ReactNode }) {
   const he = locale === "he";
   const home = newYearPath(locale);
-  return <main id="main" className={`${s.page} ${handwriting.variable} ${programId ? s.detailPage : ""}`}>
+  const isVideoGreeting = programId === NEW_YEAR_VIDEO_GREETING_ID;
+  return <main id="main" className={`${s.page} ${handwriting.variable} ${programId ? s.detailPage : ""} ${isVideoGreeting ? s.greetingPage : ""}`}>
     <header className={s.header}>
       <Link href={`/${locale}`} className={s.brand} aria-label={he ? "מישניה בארץ הפלאות — ראשי" : "Мишаня в Стране Чудес — главная"}>
         <img src={he ? "/logo-he.png" : "/logo-ru.png"} width="104" height="104" alt={he ? "מישניה בארץ הפלאות" : "Мишаня в Стране Чудес"} />
       </Link>
       <nav className={s.desktopNav} aria-label={he ? "ניווט" : "Навигация"}>
-        <Link href={`${home}#programs`}>{he ? "התוכניות" : "Программы"}</Link>
-        <a href="#memories">{he ? "וידאו" : "Видео"}</a>
-        <a href="#reviews">{he ? "חוות דעת" : "Отзывы"}</a>
+        {/* Use the browser's fragment navigation so returning to the catalog keeps a single anchor. */}
+        <a href={`${home}#programs`}>{he ? "התוכניות" : "Программы"}</a>
+        {isVideoGreeting
+          ? <a href="#how-to-order">{he ? "איך מזמינים" : "Как заказать"}</a>
+          : <><a href="#memories">{he ? "וידאו" : "Видео"}</a><a href="#reviews">{he ? "חוות דעת" : "Отзывы"}</a></>}
       </nav>
       <div className={s.headerTools}>
         <nav className={s.languages} aria-label={he ? "שפה" : "Язык"} dir="ltr">
