@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Clock, MapPin, Users } from "lucide-react";
 import { BidiText } from "@/components/BidiText";
+import { ProgramDiscount } from "@/components/ProgramDiscount";
 import type { Program } from "@/lib/types";
 import { getDictionary } from "@/lib/dictionaries";
 import { localePath, type Locale } from "@/lib/i18n";
@@ -120,6 +121,7 @@ export function ProgramCatalogCard({
           </div>
         )}
 
+        <ProgramDiscount program={program} locale={locale} />
         <div className="mt-2 flex items-center justify-center flex-wrap gap-x-2 gap-y-1.5">
           {/* Price pill */}
           <div className="apple-glass inline-flex items-baseline rounded-full px-3 py-1.5 text-sm font-bold text-[var(--color-ink)]" dir={locale === "he" ? undefined : "ltr"}>

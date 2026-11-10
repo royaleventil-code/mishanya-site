@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, animate, motion, useMotionValue } from "framer-motion";
 import { Banknote, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, MapPin, MessageCircle, Users, X } from "lucide-react";
 import { BidiText } from "@/components/BidiText";
+import { ProgramDiscount } from "@/components/ProgramDiscount";
 import type { Addon, AudienceContext, Hero, Program, SegmentId } from "@/lib/types";
 import { filterHeroes, filterPrograms } from "@/lib/filtering";
 import { sortHeroes } from "@/lib/heroOrder";
@@ -596,6 +597,7 @@ function ProgramCard({
           </div>
         )}
 
+        <ProgramDiscount program={program} locale={locale} />
         <div className="mt-2 flex items-center justify-center flex-wrap gap-x-2 gap-y-1.5">
           {/* Price pill */}
           <div className="apple-glass inline-flex items-baseline rounded-full px-3 py-1.5 text-sm font-bold text-[var(--color-ink)]" dir={locale === "he" ? undefined : "ltr"}>
@@ -1014,6 +1016,7 @@ function ProgramModal({
               <div className="text-xs uppercase tracking-wider opacity-90 font-medium">
                 {hasStartingPrice(program.id) ? dict.catalog.labels.priceFrom : dict.catalog.labels.price}
               </div>
+              <ProgramDiscount program={program} locale={locale} totalPrice={totalPriceFrom} />
               <div className="mt-1 flex min-h-[40px] items-center justify-center text-3xl font-bold tracking-tight tabular-nums sm:min-h-[48px] sm:text-4xl" dir="ltr">
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.span

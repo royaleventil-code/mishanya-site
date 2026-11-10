@@ -3,6 +3,7 @@ import { Inter, Lilita_One, Noto_Sans_Hebrew, Nunito } from "next/font/google";
 import { Suspense } from "react";
 import { A11yProvider } from "@/components/A11yProvider";
 import { AccessibilityWidget } from "@/components/AccessibilityWidget";
+import { DocumentBootScripts } from "@/components/DocumentBootScripts";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import { MarketingEvents } from "@/components/MarketingEvents";
 import { MarketingPixels } from "@/components/MarketingPixels";
@@ -204,15 +205,13 @@ export function RootDocument({
       suppressHydrationWarning
       className={`${inter.variable} ${notoHebrew.variable} ${lilita.variable} ${nunito.variable}`}
     >
-      <head>
-        {/* Google Tag Manager */}
-        <script dangerouslySetInnerHTML={{ __html: GOOGLE_TAG_MANAGER_BOOT_SCRIPT }} />
-        <script dangerouslySetInnerHTML={{ __html: GOOGLE_TAG_MANAGER_EVENT_BRIDGE_SCRIPT }} />
-        {/* End Google Tag Manager */}
-        {/* Восстанавливает включённые режимы доступности до первой отрисовки */}
-        <script dangerouslySetInnerHTML={{ __html: A11Y_BOOT_SCRIPT }} />
-      </head>
       <body className="min-h-screen antialiased">
+        <DocumentBootScripts>
+          <script dangerouslySetInnerHTML={{ __html: GOOGLE_TAG_MANAGER_BOOT_SCRIPT }} />
+          <script dangerouslySetInnerHTML={{ __html: GOOGLE_TAG_MANAGER_EVENT_BRIDGE_SCRIPT }} />
+          {/* Восстанавливает включённые режимы доступности до первой отрисовки */}
+          <script dangerouslySetInnerHTML={{ __html: A11Y_BOOT_SCRIPT }} />
+        </DocumentBootScripts>
         {/* Google Tag Manager (noscript) */}
         <noscript>
           <iframe

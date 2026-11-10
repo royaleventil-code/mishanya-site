@@ -6,6 +6,7 @@ import { PROGRAMS } from "@/data/programs";
 import { BidiText } from "@/components/BidiText";
 import { SiteFooter } from "@/components/home/SiteFooter";
 import { ProgramCatalogCard } from "@/components/ProgramCatalogCard";
+import { ProgramDiscount } from "@/components/ProgramDiscount";
 import { PublicHeader } from "@/components/PublicHeader";
 import { getDictionary } from "@/lib/dictionaries";
 import { isLocale, localePath, type Locale } from "@/lib/i18n";
@@ -302,6 +303,7 @@ export default async function LocalizedProgramPage({ params }: Props) {
               <div className="text-xs font-medium uppercase tracking-wider text-[var(--color-ink-soft)]">
                 {hasStartingPrice(program.id) ? dict.catalog.labels.priceFrom : dict.catalog.labels.price}
               </div>
+              <ProgramDiscount program={program} locale={locale} />
               <div className="mt-1 text-3xl font-bold tabular-nums tracking-tight" dir="ltr">
                 {formatShekelPrice(program.priceFrom, locale)}
               </div>

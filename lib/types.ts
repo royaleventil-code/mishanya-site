@@ -38,6 +38,7 @@ export type Program = {
   animators: number;
   animatorsLabel?: string;
   priceFrom: number;
+  originalPrice?: number;
   currency: string;
   maxKids: number | null;
   languages: Language[];
