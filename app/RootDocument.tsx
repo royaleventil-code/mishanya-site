@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Lilita_One, Noto_Sans_Hebrew, Nunito } from "next/font/google";
 import { Suspense } from "react";
 import { A11yProvider } from "@/components/A11yProvider";
 import { AccessibilityWidget } from "@/components/AccessibilityWidget";
@@ -18,6 +17,7 @@ import {
   siteUrl,
 } from "@/lib/seo";
 import "./globals.css";
+import "./site-fonts.css";
 
 const GOOGLE_TAG_MANAGER_ID = "GTM-NBGL3X4H";
 const GOOGLE_TAG_MANAGER_BOOT_SCRIPT = `
@@ -31,33 +31,6 @@ const GOOGLE_TAG_MANAGER_EVENT_BRIDGE_SCRIPT = `
   window.dataLayer = window.dataLayer || [];
   window.gtag = window.gtag || function gtag(){window.dataLayer.push(arguments);};
 `;
-
-const inter = Inter({
-  subsets: ["latin", "cyrillic"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const notoHebrew = Noto_Sans_Hebrew({
-  subsets: ["hebrew"],
-  weight: ["400", "500", "700", "800", "900"],
-  variable: "--font-hebrew",
-  display: "swap",
-});
-
-const lilita = Lilita_One({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-display",
-  display: "swap",
-});
-
-const nunito = Nunito({
-  subsets: ["latin", "cyrillic"],
-  weight: ["700", "800", "900"],
-  variable: "--font-nunito",
-  display: "swap",
-});
 
 export function createRootMetadata(locale: Locale): Metadata {
   const dict = getDictionary(locale);
@@ -203,8 +176,11 @@ export function RootDocument({
       dir={localeConfig.dir}
       // Классы режимов доступности добавляются до гидрации boot-скриптом
       suppressHydrationWarning
-      className={`${inter.variable} ${notoHebrew.variable} ${lilita.variable} ${nunito.variable}`}
     >
+      <head>
+        <link rel="preload" as="font" type="font/woff2" crossOrigin="anonymous"
+          href={locale === "he" ? "/fonts/noto-sans-hebrew-hebrew.woff2" : "/fonts/inter-cyrillic.woff2"} />
+      </head>
       <body className="min-h-screen antialiased">
         <DocumentBootScripts>
           <script dangerouslySetInnerHTML={{ __html: GOOGLE_TAG_MANAGER_BOOT_SCRIPT }} />

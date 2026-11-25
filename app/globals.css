@@ -13,7 +13,7 @@
 
   --font-sans: var(--font-inter), var(--font-hebrew), -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-display: var(--font-display), "Lilita One", sans-serif;
+  --font-display: "Lilita One", "Lilita One Fallback", sans-serif;
 
   --radius-card: 24px;
   --radius-pill: 999px;

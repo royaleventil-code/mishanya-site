@@ -1,18 +1,15 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
-import { Caveat } from "next/font/google";
 import { Menu, Heart, Snowflake } from "lucide-react";
 import { NEW_YEAR_VIDEO_GREETING_ID, newYearPath } from "@/data/new-year";
 import type { Locale } from "@/lib/i18n";
 import s from "./new-year.module.css";
 
-const handwriting = Caveat({ subsets: ["latin", "cyrillic"], weight: "500", display: "swap", variable: "--font-winter-hand" });
-
 export function NewYearShell({ locale, programId, children }: { locale: Locale; programId?: string; children: React.ReactNode }) {
   const he = locale === "he";
   const home = newYearPath(locale);
   const isVideoGreeting = programId === NEW_YEAR_VIDEO_GREETING_ID;
-  return <main id="main" className={`${s.page} ${handwriting.variable} ${programId ? s.detailPage : ""} ${isVideoGreeting ? s.greetingPage : ""}`}>
+  return <main id="main" className={`${s.page} ${programId ? s.detailPage : ""} ${isVideoGreeting ? s.greetingPage : ""}`}>
     <header className={s.header}>
       <Link href={`/${locale}`} className={s.brand} aria-label={he ? "מישניה בארץ הפלאות — ראשי" : "Мишаня в Стране Чудес — главная"}>
         <img src={he ? "/logo-he.png" : "/logo-ru.png"} width="104" height="104" alt={he ? "מישניה בארץ הפלאות" : "Мишаня в Стране Чудес"} />
