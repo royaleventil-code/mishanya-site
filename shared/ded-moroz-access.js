@@ -13,7 +13,7 @@ async function accessKeys(issuer, kid, request, now) {
   const cached = keysByIssuer.get(issuer);
   if (cached?.until > now && cached.keys.some(key => key.kid === kid)) return cached.keys;
   const response = await request(issuer + "/cdn-cgi/access/certs", {
-    redirect: "error",
+    redirect: "manual",
     signal: AbortSignal.timeout(5000),
   });
   if (!response.ok) return [];

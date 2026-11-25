@@ -79,6 +79,7 @@ test("the Pages API saves a single complete order, protects access and preserves
   const algorithm = { name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" };
   const signingKeys = await crypto.subtle.generateKey(algorithm, true, ["sign", "verify"]);
   const jwk = { ...await crypto.subtle.exportKey("jwk", signingKeys.publicKey), kid: "mock-access-key" };
+  let keysResponse = Response.redirect("https://example.invalid/keys");
   t.mock.method(globalThis, "fetch", async (address, options) => {
     const url = new URL(address);
     if (url.hostname === "challenges.cloudflare.com") return Response.json({
@@ -86,7 +87,8 @@ test("the Pages API saves a single complete order, protects access and preserves
       hostname: new URL(origin).hostname, action: "ded_moroz_order",
     });
     assert.equal(url.hostname, env.DM_ACCESS_TEAM_DOMAIN);
-    return Response.json({ keys: [jwk] });
+    assert.equal(options.redirect, "manual");
+    return keysResponse.clone();
   });
   const sign = async (audience, validSeconds) => {
     const base64 = value => Buffer.from(JSON.stringify(value)).toString("base64url");
@@ -131,6 +133,8 @@ test("the Pages API saves a single complete order, protects access and preserves
   }
   const headers = { "Cf-Access-Jwt-Assertion": await sign(env.DM_ACCESS_AUD, 600) };
   const call = (url, init) => onRequest({ env, request: new Request(url, { ...init, headers }) });
+  assert.equal((await call(staff)).status, 403);
+  keysResponse = Response.json({ keys: [jwk] });
   const [item] = await (await call(staff)).json();
   assert.equal(item.parent.whatsapp, draft.whatsapp);
   assert.deepEqual(item.children.map(child => child.age), [1, 7]);
@@ -148,20 +152,29 @@ test("the Pages API saves a single complete order, protects access and preserves
 
   let time = Date.now();
   const notices = [];
-  const options = { clock: () => time, request: async (_url, request) => {
+  const options = { clock: () => time, request: async (url, request) => {
+    assert.equal(new URL(url).hostname, "api.telegram.org");
+    assert.equal(request.redirect, "manual");
     notices.push(JSON.parse(request.body));
-    return notices.length === 1
-      ? Response.json({ ok: false, error_code: 429, parameters: { retry_after: 65 } }, { status: 429 })
-      : Response.json({ ok: true, result: { message_id: 5, chat: { id: Number(env.DM_TELEGRAM_CHAT_ID) } } });
+    if (notices.length === 1) return Response.redirect("https://example.invalid/bot");
+    if (notices.length === 2) {
+      return Response.json({ ok: false, error_code: 429, parameters: { retry_after: 65 } }, { status: 429 });
+    }
+    return Response.json({ ok: true, result: { message_id: 5, chat: { id: Number(env.DM_TELEGRAM_CHAT_ID) } } });
   } };
   await deliverOrderNotices(env, options);
   assert.equal(notices.length, 1);
+  assert.equal(db.prepare("SELECT telegram_sent_at FROM dm_orders").get().telegram_sent_at, null);
+  time += 30_000;
+  await deliverOrderNotices(env, options);
+  assert.equal(notices.length, 2);
+  assert.equal(db.prepare("SELECT telegram_sent_at FROM dm_orders").get().telegram_sent_at, null);
   time += 66_000;
   await Promise.all([deliverOrderNotices(env, options), deliverOrderNotices(env, options)]);
-  assert.equal(notices.length, 2);
-  assert.ok(notices[1].text.includes(receipt.order_id));
-  assert.ok(!notices[1].text.includes(draft.whatsapp));
-  assert.ok(!notices[1].text.includes(draft.children[0].name));
+  assert.equal(notices.length, 3);
+  assert.ok(notices[2].text.includes(receipt.order_id));
+  assert.ok(!notices[2].text.includes(draft.whatsapp));
+  assert.ok(!notices[2].text.includes(draft.children[0].name));
   assert.equal(db.prepare("SELECT telegram_sent_at FROM dm_orders").get().telegram_sent_at, time);
 });
 
