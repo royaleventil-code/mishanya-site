@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { ClipboardList, MessageCircle, X } from "lucide-react";
+import { ClipboardList, Clock3, MessageCircle, X } from "lucide-react";
 import { useRef, useState } from "react";
 import s from "./greeting-order.module.css";
 
@@ -10,7 +10,7 @@ const OrderForm = dynamic(
   { loading: () => <p role="status" className={s.loading}>Открываем анкету…</p> },
 );
 
-export function GreetingOrderActions({ inquiryHref, price }: { inquiryHref: string; price: number }) {
+export function GreetingOrderActions({ inquiryHref, price, turnaround }: { inquiryHref: string; price: number; turnaround: string }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const [opened, setOpened] = useState(false);
@@ -39,6 +39,7 @@ export function GreetingOrderActions({ inquiryHref, price }: { inquiryHref: stri
       <div className={`dm ${s.surface}`}>
         <header className={s.modalHead}>
           <h2 id="greeting-checkout-title">Заказ видеопоздравления</h2>
+          <p className={s.turnaround}><Clock3 size={16} aria-hidden />{turnaround}</p>
           <button type="button" className={s.close} aria-label="Закрыть анкету" onClick={() => dialog.current?.close()}><X size={23} aria-hidden /></button>
         </header>
         {opened && <OrderForm price={price} />}

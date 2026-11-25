@@ -1,5 +1,5 @@
-import { ArrowLeft, ArrowRight, MessageCircle, Video } from "lucide-react";
-import { newYearMessage, newYearPath, type NewYearProgram } from "@/data/new-year";
+import { ArrowLeft, ArrowRight, Clock3, MessageCircle, Video } from "lucide-react";
+import { greetingTurnaround, newYearMessage, newYearPath, type NewYearProgram } from "@/data/new-year";
 import type { Locale } from "@/lib/i18n";
 import { whatsappLink } from "@/lib/whatsapp";
 import { WinterPhoto } from "./NewYearMedia";
@@ -46,7 +46,8 @@ export function NewYearVideoGreeting({ locale, program }: { locale: Locale; prog
           <strong><bdi>{price}</bdi></strong>
           <span>{he ? "לסרטון המוכן" : "за готовый ролик"}</span>
         </div>
-        {he ? <div className={s.desktopCta}>{hebrewOrderLink}</div> : <GreetingOrderActions inquiryHref={href} price={option.price} />}
+        <p className={s.greetingTurnaround}><Clock3 size={16} aria-hidden />{greetingTurnaround[locale]}</p>
+        {he ? <div className={s.desktopCta}>{hebrewOrderLink}</div> : <GreetingOrderActions inquiryHref={href} price={option.price} turnaround={greetingTurnaround.ru} />}
       </div>
       {program.photo && <figure className={s.greetingPhoto}>
         <WinterPhoto name={program.photo} alt={he ? "דד מורוז, סנגורוצ׳קה ומישניה סביב ספר קסום פתוח" : "Дед Мороз, Снегурочка и Мишаня над раскрытой волшебной книгой"} eager sizes={photoSizes} />

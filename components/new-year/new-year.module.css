@@ -208,6 +208,8 @@
 .greetingPrice { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-top: 14px; }
 .greetingPrice strong { font-size: clamp(30px, 4vw, 40px); line-height: 1.15; color: var(--winter-blue); }
 .greetingPrice span { color: var(--winter-muted); font-size: 14px; }
+.greetingCopy .greetingTurnaround { display: flex; align-items: center; gap: 7px; margin-top: 5px; color: var(--winter-ink); font-size: 15px; }
+.greetingTurnaround svg { flex-shrink: 0; color: var(--winter-blue); }
 .greetingCopy .desktopCta { max-width: 335px; }
 .greetingPhoto { margin: 0; min-width: 0; }
 .greetingPhoto img {

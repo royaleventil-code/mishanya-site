@@ -35,6 +35,7 @@ export function OrderForm({ price }: { price: number | null }) {
   const [turnstileToken, setTurnstileToken] = useState("");
   const [verification, setVerification] = useState(0);
   const panel = useRef<HTMLDivElement>(null), sending = useRef(false);
+  const formBody = useRef<HTMLDivElement>(null);
   useEffect(() => {
     let active = true;
     async function restore() {
@@ -53,7 +54,11 @@ export function OrderForm({ price }: { price: number | null }) {
     try { localStorage.setItem(draftKey, JSON.stringify({ data: draft, step, key, savedAt: Date.now() })); }
     catch { /* The form also works in memory. */ }
   }, [draft, step, key, receipt]);
-  const focusPanel = () => requestAnimationFrame(() => { panel.current?.focus({ preventScroll: true }); panel.current?.scrollIntoView({ block: "start" }); });
+  const focusPanel = () => requestAnimationFrame(() => {
+    formBody.current?.scrollTo({ top: 0 });
+    panel.current?.focus({ preventScroll: true });
+    panel.current?.scrollIntoView({ block: "start" });
+  });
   const go = (index: number) => { setErrors({}); setIssue(""); setStep(index); focusPanel(); };
   const mark = (id: string) => setErrors(old => { if (!(id in old)) return old; const next = { ...old }; delete next[id]; return next; });
   const update = (field: SharedFields, value: string) => { setDraft(old => ({ ...old, [field]: value })); mark(field === "otherCity" ? "city" : field); };
@@ -142,63 +147,77 @@ export function OrderForm({ price }: { price: number | null }) {
         <button type="button" disabled={i >= step || !!busyPhotos || submitting} onClick={() => go(i)}><span>{i < step ? <Check size={15} /> : i + 1}</span>{text}</button>
       </li>)}</ol>
       <form className="dm-form" onSubmit={submit} noValidate>
-        <h3>{copy.stepTitles[step]}</h3><p className="dm-form-note">{copy.stepNotes[step]}</p>
-        {step === 0 && <>
-          {draft.children.map((child, i) => {
-            const fieldId = (field: keyof Child) => `child-${i}-${field}`;
-            const field = (name: keyof Child, max: number, example: string, optional = false, multiline = false) => {
-              const id = fieldId(name);
-              const props = { id, value: child[name], maxLength: max, placeholder: example, "aria-invalid": !!errors[id],
-                "aria-describedby": errors[id] ? id + "-help" : undefined,
-                onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => editChild(i, name, e.target.value) };
-              return <Field id={id} label={copy.fields[name]} count={child[name].length} max={max} error={errors[id]} optional={optional}>
-                {multiline ? <textarea rows={2} {...props} /> : <input {...props} onBlur={() => {
-                  if (name !== "name") return;
-                  const formatted = formattedName(child.name.trim());
-                  if (formatted !== child.name) editChild(i, name, formatted);
-                }} />}
-              </Field>;
-            };
-            return <fieldset className="dm-child" key={i} aria-label={`Ребёнок ${i + 1}`}>
-              {draft.children.length > 1 && <button type="button" className="dm-remove" aria-label={`Убрать ребёнка ${i + 1}`} onClick={() => { setDraft(d => ({ ...d, children: d.children.filter((_, n) => i !== n) })); setErrors({}); }}><Trash2 size={15} /> Убрать</button>}
-              <div className="dm-two">{field("name", 12, "Например, Соня")}{field("name_pronounce", 30, "Например, ЛиОр", true)}</div>
-              <div className="dm-two">
-                <Field id={fieldId("gender")} label={copy.fields.gender} error={errors[fieldId("gender")]}>
-                  <select id={fieldId("gender")} value={child.gender} onChange={e => editChild(i, "gender", e.target.value)}>
-                    <option value="">Выберите</option><option value="boy">Мальчик</option><option value="girl">Девочка</option></select></Field>
-                <Field id={fieldId("age")} label={copy.fields.age} error={errors[fieldId("age")]}>
-                  <select id={fieldId("age")} value={child.age} onChange={e => editChild(i, "age", e.target.value)}>
-                    <option value="">Сколько лет?</option>
-                    {childAges.map(age => <option value={age} key={age}>{age === "1" ? "1 год" : age}</option>)}
-                  </select>
-                </Field>
+        <div className="dm-form-body" ref={formBody}>
+          <h3>{copy.stepTitles[step]}</h3><p className="dm-form-note">{copy.stepNotes[step]}</p>
+          {step === 0 && <>
+            {draft.children.map((child, i) => {
+              const fieldId = (field: keyof Child) => `child-${i}-${field}`;
+              const field = (name: keyof Child, max: number, example: string, optional = false, multiline = false) => {
+                const id = fieldId(name);
+                const props = { id, value: child[name], maxLength: max, placeholder: example, "aria-invalid": !!errors[id],
+                  "aria-describedby": errors[id] ? id + "-help" : undefined,
+                  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => editChild(i, name, e.target.value) };
+                return <Field id={id} label={copy.fields[name]} count={child[name].length} max={max} error={errors[id]} optional={optional}>
+                  {multiline ? <textarea rows={2} {...props} /> : <input {...props} onBlur={() => {
+                    if (name !== "name") return;
+                    const formatted = formattedName(child.name.trim());
+                    if (formatted !== child.name) editChild(i, name, formatted);
+                  }} />}
+                </Field>;
+              };
+              return <fieldset className="dm-child" key={i} aria-label={`Ребёнок ${i + 1}`}>
+                {draft.children.length > 1 && <div className="dm-child-tools">
+                  <b>Ребёнок {i + 1}</b>
+                  <button type="button" className="dm-remove" aria-label={`Убрать ребёнка ${i + 1}`} onClick={() => { setDraft(d => ({ ...d, children: d.children.filter((_, n) => i !== n) })); setErrors({}); }}><Trash2 size={15} /> Убрать</button>
+                </div>}
+                <div className="dm-two">{field("name", 12, "Например, Соня")}{field("name_pronounce", 30, "Например, ЛиОр", true)}</div>
+                <div className="dm-two">
+                  <Field id={fieldId("gender")} label={copy.fields.gender} error={errors[fieldId("gender")]}>
+                    <select id={fieldId("gender")} value={child.gender} onChange={e => editChild(i, "gender", e.target.value)}>
+                      <option value="">Выберите</option><option value="boy">Мальчик</option><option value="girl">Девочка</option></select></Field>
+                  <Field id={fieldId("age")} label={copy.fields.age} error={errors[fieldId("age")]}>
+                    <select id={fieldId("age")} value={child.age} onChange={e => editChild(i, "age", e.target.value)}>
+                      <option value="">Сколько лет?</option>
+                      {childAges.map(age => <option value={age} key={age}>{age === "1" ? "1 год" : age}</option>)}
+                    </select>
+                  </Field>
+                </div>
+                <div className="dm-two">
+                  {field("fact_learned", 60, "Например, научилась кататься на велосипеде", false, true)}
+                  {field("fact_kind", 60, "Например, помогает заботиться о младшей сестре", true, true)}
+                </div>
+              </fieldset>;
+            })}
+            <button type="button" className="dm-add" onClick={() => { const index = draft.children.length; setDraft(d => ({ ...d, children: [...d.children, newChild()] })); requestAnimationFrame(() => document.getElementById(`child-${index}-name`)?.focus()); }}><Plus size={17} />Добавить ребёнка</button>
+            <div className="dm-family-fields">
+              <div>
+                <Field id="city" label={copy.fields.city} error={errors.city}><select id="city" value={draft.city} onChange={e => update("city", e.target.value)}><option value="">Выберите город</option>{cities.map(c => <option key={c}>{c}</option>)}</select></Field>
+                {draft.city === "Другой" && familyText("otherCity", copy.fields.otherCity, 25, "Ваш город")}
               </div>
-              {field("fact_learned", 60, "Например, научилась кататься на велосипеде", false, true)}
-              {field("fact_kind", 60, "Например, помогает заботиться о младшей сестре", true, true)}
-            </fieldset>;
-          })}
-          <button type="button" className="dm-add" onClick={() => { const index = draft.children.length; setDraft(d => ({ ...d, children: [...d.children, newChild()] })); requestAnimationFrame(() => document.getElementById(`child-${index}-name`)?.focus()); }}><Plus size={17} />Добавить ребёнка</button>
-          <div className="dm-family-fields"><Field id="city" label={copy.fields.city} error={errors.city}><select id="city" value={draft.city} onChange={e => update("city", e.target.value)}><option value="">Выберите город</option>{cities.map(c => <option key={c}>{c}</option>)}</select></Field>
-            {draft.city === "Другой" && familyText("otherCity", copy.fields.otherCity, 25, "Ваш город")}
-            <Field id="parents_words" label={copy.fields.parents_words} max={70} count={draft.parents_words.length} error={errors.parents_words}>
-              <textarea id="parents_words" rows={2} maxLength={70} value={draft.parents_words} placeholder="Например, мы тобой очень гордимся и любим тебя!" onChange={e => update("parents_words", e.target.value)} />
-            </Field></div>
-        </>}
-        {step === 1 && <div className="dm-photo-grid">{photos.map((photo, i) => <PhotoSlot key={i} index={i} value={photo} error={errors["photo-" + i]} onChange={p => updatePhoto(i, p)} onBusy={delta => setBusyPhotos(x => x + delta)} />)}</div>}
-        {step === 2 && <div className="dm-contact">
-          <div className="dm-summary-line"><span>Для кого</span><b>{draft.children.map(c => formattedName(c.name)).join(", ")}</b></div>
-          <div className="dm-two">
-            {familyText("parentName", copy.fields.parentName, 30, "Имя родителя")}
-            {familyText("whatsapp", copy.fields.whatsapp, undefined, "Номер в любом формате", "tel")}
-          </div>
-          {familyText("email", copy.fields.email, undefined, "name@example.com", "email", true)}
-          <Field id="ready_by" label={copy.fields.ready_by} error={errors.ready_by} hint="Можно выбрать дату начиная с послезавтра."><input id="ready_by" type="date" min={earliestDate()} value={draft.ready_by} onChange={e => update("ready_by", e.target.value)} /></Field>
-          <label className="dm-consent"><input id="consent" type="checkbox" checked={draft.consent} onChange={e => { const checked = e.target.checked; setDraft(d => ({ ...d, consent: checked })); mark("consent"); }} />Соглашаюсь на обработку фотографий и данных детей для создания этого видео.</label>
-          {errors.consent && <span className="dm-error" role="alert">{errors.consent}</span>}
-          {!preview && <RsvpTurnstile locale="ru" action="ded_moroz_order" resetKey={verification} onTokenChange={setTurnstileToken} />}
-        </div>}
-        {storageNote && <p className="dm-small-note" role="status">{storageNote}</p>}
-        {issue && <p role="alert" className="dm-error">{issue}</p>}
+              <Field id="parents_words" label={copy.fields.parents_words} max={70} count={draft.parents_words.length} error={errors.parents_words}>
+                <textarea id="parents_words" rows={2} maxLength={70} value={draft.parents_words} placeholder="Например, мы тобой очень гордимся и любим тебя!" onChange={e => update("parents_words", e.target.value)} />
+              </Field></div>
+          </>}
+          {step === 1 && <div className="dm-photo-grid">{photos.map((photo, i) => <PhotoSlot key={i} index={i} value={photo} error={errors["photo-" + i]} onChange={p => updatePhoto(i, p)} onBusy={delta => setBusyPhotos(x => x + delta)} />)}</div>}
+          {step === 2 && <div className="dm-contact">
+            <div className="dm-summary-line"><span>Для кого</span><b>{draft.children.map(c => formattedName(c.name)).join(", ")}</b></div>
+            <div className="dm-two">
+              {familyText("parentName", copy.fields.parentName, 30, "Имя родителя")}
+              {familyText("whatsapp", copy.fields.whatsapp, undefined, "Номер в любом формате", "tel")}
+            </div>
+            <div className="dm-two">
+              {familyText("email", copy.fields.email, undefined, "name@example.com", "email", true)}
+              <Field id="ready_by" label={copy.fields.ready_by} error={errors.ready_by} hint="Выберите желаемую дату начиная с послезавтра. Точную дату подтвердим в WhatsApp.">
+                <input id="ready_by" type="date" min={earliestDate()} value={draft.ready_by} aria-describedby="ready_by-help" aria-invalid={!!errors.ready_by} onChange={e => update("ready_by", e.target.value)} />
+              </Field>
+            </div>
+            <label className="dm-consent"><input id="consent" type="checkbox" checked={draft.consent} onChange={e => { const checked = e.target.checked; setDraft(d => ({ ...d, consent: checked })); mark("consent"); }} />Соглашаюсь на обработку фотографий и данных детей для создания этого видео.</label>
+            {errors.consent && <span className="dm-error" role="alert">{errors.consent}</span>}
+            {!preview && <RsvpTurnstile locale="ru" action="ded_moroz_order" resetKey={verification} onTokenChange={setTurnstileToken} />}
+          </div>}
+          {storageNote && <p className="dm-small-note" role="status">{storageNote}</p>}
+          {issue && <p role="alert" className="dm-error">{issue}</p>}
+        </div>
         <div className="dm-form-actions">{step > 0 && <button type="button" className="dm-back" disabled={submitting || !!busyPhotos} onClick={() => go(step - 1)}>Назад</button>}
           <button type="submit" className="dm-btn dm-green" disabled={!key || !!busyPhotos || submitting || (step === 2 && !preview && !turnstileToken)}>{submitting ? "Сохраняем заказ…" : ["Перейти к фотографиям", "Перейти к контактам", "Оформить заказ"][step]}</button>
         </div>

@@ -12,7 +12,7 @@
 .order:hover { background: #0a5199; }
 .mobilePrice { display: none; }
 .dialog {
-  position: fixed; inset: 0; margin: auto; padding: 0; width: min(680px, calc(100% - 32px));
+  position: fixed; inset: 0; margin: auto; padding: 0; width: min(1000px, calc(100% - 40px));
   max-width: none; max-height: calc(100vh - 40px); max-height: calc(100dvh - 40px);
   border: 1px solid #c5daee; border-radius: 22px; background: #fff;
   overflow-y: auto; overscroll-behavior: contain; box-shadow: 0 20px 75px #0b2b5540;
@@ -26,12 +26,15 @@
   margin: 0; font-family: var(--font-inter), "Segoe UI", sans-serif; color: var(--ink); background: white;
 }
 .modalHead {
-  position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center;
-  gap: 10px; padding: 12px 20px; background: #f7fbff; border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 2; display: grid; align-items: center;
+  grid-template: "title time close" auto / minmax(0, 1fr) auto auto;
+  gap: 4px 18px; padding: 14px 28px; background: #f7fbff; border-bottom: 1px solid var(--line);
 }
-.modalHead h2 { font-size: clamp(18px, 3vw, 23px); }
+.surface .modalHead h2 { grid-area: title; font-size: clamp(18px, 2vw, 24px); line-height: 1.2; text-wrap: initial; }
+.turnaround { grid-area: time; display: flex; align-items: center; gap: 6px; font-size: 14px; line-height: 1.35; color: var(--muted); }
+.turnaround svg { flex-shrink: 0; color: var(--pine); }
 .close {
-  display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px; cursor: pointer;
+  grid-area: close; display: grid; place-items: center; width: 40px; height: 40px; cursor: pointer;
   border: 1px solid #c5d8e9; border-radius: 50%; color: var(--ink); background: #fff;
 }
 .loading { padding: 25px; }
@@ -41,6 +44,41 @@
 .surface :global(.dm-field select), .surface :global(.dm-field input), .surface :global(.dm-field textarea) { border-color: #b8c9d9; background-color: #fff; scroll-margin-top: 75px; }
 .surface :global(.dm-field[data-issue=true]) :is(select,input,textarea) { border-color: #a54236; }
 .surface :global(.dm-summary-line) { background: #edf5fc; }
+.surface :is(:global(.dm-add), :global(.dm-upload)) { border-color: #abc5dc; color: var(--pine); background: #fff; }
+.surface :is(:global(.dm-add), :global(.dm-upload)):hover { background: #edf5fc; }
+.surface :global(.dm-green):hover { background: #104c87; }
+@media (min-width: 761px) {
+  .surface :global(.dm-steps) {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px;
+    padding: 0 28px; background: #fff;
+  }
+  .surface :global(.dm-steps li) { border-bottom: 3px solid transparent; }
+  .surface :global(.dm-steps li[data-state=current]) { border-color: var(--pine); }
+  .surface :global(.dm-steps li button) { min-height: 52px; gap: 10px; font-size: .95rem; }
+  .surface :global(.dm-form-note) { max-width: 72ch; }
+  .surface :global(.dm-child) { padding: 4px 20px 18px; }
+  .surface :global(.dm-child-tools) { margin-top: 8px; }
+  .surface :is(:global(.dm-two), :global(.dm-family-fields), :global(.dm-photo-grid)) { column-gap: 22px; }
+  .surface :global(.dm-photo-slot) { padding: 17px 20px; }
+  .surface :global(.dm-family-fields) { margin-top: 16px; }
+}
+@media (min-width: 761px) and (min-height: 480px) {
+  .dialog[open], .dialog .surface, .surface :global(.dm-panel), .surface :global(.dm-form) {
+    display: flex; flex-direction: column; min-height: 0;
+  }
+  .dialog[open] { overflow: hidden; }
+  .modalHead, .surface :global(.dm-steps), .surface :global(.dm-form-actions) { flex: none; }
+  .surface :global(.dm-form) { padding: 0; }
+  .surface :global(.dm-form-body), .surface :global(.dm-receipt) {
+    min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-gutter: stable;
+    padding: 22px 28px; scroll-padding-block: 14px;
+  }
+  .surface :global(.dm-form-actions) { margin: 0; padding: 12px 28px; background: #f7fbff; }
+}
+@media (max-width: 760px) {
+  .modalHead { grid-template: "title close" auto "time close" auto / minmax(0, 1fr) auto; gap: 4px 10px; padding: 9px 15px; }
+  .turnaround { font-size: 13px; }
+}
 @media (max-width: 700px) {
   .dock {
     position: fixed; bottom: 0; inset-inline: 0; z-index: 40; margin: 0;
@@ -50,6 +88,6 @@
   .inquiry, .order { min-height: 46px; padding: 8px; gap: 5px; font-size: 14px; }
   .mobilePrice { display: block; text-align: center; margin-top: 3px !important; font-size: 12px; color: var(--winter-muted); }
   .dialog { width: calc(100% - 12px); max-height: calc(100vh - 12px); max-height: calc(100dvh - 12px); border-radius: 16px; }
-  .modalHead { padding: 9px 13px; }
 }
+@media (max-height: 440px) { .modalHead { position: static; } }
 @media (max-width: 355px) { .actions svg { display: none; } }
