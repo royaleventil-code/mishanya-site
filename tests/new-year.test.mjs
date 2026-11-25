@@ -16,7 +16,9 @@ test("the catalog lists the fixed video price and all approved in-person offers"
 });
 
 test("performer photographs follow the supplied cast assignments", () => {
-  assert.equal(newYearProgram("video-greeting").photo, "video-greeting-book");
+  const greeting = newYearProgram("video-greeting");
+  assert.equal(greeting.photo, "video-greeting-book");
+  assert.equal(greeting.cardPhoto ?? greeting.photo, greeting.photo);
   assert.equal(newYearProgram("ded-moroz").photo, "solo-red-winter-v1");
   assert.equal(newYearProgram("ded-moroz-snegurochka").photo, "ded-moroz-snegurochka");
   assert.equal(newYearProgram("olaf").photo, "ded-moroz-snegurochka-olaf");

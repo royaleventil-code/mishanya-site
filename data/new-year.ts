@@ -46,7 +46,6 @@ export const NEW_YEAR_PROGRAMS: NewYearProgram[] = [
       "דד מורוז יפנה לילד או לילדה בשם הפרטי, והתמונות ישתלבו בסיפור חגיגי לשנה החדשה. את הסרטון המוכן תוכלו להקרין ליד עץ החג ולשמור למזכרת.",
     ),
     photo: "video-greeting-book",
-    cardPhoto: "video-greeting-santa-2027",
     options: [{ price: 250 }],
     includes: [],
   },

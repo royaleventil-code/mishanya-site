@@ -8,6 +8,10 @@ import { NewYearShell } from "./NewYearShell";
 import { NewYearReview, PastCelebrations, WinterPhoto } from "./NewYearMedia";
 import s from "./new-year.module.css";
 
+const greetingPhotoSizes = "(max-width: 700px) min(34vw, 160px), clamp(180px, 24vw, 264px)";
+const groupPhotoSizes = "(max-width: 360px) 70px, (max-width: 700px) 78px, (max-width: 900px) 75px, 102px";
+const standardPhotoSizes = "(max-width: 360px) 108px, (max-width: 700px) 120px, (max-width: 900px) 115px, 155px";
+
 export function NewYearHome({ locale }: { locale: Locale }) {
   const he = locale === "he";
   const jsonLd = {
@@ -40,13 +44,15 @@ export function NewYearHome({ locale }: { locale: Locale }) {
         {NEW_YEAR_PROGRAMS.map((program) => {
           const first = program.options[0];
           const photo = program.cardPhoto ?? program.photo;
+          const greeting = program.id === NEW_YEAR_VIDEO_GREETING_ID;
+          const sizes = greeting ? greetingPhotoSizes : program.mascot ? groupPhotoSizes : standardPhotoSizes;
           const solo = program.id === "ded-moroz";
           const showDuration = first.minutes && (solo || program.options.length === 1);
           const from = first.from || (!showDuration && program.options.length > 1);
-          return <li key={program.id} className={program.id === NEW_YEAR_VIDEO_GREETING_ID ? s.featuredProgram : undefined}><Link href={newYearPath(locale, program.id)} className={`${s.programCard} ${photo ? "" : s.compactCard}`}>
+          return <li key={program.id} className={greeting ? s.featuredProgram : undefined}><Link href={newYearPath(locale, program.id)} className={`${s.programCard} ${photo ? "" : s.compactCard}`}>
             {photo ?
               <span className={`${s.cardPicture} ${program.mascot ? s.cardPictureWithMascot : ""}`}>
-                <WinterPhoto name={photo} alt="" className={`${s.cardMainPhoto} ${solo ? s.soloPhoto : ""} ${program.id === "circus" ? s.circusCardPhoto : ""}`} sizes={program.mascot ? "(max-width: 360px) 70px, (max-width: 700px) 78px, (max-width: 900px) 75px, 102px" : "(max-width: 360px) 108px, (max-width: 700px) 120px, (max-width: 900px) 115px, 155px"} />
+                <WinterPhoto name={photo} alt="" className={`${s.cardMainPhoto} ${solo ? s.soloPhoto : ""} ${program.id === "circus" ? s.circusCardPhoto : ""}`} sizes={sizes} />
                 {program.mascot && <WinterPhoto name={program.mascot} alt="" className={s.cardMascot} sizes="(max-width: 360px) 35px, (max-width: 700px) 39px, (max-width: 900px) 38px, 51px" />}
               </span> : <span className={s.programIcon}><Snowflake size={35} aria-hidden /></span>}
             <span className={s.cardCopy}><h3>{program.shortName[locale]}</h3>{photo && <p>{program.teaser[locale]}</p>}
