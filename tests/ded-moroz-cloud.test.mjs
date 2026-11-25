@@ -100,6 +100,10 @@ test("the Pages API saves a single complete order, protects access and preserves
   };
   const jpeg = new Blob([await sharp({ create: { width: 120, height: 150, channels: 3, background: "#8d5260" } }).jpeg().toBuffer()], { type: "image/jpeg" });
   const key = crypto.randomUUID();
+  const readiness = await onRequest({ env, request: new Request(upload, { method: "HEAD" }) });
+  assert.equal(readiness.status, 204);
+  assert.equal(await readiness.text(), "");
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM dm_orders").get().n, 0);
   const invalid = await submit(env, key, jpeg, "bad");
   assert.equal(invalid.status, 400);
   assert.equal(db.prepare("SELECT COUNT(*) AS n FROM dm_order_photo_parts").get().n, 0);

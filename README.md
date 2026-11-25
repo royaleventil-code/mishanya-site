@@ -26,11 +26,11 @@ Open [http://localhost:3003](http://localhost:3003) with your browser to see the
 
 ### Видеопоздравления на боевом сайте
 
-1. Заявки и четыре фотографии хранятся в существующей D1 `mishanya-gift`. Миграция `0013_ded_moroz_orders.sql` создаёт таблицы для анкет и зашифрованных частей фотографий. Кабинет и Telegram получают заказ после сохранения всех четырёх снимков.
+1. Заявки и четыре фотографии хранятся в существующей D1 `mishanya-gift`. Перед первым выпуском выполните `migrations/0013_ded_moroz_orders.sql` в консоли этой базы. Миграция создаёт таблицы для анкет и зашифрованных частей фотографий. Кабинет и Telegram получают заказ после сохранения всех четырёх снимков.
 2. Создайте одно приложение Cloudflare Access для `mishanya-show.com/admin/ded-moroz` и `mishanya-show.com/api/ded-moroz/staff/*`. Добавьте сотрудников в политику Allow по рабочим адресам электронной почты. В секретах Pages `mishanya-site` укажите `DM_ACCESS_TEAM_DOMAIN` (домен команды вида `team.cloudflareaccess.com`) и `DM_ACCESS_AUD` (Application Audience). Не закрывайте публичный маршрут отправки заказа `/api/ded-moroz/orders`.
 3. Задайте секреты `DM_TELEGRAM_BOT_TOKEN`, `DM_TELEGRAM_CHAT_ID` и, для темы группы, `DM_TELEGRAM_THREAD_ID` в Worker `mishanya-gift-sync`. Скопируйте настройки бота из локальной настройки непосредственно в поля секретов. Worker проверяет очередь каждую минуту и при необходимости повторяет доставку. В Telegram приходит номер заказа, срок и ссылка на кабинет. Данные семьи и фотографии открываются в кабинете.
 
-GitHub Actions проверяет секреты, применяет SQL для заявок и публикует сайт после push в `main`. Токен публикации должен позволять выполнять SQL для этой D1. В анкете используется существующий Turnstile. Оплату менеджер согласовывает после заявки.
+GitHub Actions проверяет секреты и публикует сайт после push в `main`. После публикации запрос `HEAD /api/ded-moroz/orders` проверяет подключение к таблицам заявок и фото через привязку Pages к D1. Исправный сервис отвечает HTTP 204. В анкете используется существующий Turnstile. Оплату менеджер согласовывает после заявки.
 
 You can start editing the legacy home page in `app/(legacy)/page.tsx`. The page auto-updates as you edit the file.
 

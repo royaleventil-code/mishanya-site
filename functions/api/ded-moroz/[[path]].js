@@ -85,9 +85,6 @@ async function readOrderPhotos(form) {
 }
 
 async function postOrder(env, request) {
-  if (!env.TURNSTILE_SECRET_KEY || !accessIssuer(env) || !env.DM_ACCESS_AUD) {
-    throw orderError("Приём заказов временно недоступен. Напишите нам в WhatsApp.", 503);
-  }
   const form = await orderForm(request);
   const input = form.get("key");
   if (typeof input !== "string" || !requestKeyPattern.test(input)) {
@@ -154,7 +151,20 @@ export async function onRequest({ request, env }) {
     if (!env.GIFT_DB || !env.GIFT_DATA_SECRET) {
       throw orderError("Сервис заказов временно недоступен.", 503);
     }
-    if (section === "orders" && !action && request.method === "POST") return await postOrder(env, request);
+    if (section === "orders" && !action) {
+      if (!env.TURNSTILE_SECRET_KEY || !accessIssuer(env) || !env.DM_ACCESS_AUD) {
+        throw orderError("Приём заказов временно недоступен. Напишите нам в WhatsApp.", 503);
+      }
+      if (request.method === "POST") return await postOrder(env, request);
+      if (request.method === "HEAD") {
+        // Check the deployed schema without reading or creating a customer's order.
+        await env.GIFT_DB.prepare(
+          "SELECT o.payload_ciphertext, o.telegram_sent_at, l.attempts, u.expires_at, p.content " +
+          "FROM dm_orders o, dm_order_limits l, dm_photo_uploads u, dm_order_photo_parts p LIMIT 0",
+        ).all();
+        return new Response(null, { status: 204, headers });
+      }
+    }
     if (section === "staff" && action === "orders") return await staffAction(env, request, id, resource);
     throw orderError("Маршрут не найден.", 404);
   } catch (error) {
