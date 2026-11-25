@@ -21,7 +21,7 @@ export type NewYearProgram = {
   includes: Copy[];
   includesTitle?: Copy;
   includesNote?: Copy;
-  extended?: Copy[];
+  extended?: (Copy & { description?: Copy })[];
 };
 
 const copy = (ru: string, he: string): Copy => ({ ru, he });
@@ -44,8 +44,9 @@ export const NEW_YEAR_PROGRAMS: NewYearProgram[] = [
       "Дед Мороз назовёт ребёнка по имени, а его фотографии появятся в новогодней истории. Включите готовый ролик под ёлкой и сохраните его на память.",
       "דד מורוז יפנה לילד או לילדה בשם הפרטי, והתמונות ישתלבו בסיפור חגיגי לשנה החדשה. את הסרטון המוכן תוכלו להקרין ליד עץ החג ולשמור למזכרת.",
     ),
-    photo: "video-greeting-seated",
-    options: [{ price: 299 }],
+    photo: "video-greeting-book",
+    cardPhoto: "video-greeting-santa-2027",
+    options: [{ price: 250 }],
     includes: [],
   },
   {
@@ -56,6 +57,13 @@ export const NEW_YEAR_PROGRAMS: NewYearProgram[] = [
     description: copy("Дед Мороз приходит в гости, и начинается маленькое новогоднее приключение! Вместе с ребятами играем, водим зимние хороводы и разыгрываем добрую сказку, в которой дети сами становятся героями. А в финале наступает долгожданный момент — поздравления и вручение ваших подарков.", "דד מורוז מגיע לביקור, והרפתקת החג מתחילה! יחד עם הילדים נשחק במשחקי השנה החדשה, נרקוד במעגל ונציג אגדת חורף שבה הילדים עצמם הופכים לגיבורים. בסיום מגיע הרגע שכולם מחכים לו — ברכות וחלוקת המתנות שהכנתם."),
     photo: "solo-red-winter-v1",
     video: "DaHgXCqYOjY",
+    gallery: [
+      { photo: "solo-event-conversation", caption: copy("Личное общение с Дедом Морозом", "שיחה אישית עם דד מורוז") },
+      { photo: "solo-event-gift", caption: copy("Долгожданный подарок от Деда Мороза", "המתנה שחיכינו לה מדד מורוז") },
+      { photo: "solo-event-portrait", caption: copy("Тёплая встреча и фотография на память", "מפגש חם ותמונה למזכרת") },
+      { photo: "solo-event-family", caption: copy("Семейный праздник с Дедом Морозом", "חגיגה משפחתית עם דד מורוז") },
+      { photo: "solo-event-group", caption: copy("Общее фото у новогодней ёлки", "תמונה משותפת ליד עץ החג"), wide: true },
+    ],
     options: [{ minutes: 20, price: 800 }, { minutes: 30, price: 1000 }],
     includes: [
       copy("Знакомство и личное поздравление — Дед Мороз приветствует ребят, общается с ними и приглашает вместе встретить праздник.", "היכרות וברכה אישית — דד מורוז מברך את הילדים, משוחח איתם ומזמין אותם לחגוג יחד."),
@@ -131,6 +139,15 @@ export const NEW_YEAR_PROGRAMS: NewYearProgram[] = [
     hostLabel: copy("Дед Мороз — Мишаня", "מישניה בתפקיד דד מורוז"),
     description: copy("Авторское ведение Мишани: он лично проводит программу в образе Деда Мороза. Вместе со Снегурочкой и Гринчем вовлекает детей в игры, фокусы и новогоднее приключение.", "הנחיה בסגנון הייחודי של מישניה: הוא מנחה את התוכנית בעצמו, בדמותו של דד מורוז. יחד עם סנגורוצ׳קה והגרינץ׳ הוא מזמין את הילדים למשחקים, קסמים והרפתקה חגיגית."),
     photo: "grinch-trio",
+    moments: [
+      { photo: "blue-home-gift-5519", caption: copy("Домашнее поздравление у новогодней ёлки", "ברכת החג בבית ליד עץ השנה החדשה"), wide: true },
+      { photo: "blue-home-welcome-wa0003", caption: copy("Знакомимся и общаемся с детьми", "מכירים את הילדים ומשוחחים איתם"), wide: true },
+      { photo: "blue-home-story-wa0027", caption: copy("Тёплая встреча со Снегурочкой", "מפגש חם עם סנגורוצ׳קה") },
+      { photo: "blue-home-games-wa0077", caption: copy("Новогодние игры со Снегурочкой и Гринчем", "משחקי חג עם סנגורוצ׳קה והגרינץ׳") },
+      { photo: "blue-home-grinch-wa0082", caption: copy("Играем с Гринчем в гостиной", "משחקים עם הגרינץ׳ בסלון") },
+      { photo: "blue-home-confetti-wa0013", caption: copy("Конфетти и детские улыбки дома", "קונפטי וחיוכי הילדים בבית") },
+    ],
+    galleryTitle: copy("Герои вашего праздника", "הדמויות של החגיגה שלכם"),
     gallery: [
       { photo: "mishanya-blue-pair", caption: copy("Мишаня в образе Деда Мороза и Снегурочка", "מישניה בדמות דד מורוז וסנגורוצ׳קה") },
       { photo: "grinch", caption: copy("Гринч", "הגרינץ׳") },
@@ -147,7 +164,16 @@ export const NEW_YEAR_PROGRAMS: NewYearProgram[] = [
       giftGiving,
       copy("Фотографии на память — общее фото с героями и забавные кадры с Гринчем, которыми хочется поделиться.", "תמונות למזכרת — תמונה משותפת עם הדמויות ורגעים מצחיקים עם הגרינץ׳ שכיף לשתף."),
     ],
-    extended: [copy("Фотозона", "פינת צילום"), copy("Надувные декорации", "תפאורה מתנפחת")],
+    extended: [
+      {
+        ...copy("Фотозона", "פינת צילום"),
+        description: copy("Фотозона — оформляем праздничный уголок для памятных снимков. Дети и родители могут сфотографироваться с Дедом Морозом, Снегурочкой и Гринчем и сохранить яркие воспоминания о новогодней встрече.", "פינת צילום — מסדרים פינה חגיגית לתמונות למזכרת. הילדים וההורים יכולים להצטלם עם דד מורוז, סנגורוצ׳קה והגרינץ׳ ולשמור זיכרונות צבעוניים מהמפגש של השנה החדשה."),
+      },
+      {
+        ...copy("Надувные декорации", "תפאורה מתנפחת"),
+        description: copy("Надувные декорации — дополняем место праздника объёмными украшениями, которые создают новогоднюю атмосферу и делают встречу с героями ещё сказочнее. Они добавляют яркие детали и праздничное настроение вашим фотографиям.", "תפאורה מתנפחת — מוסיפים לחלל החגיגה קישוטים תלת־ממדיים שיוצרים אווירת שנה חדשה והופכים את המפגש עם הדמויות לקסום עוד יותר. הם מוסיפים צבע, פרטים חגיגיים ואווירה מיוחדת לתמונות שלכם."),
+      },
+    ],
   },
   {
     id: "circus",
@@ -157,6 +183,13 @@ export const NEW_YEAR_PROGRAMS: NewYearProgram[] = [
     description: copy("Новогодние фокусы и конкурсы, цирковые номера с королевским пуделем и праздничный выход Деда Мороза.", "קסמים ותחרויות לשנה החדשה, קטעי קרקס עם פודל מלכותי וכניסה חגיגית של דד מורוז."),
     photo: "circus-cover-v1",
     gallery: [
+      { photo: "circus-event-5574", caption: copy("Артисты и королевский пудель на празднике", "האמנים והפודל המלכותי בחגיגה"), wide: true },
+      { photo: "circus-event-5558", caption: copy("Пудель с зонтиком", "פודל עם מטרייה"), wide: true },
+      { photo: "circus-event-5581", caption: copy("Номер с дрессированным пуделем", "קטע עם פודל מאולף"), wide: true },
+      { photo: "circus-event-5588", caption: copy("Дети участвуют в шоу", "הילדים משתתפים במופע"), wide: true },
+      { photo: "circus-event-5598", caption: copy("Зрители нашего праздника", "הקהל בחגיגה שלנו"), wide: true },
+      { photo: "circus-event-5560", caption: copy("Цирковой трюк с зонтом", "תרגיל קרקס עם מטרייה") },
+      { photo: "circus-event-5652", caption: copy("Новогодний выход Деда Мороза", "כניסה חגיגית של דד מורוז") },
       { photo: "circus-ded-moroz", caption: copy("Дед Мороз и Снегурочка у ёлки", "דד מורוז וסנגורוצ׳קה ליד עץ החג"), wide: true },
       { photo: "circus-performance", caption: copy("Артисты и королевский пудель", "האמנים והפודל המלכותי"), wide: true },
       { photo: "circus-poodle-tree", caption: copy("Новогоднее настроение", "אווירת השנה החדשה") },
@@ -195,27 +228,35 @@ export const NEW_YEAR_PROGRAMS: NewYearProgram[] = [
 
 export const newYearProgram = (id: string) => NEW_YEAR_PROGRAMS.find((p) => p.id === id);
 export const newYearPath = (locale: Locale, id?: string) => `/${locale}/holiday/new-year${id ? `/${id}` : ""}`;
+export const greetingOrderPath = newYearPath("ru", NEW_YEAR_VIDEO_GREETING_ID);
 
 export const NEW_YEAR_HERO_PHOTO = "ensemble-photo-collage-v2";
 
 export const NEW_YEAR_PHOTO_SIZE: Record<string, [number, number]> = {
   "new-year-night-family-circle": [600, 600],
   "video-greeting-seated": [1000, 667],
+  "video-greeting-book": [1000, 563],
+  "video-greeting-santa-2027": [1000, 667],
   "video-greeting-album": [1000, 667],
-  "ded-moroz-snegurochka": [1000,750],
-  "silver-games-3236": [1000,667],
-  "silver-conversation-0086": [1000,1500],
-  "silver-children-0015": [1000,1333],
-  "silver-gift-7297": [1000,668],
-  "silver-confetti-0030": [1000,1333],
-  "silver-costumes-full-9582": [1000,1333],
-  "silver-costumes-detail-9556": [1000,1333],
-  "ded-moroz-snegurochka-olaf": [1000,750],
-  "olaf-meeting-2362": [1000,1328],
-  "olaf-games-0015": [1000,1333],
+  "blue-home-gift-5519": [1000, 1333], "blue-home-welcome-wa0003": [1000, 750],
+  "blue-home-story-wa0027": [1000, 1333], "blue-home-games-wa0077": [1000, 1333],
+  "blue-home-grinch-wa0082": [1000, 1333], "blue-home-confetti-wa0013": [1000, 1333],
+  "blue-pair-4359": [1000, 1333], "blue-hugs-1013": [1000, 1333],
+  "blue-snegurochka-7907": [1000, 667], "blue-conversation-8149": [1000, 666],
+  "blue-games-8342": [1000, 667], "blue-grinch-8139": [1000, 667],
+  "blue-confetti-9398": [1000, 667],
+  "silver-costumes-full-9582": [1000, 1333], "silver-costumes-detail-9556": [1000, 1333],
+  "silver-games-3236": [1000, 667], "silver-conversation-0086": [1000, 1500],
+  "silver-children-0015": [1000, 1333], "silver-gift-7297": [1000, 668],
+  "silver-confetti-0030": [1000, 1333], "olaf-meeting-2362": [1000, 1328],
+  "olaf-games-0015": [1000, 1333],
   "ensemble-photo-collage-v2": [1000, 900],
   "ensemble-photo-collage": [1000, 900],
   "solo-red-winter-v1": [800, 600],
+  "solo-event-welcome": [478, 850], "solo-event-dance": [478, 850],
+  "solo-event-conversation": [478, 680], "solo-event-gift": [478, 850],
+  "solo-event-portrait": [1000, 1333], "solo-event-family": [1000, 1778],
+  "solo-event-group": [1000, 750],
   "solo-red": [800, 600], "denis-silver-pair": [614, 810],
   "mishanya-blue-pair": [611, 814], "circus-archive": [1000, 1778], winter: [1000, 1500],
   olaf: [1000, 1500], grinch: [307, 791],
@@ -223,6 +264,12 @@ export const NEW_YEAR_PHOTO_SIZE: Record<string, [number, number]> = {
   "circus-poodle-tree": [1000, 1333], "circus-umbrella": [772, 1365],
   "circus-poodle-trick": [681, 631],
   "grinch-trio": [1000, 667],
+  "circus-event-5574": [1000, 562], "circus-event-5558": [1000, 562],
+  "circus-event-5581": [1000, 562], "circus-event-5588": [1000, 562],
+  "circus-event-5598": [1000, 562],
+  "circus-event-5560": [899, 1600], "circus-event-5652": [899, 1600],
+  "ded-moroz-snegurochka": [1000, 750],
+  "ded-moroz-snegurochka-olaf": [1000, 750],
 };
 
 // Real screenshots of New Year reviews verified on Facebook on 2026-09-23.
@@ -249,7 +296,7 @@ export function newYearMessage(program: NewYearProgram, option: NewYearOption, l
   const price = `${option.from ? (locale === "ru" ? "от " : "החל מ־") : ""}${option.price} ₪`;
   if (program.id === NEW_YEAR_VIDEO_GREETING_ID) {
     return locale === "ru"
-      ? `Здравствуйте! Хочу заказать видеопоздравление от Деда Мороза за ${price}. Какие фотографии и данные нужно прислать?`
+      ? `Здравствуйте! Хочу узнать подробнее про видеопоздравление от Деда Мороза за ${price}. Какие фотографии и данные нужно прислать?`
       : `שלום! אשמח להזמין ברכת וידאו מדד מורוז במחיר ${price}. אילו תמונות ופרטים צריך לשלוח?`;
   }
   return locale === "ru"

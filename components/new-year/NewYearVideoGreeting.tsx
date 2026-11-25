@@ -3,14 +3,15 @@ import { newYearMessage, newYearPath, type NewYearProgram } from "@/data/new-yea
 import type { Locale } from "@/lib/i18n";
 import { whatsappLink } from "@/lib/whatsapp";
 import { WinterPhoto } from "./NewYearMedia";
+import { GreetingOrderActions } from "./GreetingOrderActions";
 import s from "./new-year.module.css";
 
 const photoSizes = "(max-width: 520px) calc(100vw - 32px), (max-width: 700px) 488px, (max-width: 1120px) calc(48vw - 28px), 510px";
 
 const orderSteps = {
   ru: [
-    { title: "Напишите в WhatsApp", detail: "Обсудим детали заказа и подскажем, какие снимки подойдут." },
-    { title: "Пришлите имя и фотографии ребёнка", detail: "Добавим их в готовую новогоднюю историю." },
+    { title: "Откройте анкету", detail: "Нажмите «Сразу заказать». Если хотите что-то уточнить, выберите «Узнать подробнее»." },
+    { title: "Укажите имена и добавьте фотографии", detail: "В одном поздравлении могут участвовать несколько детей. Для семьи нужны четыре снимка." },
     { title: "Получите своё видео", detail: "Покажите его ребёнку в новогоднюю ночь или устройте сюрприз заранее." },
   ],
   he: [
@@ -25,9 +26,9 @@ export function NewYearVideoGreeting({ locale, program }: { locale: Locale; prog
   const option = program.options[0];
   const price = `${option.price} ₪`;
   const href = whatsappLink(newYearMessage(program, option, locale));
-  const orderLink = <a className={s.whatsapp} href={href} target="_blank" rel="noopener noreferrer">
+  const hebrewOrderLink = <a className={s.whatsapp} href={href} target="_blank" rel="noopener noreferrer">
     <MessageCircle size={23} aria-hidden />
-    <span>{he ? "להזמנה בוואטסאפ" : "Заказать в WhatsApp"}</span>
+    <span>להזמנה בוואטסאפ</span>
     <ArrowRight size={19} className={s.directional} aria-hidden />
   </a>;
 
@@ -45,11 +46,11 @@ export function NewYearVideoGreeting({ locale, program }: { locale: Locale; prog
           <strong><bdi>{price}</bdi></strong>
           <span>{he ? "לסרטון המוכן" : "за готовый ролик"}</span>
         </div>
-        <div className={s.desktopCta}>{orderLink}</div>
+        {he ? <div className={s.desktopCta}>{hebrewOrderLink}</div> : <GreetingOrderActions inquiryHref={href} price={option.price} />}
       </div>
       {program.photo && <figure className={s.greetingPhoto}>
-        <WinterPhoto name={program.photo} alt={he ? "דד מורוז בתלבושת אדומה יושב על כיסא עם ספר פתוח" : "Дед Мороз в красном костюме сидит на стуле с открытой книгой"} eager sizes={photoSizes} />
-        <figcaption>{he ? "דד מורוז שלנו" : "Наш Дед Мороз"}</figcaption>
+        <WinterPhoto name={program.photo} alt={he ? "דד מורוז, סנגורוצ׳קה ומישניה סביב ספר קסום פתוח" : "Дед Мороз, Снегурочка и Мишаня над раскрытой волшебной книгой"} eager sizes={photoSizes} />
+        <figcaption>{he ? "גיבורי ברכת הווידאו" : "Герои видеопоздравления"}</figcaption>
       </figure>}
     </div>
     <section className={s.greetingOrder} id="how-to-order" aria-labelledby="greeting-order-title">
@@ -67,9 +68,9 @@ export function NewYearVideoGreeting({ locale, program }: { locale: Locale; prog
         <figcaption>{he ? "דוגמה לשילוב תמונה בסיפור" : "Пример того, как фото становится частью истории"}</figcaption>
       </figure>
     </section>
-    <aside className={s.mobileCta} aria-label={he ? "הזמנת ברכת וידאו" : "Заказ видеопоздравления"}>
-      {orderLink}
-      <p>{he ? "ברכת וידאו אישית" : "Именное видеопоздравление"} · <bdi>{price}</bdi></p>
-    </aside>
+    {he && <aside className={s.mobileCta} aria-label="הזמנת ברכת וידאו">
+      {hebrewOrderLink}
+      <p>ברכת וידאו אישית · <bdi>{price}</bdi></p>
+    </aside>}
   </article>;
 }

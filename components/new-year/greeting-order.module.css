@@ -1,0 +1,55 @@
+.dock { margin-top: 20px; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+.inquiry, .order {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 49px; padding: 11px 17px; border-radius: 999px;
+  font-family: inherit; font-weight: 800; font-size: 16px; line-height: 1.2; text-align: center;
+}
+.actions svg { flex-shrink: 0; }
+.inquiry { background: #fff; color: #106738; border: 1px solid #79ab8c; }
+.inquiry:hover { background: #eef8f0; }
+.order { border: 1px solid #1058a0; background: var(--winter-blue); color: #fff; cursor: pointer; }
+.order:hover { background: #0a5199; }
+.mobilePrice { display: none; }
+.dialog {
+  position: fixed; inset: 0; margin: auto; padding: 0; width: min(680px, calc(100% - 32px));
+  max-width: none; max-height: calc(100vh - 40px); max-height: calc(100dvh - 40px);
+  border: 1px solid #c5daee; border-radius: 22px; background: #fff;
+  overflow-y: auto; overscroll-behavior: contain; box-shadow: 0 20px 75px #0b2b5540;
+}
+.dialog:not([open]) { display: none; }
+.dialog::backdrop { background: rgb(10 30 52 / 60%); }
+:global(html):has(.dialog[open]) { overflow: hidden; }
+.dialog .surface {
+  --dm-nunito: var(--font-nunito); --pine: #145da4; --dark: #102f58;
+  --ink: #163552; --muted: #47617e; --cream: #f6faff; --paper: #fff; --line: #d2dfeb;
+  margin: 0; font-family: var(--font-inter), "Segoe UI", sans-serif; color: var(--ink); background: white;
+}
+.modalHead {
+  position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center;
+  gap: 10px; padding: 12px 20px; background: #f7fbff; border-bottom: 1px solid var(--line);
+}
+.modalHead h2 { font-size: clamp(18px, 3vw, 23px); }
+.close {
+  display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px; cursor: pointer;
+  border: 1px solid #c5d8e9; border-radius: 50%; color: var(--ink); background: #fff;
+}
+.loading { padding: 25px; }
+.surface :global(.dm-panel) { border: 0; border-radius: 0; box-shadow: none; scroll-margin-top: 70px; }
+.surface :global(.dm-steps), .surface :global(.dm-child), .surface :global(.dm-photo-slot) { background: #f4f8fc; border-color: #d5e1eb; }
+.surface :global(.dm-slot-heading), .surface :global(.dm-slot-heading span) { color: #335e82; }
+.surface :global(.dm-field select), .surface :global(.dm-field input), .surface :global(.dm-field textarea) { border-color: #b8c9d9; background-color: #fff; scroll-margin-top: 75px; }
+.surface :global(.dm-field[data-issue=true]) :is(select,input,textarea) { border-color: #a54236; }
+.surface :global(.dm-summary-line) { background: #edf5fc; }
+@media (max-width: 700px) {
+  .dock {
+    position: fixed; bottom: 0; inset-inline: 0; z-index: 40; margin: 0;
+    padding: 9px 12px calc(6px + env(safe-area-inset-bottom)); background: #f8fcfff7; box-shadow: 0 -5px 20px #204f7610;
+  }
+  .actions { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); max-width: 485px; margin-inline: auto; gap: 7px; }
+  .inquiry, .order { min-height: 46px; padding: 8px; gap: 5px; font-size: 14px; }
+  .mobilePrice { display: block; text-align: center; margin-top: 3px !important; font-size: 12px; color: var(--winter-muted); }
+  .dialog { width: calc(100% - 12px); max-height: calc(100vh - 12px); max-height: calc(100dvh - 12px); border-radius: 16px; }
+  .modalHead { padding: 9px 13px; }
+}
+@media (max-width: 355px) { .actions svg { display: none; } }

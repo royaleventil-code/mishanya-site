@@ -20,7 +20,7 @@ npm run dev
 
 ## Cloudflare Pages / D1
 
-API находится в `functions/api/rsvp.js`, схема — в `migrations/0004_rsvp.sql`.
+API находится в `../functions/api/rsvp.js`, схема — в `../migrations/0004_rsvp.sql`.
 
 Перед production-публикацией:
 

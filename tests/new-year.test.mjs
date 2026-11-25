@@ -4,7 +4,7 @@ import { NEW_YEAR_PROGRAMS, newYearMessage, newYearPath, newYearProgram } from "
 
 test("the catalog lists the fixed video price and all approved in-person offers", () => {
   assert.deepEqual(NEW_YEAR_PROGRAMS.map(p => [p.id, p.options.map(o => [o.minutes ?? null, o.price])]), [
-    ["video-greeting", [[null, 299]]],
+    ["video-greeting", [[null, 250]]],
     ["ded-moroz", [[20, 800], [30, 1000]]],
     ["ded-moroz-snegurochka", [[30, 1200], [60, 1500]]],
     ["olaf", [[60, 1700], [90, 2300]]],
@@ -16,7 +16,7 @@ test("the catalog lists the fixed video price and all approved in-person offers"
 });
 
 test("performer photographs follow the supplied cast assignments", () => {
-  assert.equal(newYearProgram("video-greeting").photo, "video-greeting-seated");
+  assert.equal(newYearProgram("video-greeting").photo, "video-greeting-book");
   assert.equal(newYearProgram("ded-moroz").photo, "solo-red-winter-v1");
   assert.equal(newYearProgram("ded-moroz-snegurochka").photo, "ded-moroz-snegurochka");
   assert.equal(newYearProgram("olaf").photo, "ded-moroz-snegurochka-olaf");
@@ -40,7 +40,9 @@ test("every duration creates a localized WhatsApp message with the selected pric
 
 test("the video greeting inquiry asks what to send for personalization", () => {
   const greeting = newYearProgram("video-greeting");
-  assert.match(newYearMessage(greeting, greeting.options[0], "ru"), /Какие фотографии и данные нужно прислать/);
+  const question = newYearMessage(greeting, greeting.options[0], "ru");
+  assert.match(question, /Хочу узнать подробнее/);
+  assert.match(question, /Какие фотографии и данные нужно прислать/);
   assert.match(newYearMessage(greeting, greeting.options[0], "he"), /אילו תמונות ופרטים צריך לשלוח/);
 });
 

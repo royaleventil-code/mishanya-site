@@ -51,7 +51,7 @@ export function NewYearProgram({ locale, program }: { locale: Locale; program: P
         {program.includes.length > 0 && <section className={s.included}>
           <h2><Gift size={24} aria-hidden />{program.includesTitle?.[locale] ?? (he ? "מה כלול בתוכנית" : "Что входит в программу")}</h2>
           {program.includesNote && <p className={s.includedIntro}>{program.includesNote[locale]}</p>}
-          <ul>{[...program.includes, ...extended].map((item) => <li key={item.ru}><Check size={16} aria-hidden /><span>{item[locale]}</span></li>)}</ul>
+          <ul>{[...program.includes, ...extended.map((item) => item.description ?? item)].map((item) => <li key={item.ru}><Check size={16} aria-hidden /><span>{item[locale]}</span></li>)}</ul>
           {program.extended && option.minutes !== 90 && <p className={s.extendedNote}>{he ? "בתוכנית של 90 דקות: " : "В программе на 90 минут: "}{program.extended.map((item) => item[locale].toLocaleLowerCase()).join(he ? " ו" : " и ") }.</p>}
         </section>}
         <div className={s.desktopCta}><a className={s.whatsapp} href={href} target="_blank" rel="noopener noreferrer"><MessageCircle size={25} aria-hidden />{he ? "פשוט לכתוב בוואטסאפ" : "Просто написать в WhatsApp"}<ArrowRight size={19} className={s.directional} aria-hidden /></a><p className={s.ctaNote}>{he ? "נדבר על התאריך, השעה והעיר בהודעה" : "Дату, время и город обсудим в переписке"}</p></div>

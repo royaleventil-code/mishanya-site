@@ -34,7 +34,7 @@ export function RsvpTurnstile({
   resetKey = 0,
 }: {
   locale: RsvpLocale;
-  action: "rsvp_create" | "rsvp_response";
+  action: "rsvp_create" | "rsvp_response" | "ded_moroz_order";
   onTokenChange: (token: string) => void;
   resetKey?: number;
 }) {

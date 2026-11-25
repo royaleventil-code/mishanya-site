@@ -9,10 +9,13 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    ".codex-run/**",
     ".wrangler/**",
     "out/**",
     "output/**",
     "build/**",
+    // Generated worker bundle from local RSVP checks.
+    "tmp/rsvp-time-worker-check/**",
     "next-env.d.ts",
   ]),
 ]);

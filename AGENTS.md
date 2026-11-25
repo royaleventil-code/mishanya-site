@@ -13,3 +13,7 @@ When Sergey says to continue working on the site, do only the startup action unl
 Sergey controls the site workflow. After every significant change, complete the mandatory local verification from `Workflow сайт Мишаня.md`: relevant tests, lint, production build, the changed user flow on `http://localhost:3003/`, and browser console/network error checks. Do not call the work ready and do not give Sergey the final completion response until the full verification passes without errors. Push only after Sergey's explicit command.
 
 For this project, Sergey's commands `push`, `пуш`, `запушить` and equivalent wording always mean a complete production release: deliver the approved changes to the production branch, wait for deployment, and verify the live site. Do not stop at pushing a feature branch and do not create a draft PR unless Sergey explicitly asks for a branch or PR.
+
+## Фотографии для сайта — указание Сергея
+
+Все фотографии обязательно подготавливать для веба и проверять на телефоне и компьютере. Для сайта создавать оптимизированные копии, обычно WebP, и размеры под реальное место показа; тяжёлые оригиналы с камеры сохранять отдельно и не подключать к страницам. Не увеличивать маленький исходник ради формального разрешения. В адаптивных изображениях указывать реальные размеры файлов в `srcset`, корректные `sizes`, `width` и `height`. Первое важное фото загружать сразу, остальные — по мере приближения к экрану. При кадрировании сохранять пропорции, лица и важные детали костюмов.

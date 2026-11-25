@@ -4,11 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev -p 3003 --webpack",
+    "dev": "node scripts/ded-moroz-preview.mjs --dev",
+    "preview:ded-moroz": "node scripts/ded-moroz-preview.mjs",
     "build": "next build",
     "build:pages": "node scripts/require-turnstile-site-key.mjs && next build --webpack",
     "start": "next start",
     "lint": "eslint",
+    "test:ded-moroz": "node --test tests/new-year.test.mjs tests/ded-moroz.test.mjs tests/ded-moroz-cloud.test.mjs",
     "test:gift": "node --test tests/gift-core.test.mjs tests/gift-api.test.mjs",
     "test:rsvp": "node --test tests/rsvp-core.test.mjs tests/rsvp-invitation.test.mjs tests/rsvp-api.test.mjs tests/rsvp-bitrix-core.test.mjs tests/rsvp-bitrix-endpoint.test.mjs tests/rsvp-bitrix-service.test.mjs tests/rsvp-worker.test.mjs"
   },

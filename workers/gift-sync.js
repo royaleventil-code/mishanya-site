@@ -1,4 +1,5 @@
 import { decryptPayload, readClaimById, syncBitrix } from "../shared/gift-core.js";
+import { deliverOrderNotices } from "../shared/ded-moroz-notices.js";
 import { repairRsvpEventTime } from "../shared/rsvp-time-repair.js";
 import {
   processRsvpDealUpdate,
@@ -160,6 +161,7 @@ const giftSyncWorker = {
       drainRsvpWebhookOutbox(env),
       drainRsvpMessageOutbox(env),
     ]));
+    context.waitUntil(deliverOrderNotices(env).catch(() => console.error("Ded Moroz order notifications could not be processed")));
   },
 
   async queue(batch, env) {
