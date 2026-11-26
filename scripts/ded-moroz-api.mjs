@@ -69,7 +69,7 @@ export function greetingRequestHandler(store, servePage, notifyPendingOrders) {
         const staff = url.pathname === "/api/ded-moroz/staff/orders";
         const order = await store.create(draft, token, photos, { staff });
         void notifyPendingOrders?.();
-        return sendJson(res, 201, { order_id: order.order_id, ready_by: order.ready_by });
+        return sendJson(res, 201, { order_id: order.order_id });
       }
       if (!id && req.method === "GET") return sendJson(res, 200, (await store.list()).map(publicOrder));
       if (!id || !orderPattern.test(id)) throw problem("Заказ не найден.", 404);

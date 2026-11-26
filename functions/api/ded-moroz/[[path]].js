@@ -1,4 +1,4 @@
-import { canAccessOrders, accessIssuer } from "../../../shared/ded-moroz-access.js";
+import { orderAccessRole, accessIssuer } from "../../../shared/ded-moroz-access.js";
 import { allDraftIssues, maxPhotos, orderPhotoPattern, photoIssue, photoSlots, preparedPhotoLimit, statuses } from "../../../shared/ded-moroz.ts";
 import { orderZip } from "../../../shared/ded-moroz-zip.js";
 import {
@@ -122,24 +122,20 @@ async function postOrder(env, request, staff = false) {
 }
 
 async function staffAction(env, request, id, resource) {
-  if (!await canAccessOrders(request, env)) {
+  const role = await orderAccessRole(request, env);
+  if (!role) {
     throw orderError("Войдите в кабинет под рабочей учётной записью.", 403);
   }
-  if (!id && !resource && request.method === "POST") return postOrder(env, request, true);
-  if (!id && request.method === "GET") return json(await listOrders(env));
-  const row = await getOrder(env, id);
-  if (request.method === "GET" && orderPhotoPattern.test(resource)) {
-    const photo = await getOrderPhoto(env, row, resource);
-    return new Response(photo, { headers: { ...headers, "Content-Type": "image/jpeg" } });
-  }
-  if (request.method === "GET" && resource === "zip") {
+  if (!id && !resource && request.method === "GET") return json(await listOrders(env));
+  if (id && request.method === "GET" && resource === "zip") {
+    const row = await getOrder(env, id);
     const archive = orderZip(await orderArchiveEntries(env, row));
     return new Response(archive, { headers: {
       ...headers, "Content-Type": "application/zip",
       "Content-Disposition": 'attachment; filename="' + id + '.zip"',
     } });
   }
-  if (request.method === "PATCH" && !resource) {
+  if (id && request.method === "PATCH" && !resource) {
     const payload = await limitedBody(request, 8192).json().catch(error => {
       if (error.status) throw error;
       throw orderError("Проверьте статус и ссылку.");
@@ -152,7 +148,13 @@ async function staffAction(env, request, id, resource) {
     if (link && (!url || url.protocol !== "https:" || url.username || url.password)) {
       throw orderError("Введите полную ссылку на видео, начинающуюся с https://.");
     }
-    return json(await updateOrder(env, row, { status: payload.status, video_url: link }));
+    return json(await updateOrder(env, await getOrder(env, id), { status: payload.status, video_url: link }));
+  }
+  if (role === "service") throw orderError("Эта операция недоступна скрипту.", 403);
+  if (!id && !resource && request.method === "POST") return postOrder(env, request, true);
+  if (id && request.method === "GET" && orderPhotoPattern.test(resource)) {
+    const photo = await getOrderPhoto(env, await getOrder(env, id), resource);
+    return new Response(photo, { headers: { ...headers, "Content-Type": "image/jpeg" } });
   }
   throw orderError("Маршрут не найден.", 404);
 }

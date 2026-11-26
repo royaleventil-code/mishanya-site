@@ -23,29 +23,40 @@ async function accessKeys(issuer, kid, request, now) {
   return keys;
 }
 
-export async function canAccessOrders(request, env, fetchKeys = fetch, now = Date.now()) {
+export async function orderAccessRole(request, env, fetchKeys = fetch, now = Date.now()) {
   const issuer = accessIssuer(env);
   const audience = env.DM_ACCESS_AUD?.trim();
   const token = request.headers.get("Cf-Access-Jwt-Assertion") ?? "";
-  if (!issuer || !audience || token.length > 8192 || !/^[\w-]+\.[\w-]+\.[\w-]+$/.test(token)) return false;
+  if (!issuer || !audience || token.length > 8192 || !/^[\w-]+\.[\w-]+\.[\w-]+$/.test(token)) return null;
 
   try {
     const [header, claims, signature] = token.split(".");
     const read = value => JSON.parse(new TextDecoder().decode(fromBase64Url(value)));
     const { alg, kid } = read(header);
-    const { iss, aud, exp, nbf, email } = read(claims);
-    if (alg !== "RS256" || typeof kid !== "string" || iss !== issuer ||
+    const { type, iss, aud, exp, nbf, email, common_name: clientId, sub } = read(claims);
+    if (alg !== "RS256" || typeof kid !== "string" || type !== "app" || iss !== issuer ||
       !Array.isArray(aud) || !aud.includes(audience) ||
       !Number.isFinite(exp) || exp <= now / 1000 ||
-      (nbf !== undefined && (!Number.isFinite(nbf) || nbf > now / 1000)) ||
-      typeof email !== "string" || !email.includes("@")) return false;
+      (nbf !== undefined && (!Number.isFinite(nbf) || nbf > now / 1000))) return null;
+
+    let role;
+    if (clientId !== undefined) {
+      if (typeof clientId !== "string" || !clientId || sub !== "" ||
+        clientId !== env.DM_ACCESS_SERVICE_CLIENT_ID?.trim()) return null;
+      role = "service";
+    } else if (typeof email === "string" && email.includes("@")) {
+      role = "staff";
+    } else {
+      return null;
+    }
 
     const key = (await accessKeys(issuer, kid, fetchKeys, now)).find(item => item.kid === kid && item.kty === "RSA");
-    if (!key) return false;
+    if (!key) return null;
     const algorithm = { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" };
     const publicKey = await crypto.subtle.importKey("jwk", key, algorithm, false, ["verify"]);
-    return await crypto.subtle.verify(algorithm, publicKey, fromBase64Url(signature), new TextEncoder().encode(header + "." + claims));
+    const valid = await crypto.subtle.verify(algorithm, publicKey, fromBase64Url(signature), new TextEncoder().encode(header + "." + claims));
+    return valid ? role : null;
   } catch {
-    return false;
+    return null;
   }
 }

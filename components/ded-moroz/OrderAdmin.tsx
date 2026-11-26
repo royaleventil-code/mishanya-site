@@ -105,7 +105,7 @@ function Editor({ item, onSaved }: { item: Order; onSaved: (order: Order) => voi
           {item.parent.email && <div><dt>Email</dt><dd>{item.parent.email}</dd></div>}
           <div><dt>Согласие</dt><dd>{item.consent ? "Получено" : "—"}</dd></div>
           {item.payment_reported && <div><dt>Отметка клиента</dt><dd>{item.payment_reported} · демо</dd></div>}
-          <div className={s.wideFact}><dt>Слова родителей</dt><dd>{item.parents_words}</dd></div>
+          {item.parents_words && <div className={s.wideFact}><dt>Слова родителей</dt><dd>{item.parents_words}</dd></div>}
         </dl>
       </section>
       <section className={s.panel}>

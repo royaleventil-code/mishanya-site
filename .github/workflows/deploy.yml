@@ -29,7 +29,7 @@ jobs:
         run: |
           set -euo pipefail
           secret_list="$(npx --yes wrangler@4.111.0 pages secret list --project-name=mishanya-site)"
-          for secret_name in BITRIX_EVENT_TOKEN BITRIX_EVENT_DOMAIN GIFT_DATA_SECRET TURNSTILE_SECRET_KEY DM_ACCESS_TEAM_DOMAIN DM_ACCESS_AUD; do
+          for secret_name in BITRIX_EVENT_TOKEN BITRIX_EVENT_DOMAIN GIFT_DATA_SECRET TURNSTILE_SECRET_KEY DM_ACCESS_TEAM_DOMAIN DM_ACCESS_AUD DM_ACCESS_SERVICE_CLIENT_ID; do
             if ! grep -Fq -- "- ${secret_name}:" <<<"${secret_list}"; then
               echo "Required Cloudflare Pages secret is missing: ${secret_name}" >&2
               exit 1

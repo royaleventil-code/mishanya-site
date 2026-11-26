@@ -15,7 +15,7 @@ const draft = (count = 2) => ({
   ...newDraft(), children_count: count, children: ["соня", "миша", "лаша", "лиза", "инна"].slice(0,count).map((name,i) => ({
     ...newChild(), name, stress: i === 4 ? 0 : 1, gender: i % 2 ? "boy" : "girl", age: i ? "14" : "1",
     fact_learned: "научилась плавать в море", fact_kind: "помогает бабушке по дому",
-  })), city: "Назарет-Иллит (Ноф-ха-Галиль)", parents_words: "Мы очень вами гордимся!", shared_fact: "Помогали бабушке весь год",
+  })), city: "Назарет-Иллит (Ноф-ха-Галиль)", shared_fact: "Помогали бабушке весь год",
   parentName: "Анна", whatsapp: "050-123-4567", consent: true,
 });
 async function pictures(count) {
@@ -36,6 +36,7 @@ test("the quiz uses the selected template for every family size", () => {
     assert.equal(orderPhotos(order).length, count === 1 ? 3 : count + 1);
     assert.equal(order.parent.whatsapp, "+972501234567");
     assert.equal(Object.hasOwn(order,"ready_by"),false);
+    assert.equal(Object.hasOwn(order,"parents_words"),false);
   }
   assert.ok(validateDraft({...draft(),children_count:6},0).count);
 });
@@ -172,7 +173,7 @@ test("saved orders queue a Telegram notice, retry after a failure and send once 
     "Открыть кабинет: https://mishanya-show.com/admin/ded-moroz",
   ].join("\n"));
   assert.ok(!sent[1].text.includes(older.order_id));
-  for (const privateValue of [order.parent.name, order.children[0].name, order.parents_words, "child1_1.jpg"]) {
+  for (const privateValue of [order.parent.name, order.children[0].name, order.children[0].facts[0], "child1_1.jpg"]) {
     assert.ok(!sent[1].text.includes(privateValue));
   }
   await notifyAfterRestart();

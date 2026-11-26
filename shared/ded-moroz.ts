@@ -2,12 +2,12 @@ import { parsePhoneNumberFromString } from "libphonenumber-js/min";
 
 export type Child = { name: string; stress: number; distinction: string; gender: string; age: string; fact_learned: string; fact_kind: string };
 export type Draft = {
-  children_count: number; children: Child[]; shared_fact: string; city: string; otherCity: string; parents_words: string;
+  children_count: number; children: Child[]; shared_fact: string; city: string; otherCity: string;
   parentName: string; whatsapp: string; email: string; consent: boolean;
 };
 export const newChild = (): Child => ({ name: "", stress: -1, distinction: "", gender: "", age: "", fact_learned: "", fact_kind: "" });
 export const newDraft = (): Draft => ({
-  children_count: 0, children: [], shared_fact: "", city: "", otherCity: "", parents_words: "",
+  children_count: 0, children: [], shared_fact: "", city: "", otherCity: "",
   parentName: "", whatsapp: "", email: "", consent: false,
 });
 export const counts = [1, 2, 3, 4, 5];
@@ -98,7 +98,6 @@ export function validateDraft(draft: Draft, step: number): Issues {
   }
   if (step === 2) {
     if (!cities.includes(draft.city) || !familyCity(draft) || familyCity(draft).length > 40) errors.city = "Укажите город.";
-    mark("parents_words", storyIssue(draft.parents_words, 70));
     if (draft.children_count === 3) mark("shared_fact", storyIssue(draft.shared_fact, 60, true));
   }
   if (step === 4) {
@@ -126,7 +125,7 @@ export function orderFromDraft(draft: Draft, id: string, now: Date) {
   });
   return {
     order_id: id, created_at: now.toISOString(), status: "new" as keyof typeof statuses, children_count: count, children,
-    shared_fact: count === 3 ? draft.shared_fact.trim() : "", city: familyCity(draft), parents_words: draft.parents_words.trim(),
+    shared_fact: count === 3 ? draft.shared_fact.trim() : "", city: familyCity(draft),
     family_photo: "family.jpg", parent: { name: draft.parentName.trim(), whatsapp: "+" + whatsappContactDigits(draft.whatsapp), email: draft.email.trim() },
     consent: true,
   };
@@ -136,7 +135,7 @@ type NewOrder = ReturnType<typeof orderFromDraft>;
 type LegacyOrder = Omit<NewOrder,"children_count"|"children"|"family_photo"|"shared_fact"> & {
   children: LegacyChild[]; photos: Record<string,string>; ready_by?: string;
 };
-export type Order = (NewOrder | LegacyOrder) & { video_url?: string; payment_reported?: string };
+export type Order = (NewOrder | LegacyOrder) & { parents_words?: string; video_url?: string; payment_reported?: string };
 export function orderPhotos(order: Order): PhotoSlotInfo[] {
   if ("family_photo" in order) return photoSlots(order.children);
   const labels = ["Портрет", "Любимое занятие", "Рисунок или поделка", "Вся семья"];

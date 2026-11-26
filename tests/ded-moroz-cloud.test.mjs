@@ -14,7 +14,7 @@ const upload = api + "/orders";
 const staff = api + "/staff/orders";
 const draft = {
   ...newDraft(), children_count: 2, city: "Хайфа", parentName: "Тест", whatsapp: "+972505550100",
-  parents_words: "Мы очень вами гордимся!", consent: true,
+  consent: true,
   children: [
     { ...newChild(), name: "Соня", stress: 1, gender: "girl", age: "1", fact_learned: "научилась бегать сама", fact_kind: "" },
     { ...newChild(), name: "Саша", stress: 1, gender: "boy", age: "7", fact_learned: "научился плавать в море", fact_kind: "" },
@@ -31,6 +31,7 @@ function fixture(t) {
     TURNSTILE_SECRET_KEY: "mock-turnstile-key",
     DM_ACCESS_TEAM_DOMAIN: "example-test.cloudflareaccess.com",
     DM_ACCESS_AUD: "mock-orders-audience",
+    DM_ACCESS_SERVICE_CLIENT_ID: "mock-video-assembly.access",
     DM_TELEGRAM_BOT_TOKEN: "123456:abcdefghijklmnopqrstuvwxyz",
     DM_TELEGRAM_CHAT_ID: "-100123456789",
     GIFT_DB: {
@@ -98,11 +99,11 @@ test("the Pages API saves a single complete order, protects access and preserves
     assert.equal(options.redirect, "manual");
     return keysResponse.clone();
   });
-  const sign = async (audience, validSeconds) => {
+  const sign = async (audience, validSeconds, identity = { email: "editor@example.test" }) => {
     const base64 = value => Buffer.from(JSON.stringify(value)).toString("base64url");
     const header = base64({ alg: "RS256", kid: jwk.kid });
     const body = base64({
-      aud: [audience], iss: "https://" + env.DM_ACCESS_TEAM_DOMAIN, email: "editor@example.test",
+      type: "app", aud: [audience], iss: "https://" + env.DM_ACCESS_TEAM_DOMAIN, ...identity,
       exp: Date.now() / 1000 + validSeconds,
     });
     const signature = await crypto.subtle.sign(algorithm, signingKeys.privateKey, new TextEncoder().encode(header + "." + body));
@@ -146,6 +147,7 @@ test("the Pages API saves a single complete order, protects access and preserves
   const [item] = await (await call(staff)).json();
   assert.equal(item.parent.whatsapp, draft.whatsapp);
   assert.equal(Object.hasOwn(item, "ready_by"), false);
+  assert.equal(Object.hasOwn(item, "parents_words"), false);
   assert.deepEqual(item.children.map(child => child.age), [1, 7]);
   const update = await call(order, { method: "PATCH", body: JSON.stringify({
     status: "review", video_url: "https://drive.google.com/file/d/demo/view",
@@ -163,6 +165,27 @@ test("the Pages API saves a single complete order, protects access and preserves
   const archive = await call(order + "/zip");
   assert.equal(archive.status, 200);
   assert.equal(Buffer.from(await archive.arrayBuffer()).readUInt32LE(), 0x04034b50);
+
+  await t.test("the video assembly service can list, download and update orders", async () => {
+    const identity = { common_name: env.DM_ACCESS_SERVICE_CLIENT_ID, sub: "" };
+    const jwt = await sign(env.DM_ACCESS_AUD, 600, identity);
+    const service = (url, init, assertion = jwt, config = env) => onRequest({ env: config, request: new Request(url, {
+      ...init, headers: { "Cf-Access-Jwt-Assertion": assertion },
+    }) });
+    assert.equal((await service(staff)).status, 200);
+    const zip = await service(order + "/zip");
+    assert.equal(zip.headers.get("Content-Type"), "application/zip");
+    const change = { status: "review", video_url: "https://example.test/demo-video" };
+    const updated = await service(order, { method: "PATCH", body: JSON.stringify(change) });
+    assert.equal(updated.status, 200);
+    assert.equal((await updated.json()).video_url, change.video_url);
+    assert.equal((await service(staff, { method: "POST" })).status, 403);
+    assert.equal((await service(order + "/child1_1.jpg")).status, 403);
+    assert.equal((await service(order, { method: "DELETE" })).status, 403);
+    assert.equal((await service(staff, {}, jwt, { ...env, DM_ACCESS_SERVICE_CLIENT_ID: "" })).status, 403);
+    const otherToken = await sign(env.DM_ACCESS_AUD, 600, { ...identity, common_name: "another-service.access" });
+    assert.equal((await service(staff, {}, otherToken)).status, 403);
+  });
 
   let time = Date.now();
   const notices = [];

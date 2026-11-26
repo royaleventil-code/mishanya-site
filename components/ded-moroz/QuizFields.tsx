@@ -60,7 +60,6 @@ export function FamilyFields({ draft, errors, change }: {draft: Draft; errors: I
   return <>
     <SelectField id="city" label="В каком городе живёт семья?" value={draft.city} error={errors.city} onChange={city => change({ city })}><option value="">Выберите город</option>{cities.map(city => <option key={city}>{city}</option>)}</SelectField>
     {draft.city === "Другой" && <TextField id="otherCity" label="Название города" value={draft.otherCity} max={40} error={errors.city} onChange={otherCity => change({ otherCity })} />}
-    <TextField id="parents_words" label="Слова от родителей" hint="Что Деду Морозу передать от вас? От 15 до 70 знаков." multiline max={70} value={draft.parents_words} placeholder="Мы очень тебя любим и гордимся тобой!" error={errors.parents_words} onChange={parents_words => change({ parents_words })} />
     {draft.children_count === 3 && <TextField id="shared_fact" label="Что ребята сделали вместе в этом году?" hint="Одна запись в книгу для всех троих, от 15 до 60 знаков." multiline max={60} value={draft.shared_fact} placeholder="Помогали бабушке весь год" error={errors.shared_fact} onChange={shared_fact => change({ shared_fact })} />}
   </>;
 }
