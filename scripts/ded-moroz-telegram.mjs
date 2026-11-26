@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { isTelegramBotToken, sendTelegramMessage } from "../shared/ded-moroz-telegram.js";
+import { formatOrderNotice, isTelegramBotToken, sendTelegramMessage } from "../shared/ded-moroz-telegram.js";
 
 export { isTelegramBotToken, sendTelegramMessage, telegramRequest } from "../shared/ded-moroz-telegram.js";
 
@@ -59,17 +59,9 @@ export function setupChats(updates, command) {
 
 export function createTelegramOrderNotifier(store, settings, { request = fetch, clock = Date.now, log = console.warn } = {}) {
   async function deliver(order) {
-    const date = order.ready_by.split("-").reverse().join(".");
-    const text = [
-      "Новый заказ на видеопоздравление",
-      "Заказ " + order.order_id,
-      "Видео нужно к " + date,
-      "Детей в заказе — " + order.children.length,
-      "Анкета, телефон и фотографии в разделе «Заказы видеопоздравлений».",
-    ].join("\n");
     let messageId;
     try {
-      messageId = await sendTelegramMessage(settings, text, request);
+      messageId = await sendTelegramMessage(settings, formatOrderNotice(order), request);
     } catch (error) {
       const attempts = order.telegram_notification.attempts + 1;
       const backoff = telegramRetryInterval * 2 ** Math.min(attempts - 1, 5);

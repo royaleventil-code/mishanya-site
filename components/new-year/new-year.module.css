@@ -198,20 +198,21 @@
   gap: clamp(24px, 4vw, 48px);
   align-items: center;
 }
-.greetingCopy .eyebrow { display: flex; }
+.greetingCopy { text-align: center; }
+.greetingCopy .eyebrow { display: flex; justify-content: center; }
 .greetingCopy h1 {
   margin: 10px 0 13px;
   font-size: clamp(27px, 3.7vw, 46px);
   letter-spacing: -.03em;
   overflow-wrap: anywhere;
 }
-.greetingDescription { max-width: 44ch; color: var(--winter-muted); font-size: 17px; }
-.greetingPrice { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-top: 14px; }
+.greetingCopy .greetingDescription { max-width: 44ch; margin: 0 auto; color: var(--winter-muted); font-size: clamp(16px, 1.4vw, 18px); }
+.greetingCopy .greetingPrice { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 4px 12px; margin: 21px auto 0; padding-top: 17px; border-top: 1px solid #c8dbed; max-width: 33ch; }
 .greetingPrice strong { font-size: clamp(30px, 4vw, 40px); line-height: 1.15; color: var(--winter-blue); }
 .greetingPrice span { color: var(--winter-muted); font-size: 14px; }
-.greetingCopy .greetingTurnaround { display: flex; align-items: center; gap: 7px; margin-top: 5px; color: var(--winter-ink); font-size: 15px; }
+.greetingCopy .greetingTurnaround { display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin: 12px auto 0; padding: 7px 14px; border-radius: 12px; background: #e5f2ff; border: 1px solid #accfea; color: #144d83; font-size: 15px; line-height: 1.4; font-weight: 750; }
 .greetingTurnaround svg { flex-shrink: 0; color: var(--winter-blue); }
-.greetingCopy .desktopCta { max-width: 335px; }
+.greetingCopy .desktopCta { max-width: 335px; margin-inline: auto; }
 .greetingPhoto { margin: 0; min-width: 0; }
 .greetingPhoto img {
   display: block;

@@ -5,81 +5,93 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
-import { cropFrame, earliestDate, newDraft, orderFromDraft, validateDraft, whatsappContactDigits } from "../shared/ded-moroz.ts";
+import { allDraftIssues, newChild, newDraft, orderFromDraft, orderPhotos, photoIssue, photoSlots, validateDraft, whatsappContactDigits } from "../shared/ded-moroz.ts";
 import { decodePhoto, orderStore, zipFiles } from "../scripts/ded-moroz-files.mjs";
 import { createTelegramOrderNotifier, loadTelegramSettings, saveTelegramSettings, setupChats } from "../scripts/ded-moroz-telegram.mjs";
+import { formatOrderNotice } from "../shared/ded-moroz-telegram.js";
 
 const testBotSettings = { token: "123456789:" + "x".repeat(35), chatId: "-1001234567890", threadId: 15 };
-
-const draft = () => ({
-  ...newDraft(), children: ["соня", "миша"].map((name,i) => ({
-    name, name_pronounce: "", gender: i ? "boy" : "girl", age: i ? "7" : "5",
-    fact_learned: i ? "научился играть на гитаре" : "научилась плавать в море", fact_kind: "",
-  })), city: "Назарет-Иллит (Ноф-ха-Галиль)", parents_words: "Мы очень вами гордимся!",
-  parentName: "Анна", whatsapp: "050-123-4567", ready_by: earliestDate(), consent: true,
+const draft = (count = 2) => ({
+  ...newDraft(), children_count: count, children: ["соня", "миша", "лаша", "лиза", "инна"].slice(0,count).map((name,i) => ({
+    ...newChild(), name, stress: i === 4 ? 0 : 1, gender: i % 2 ? "boy" : "girl", age: i ? "14" : "1",
+    fact_learned: "научилась плавать в море", fact_kind: "помогает бабушке по дому",
+  })), city: "Назарет-Иллит (Ноф-ха-Галиль)", parents_words: "Мы очень вами гордимся!", shared_fact: "Помогали бабушке весь год",
+  parentName: "Анна", whatsapp: "050-123-4567", consent: true,
 });
-test("one or several children share an order and retain all personal text", () => {
-  const d = draft();
-  assert.deepEqual(validateDraft(d, 0), {}); assert.deepEqual(validateDraft(d, 2), {});
-  const order = orderFromDraft(d, "DM-2026-0001", new Date());
-  assert.deepEqual(order.children.map(c => c.name), ["Соня", "Миша"]);
-  assert.equal(order.parent.whatsapp, "050-123-4567"); assert.equal(order.child.name, "Соня");
-  d.children.pop(); assert.equal(orderFromDraft(d, "DM-2026-0002", new Date()).children.length, 1);
-  d.children[0].fact_learned = "изучила https://sample.com";
-  assert.ok(validateDraft(d, 0)["child-0-fact_learned"]);
-  assert.ok(validateDraft({ ...d, ready_by: "2026-02-30" }, 2).ready_by);
-  assert.equal(earliestDate(new Date("2026-12-31T22:05:00Z")), "2027-01-03");
-});
-test("orders accept ages from one through twelve and save them as numbers", () => {
-  const d = draft();
-  d.children[0].age = "1";
-  d.children[1].age = "12";
-  assert.deepEqual(validateDraft(d, 0), {});
-  const order = orderFromDraft(d, "DM-2026-0001", new Date());
-  assert.deepEqual(order.children.map(child => child.age), [1, 12]);
-  assert.equal(order.child.age, 1);
-
-  for (const age of ["", "0", "13", "1.5"]) {
-    d.children[0].age = age;
-    assert.ok(validateDraft(d, 0)["child-0-age"]);
+async function pictures(count) {
+  const make = (width, height) => sharp({ create: { width, height, channels: 3, background: "#775544" } }).png().toBuffer();
+  const [portrait, family] = await Promise.all([make(800,920), make(1024,800)]);
+  return photoSlots(draft(count).children).map(s => s.kind === "family" ? family : portrait);
+}
+test("the quiz uses the selected template for every family size", () => {
+  assert.ok(validateDraft(newDraft(),0).count);
+  for (const count of [1,2,3,4,5]) {
+    const d = draft(count);
+    assert.deepEqual(allDraftIssues(d), {});
+    const order = orderFromDraft(d, "DM-2026-0001", new Date());
+    assert.equal(order.children_count, count);
+    assert.equal(order.children[0].name_stress, "СОня");
+    assert.equal(order.shared_fact, count === 3 ? d.shared_fact : "");
+    assert.deepEqual(order.children.map(c => c.facts.length), Array(count).fill(count === 1 ? 2 : count === 2 ? 1 : 0));
+    assert.equal(orderPhotos(order).length, count === 1 ? 3 : count + 1);
+    assert.equal(order.parent.whatsapp, "+972501234567");
+    assert.equal(Object.hasOwn(order,"ready_by"),false);
   }
+  assert.ok(validateDraft({...draft(),children_count:6},0).count);
 });
-test("contact numbers preserve free-form input and WhatsApp links use valid digits", () => {
-  const d = draft();
-  for (const phone of ["050-12", "+1 (202) 555-0147", "WhatsApp: abc"]) {
-    d.whatsapp = `  ${phone}  `;
-    assert.deepEqual(validateDraft(d, 2), {});
-    assert.equal(orderFromDraft(d, "DM-2026-0001", new Date()).parent.whatsapp, phone);
+test("each child needs explicit stress, valid age and a distinct spoken name", () => {
+  const d = draft(); d.children[0].stress = -1;
+  assert.ok(validateDraft(d,1)["child-0-stress"]);
+  d.children[0].name = d.children[1].name = "Саша"; d.children[0].stress = d.children[1].stress = 1;
+  assert.ok(validateDraft(d,1)["child-0-distinction"]);
+  d.children[0].distinction = "старший"; d.children[1].distinction = "младший";
+  assert.deepEqual(validateDraft(d,1),{});
+  assert.equal(orderFromDraft(d,"DM-2026-0001",new Date()).children[0].name_stress, "САша старший");
+  for (const age of ["0","15","1.5"]) {
+    d.children[0].age = age; assert.ok(validateDraft(d,1)["child-0-age"]);
   }
-  assert.ok(validateDraft({ ...d, whatsapp: "   " }, 2).whatsapp);
-  assert.equal(whatsappContactDigits("050-123-4567"), "972501234567");
-  assert.equal(whatsappContactDigits("+972501234567"), "972501234567");
+  assert.ok(validateDraft({...d,whatsapp:"050-12"},4).whatsapp);
   assert.equal(whatsappContactDigits("+1 (202) 555-0147"), "12025550147");
-  assert.equal(whatsappContactDigits("050-12"), "");
 });
-test("cropping preserves the selected edge and uses the family landscape frame", () => {
-  assert.deepEqual(cropFrame(100, 80, 0, 100), { width: 80, height: 80, left: 20, top: 0, ratio: 1, cropped: true });
-  assert.equal(cropFrame(120, 160, 3, 100).top, 80);
-  assert.equal(cropFrame(120, 160, 0, 50).cropped, false);
+test("photos require the correct size and orientation, older archives retain their files", () => {
+  assert.equal(photoIssue(799,1200,"portrait"),"Фото слишком маленькое, выберите другое");
+  assert.ok(photoIssue(1000,800,"portrait")); assert.ok(photoIssue(800,800,"family"));
+  assert.equal(photoIssue(800,800,"portrait"),""); assert.equal(photoIssue(1000,800,"family"),"");
+  const legacy = { photos:{portrait:"photo1.jpg",activity:"photo2.jpg",drawing:"photo3.jpg",family:"photo4.jpg"} };
+  assert.deepEqual(orderPhotos(legacy).map(s => s.file), Object.values(legacy.photos));
 });
-test("a failed upload leaves no order; concurrent retries produce one complete private folder and ZIP", async t => {
-  const root = await mkdtemp(path.join(tmpdir(), "greeting-test-"));
-  t.after(() => rm(root, { recursive: true, force: true }));
-  const store = orderStore(root), key = randomUUID();
-  const png = await sharp({ create: { width: 150, height: 200, channels: 3, background: "#775544" } }).png().toBuffer();
+test("two- and four-child orders reach matching folders and survive a retry", async t => {
+  const root = await mkdtemp(path.join(tmpdir(), "greeting-test-")); t.after(() => rm(root,{recursive:true,force:true}));
+  const store = orderStore(root);
   await assert.rejects(decodePhoto(Buffer.from("text file in disguise")), /JPG/);
-  await assert.rejects(store.create(draft(), key, [png, png, Buffer.from("bad"), png], []));
-  assert.equal((await store.list()).length, 0);
-  const [first, retry] = await Promise.all([1, 2].map(() => store.create(draft(), key, [png,png,png,png], [50,50,50,100])));
-  assert.equal(first.order_id, retry.order_id);
-  const folder = path.join(root, "orders", first.order_id);
-  assert.deepEqual((await readdir(folder)).sort(), ["order.json","photo1.jpg","photo2.jpg","photo3.jpg","photo4.jpg"]);
-  assert.equal((await sharp(await readFile(path.join(folder, "photo4.jpg"))).metadata()).height, 100);
-  await store.update(first.order_id, { payment_reported: "Bit" });
-  assert.equal((await store.read(first.order_id)).status, "new");
-  const archive = zipFiles([["order.json", await readFile(path.join(folder, "order.json"))]]);
-  assert.equal(archive.readUInt32LE(0), 0x04034b50); assert.equal(archive.readUInt32LE(archive.length-22), 0x06054b50);
-  await assert.rejects(store.photo(first.order_id, "../order.json"), /не найдено/);
+  for (const count of [2,4]) {
+    const d = draft(count), key = randomUUID(), photos = await pictures(count);
+    await assert.rejects(store.create(d,key,[...photos.slice(0,-1), Buffer.from("bad")]));
+    const [first, retry] = await Promise.all([store.create(d,key,photos), store.create(d,key,photos)]);
+    assert.equal(first.order_id,retry.order_id);
+    const folder = path.join(root,"orders",first.order_id);
+    const data = JSON.parse(await readFile(path.join(folder,"order.json"),"utf8"));
+    const files = data.children.flatMap(c => c.photos).concat(data.family_photo);
+    assert.equal(data.children_count,count);
+    assert.equal("request_id" in data,false);
+    assert.deepEqual((await readdir(folder)).sort(), ["order.json",...files].sort());
+    assert.equal(data.children[0].facts.length, count === 2 ? 1 : 0);
+    await store.update(first.order_id,{payment_reported:"Bit"}); await store.update(first.order_id,{status:"cancelled"});
+    assert.equal((await store.read(first.order_id)).status,"cancelled");
+    const archive=zipFiles([["order.json",await readFile(path.join(folder,"order.json"))]]);
+    assert.equal(archive.readUInt32LE(0),0x04034b50); assert.equal(archive.readUInt32LE(archive.length-22),0x06054b50);
+    await assert.rejects(store.photo(first.order_id,"../order.json"), /не найдено/);
+  }
+});
+
+test("a free-form phone stays on one line in the group message", () => {
+  const order = orderFromDraft(draft(), "DM-2026-0002", new Date());
+  order.parent.whatsapp = "  +972\n  50-123-4567  ";
+  assert.equal(formatOrderNotice(order).split("\n")[2], "Телефон: +972 50-123-4567");
+  order.parent.whatsapp = "9".repeat(5000);
+  assert.ok(formatOrderNotice(order).length < 4096);
+  order.parent.whatsapp = "";
+  assert.equal(formatOrderNotice(order).split("\n")[2], "Телефон: не указан");
 });
 
 test("Telegram setup recognizes matching group messages and channel posts", async t => {
@@ -116,14 +128,13 @@ test("Telegram setup recognizes matching group messages and channel posts", asyn
 test("saved orders queue a Telegram notice, retry after a failure and send once after a confirmed response", async t => {
   const root = await mkdtemp(path.join(tmpdir(), "greeting-telegram-orders-"));
   t.after(() => rm(root, { recursive: true, force: true }));
-  const png = await sharp({ create: { width: 150, height: 200, channels: 3, background: "#775544" } }).png().toBuffer();
-  const photos = [png, png, png, png];
-  const older = await orderStore(root).create(draft(), randomUUID(), photos, []);
+  const photos = await pictures(2);
+  const older = await orderStore(root).create(draft(), randomUUID(), photos);
   const store = orderStore(root, { telegramNotifications: true });
   const key = randomUUID();
-  await assert.rejects(store.create(draft(), key, [png, png, Buffer.from("bad"), png], []));
+  await assert.rejects(store.create(draft(), key, [photos[0], photos[1], Buffer.from("bad")]));
   assert.equal((await store.list()).length, 1);
-  const [order, replay] = await Promise.all([1, 2].map(() => store.create(draft(), key, photos, [])));
+  const [order, replay] = await Promise.all([1, 2].map(() => store.create(draft(), key, photos)));
   assert.equal(order.order_id, replay.order_id);
   assert.equal(order.telegram_notification.attempts, 0);
   assert.equal((await store.read(older.order_id)).telegram_notification, undefined);
@@ -153,9 +164,15 @@ test("saved orders queue a Telegram notice, retry after a failure and send once 
   assert.equal((await store.read(order.order_id)).telegram_notification.messageId, 34);
   assert.equal(sent[1].chat_id, testBotSettings.chatId);
   assert.equal(sent[1].message_thread_id, testBotSettings.threadId);
-  assert.ok(sent[1].text.includes(order.order_id));
+  assert.equal(sent[1].text, [
+    "Новый заказ на видеопоздравление",
+    "Заказ " + order.order_id,
+    "Телефон: " + order.parent.whatsapp,
+    "Детей в заказе — 2",
+    "Открыть кабинет: https://mishanya-show.com/admin/ded-moroz",
+  ].join("\n"));
   assert.ok(!sent[1].text.includes(older.order_id));
-  for (const privateValue of [order.parent.whatsapp, order.parent.name, order.children[0].name, order.parents_words, "photo1.jpg"]) {
+  for (const privateValue of [order.parent.name, order.children[0].name, order.parents_words, "child1_1.jpg"]) {
     assert.ok(!sent[1].text.includes(privateValue));
   }
   await notifyAfterRestart();

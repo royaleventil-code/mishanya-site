@@ -1,5 +1,5 @@
 import { decodePhoto, orderPattern, problem, zipFiles } from "./ded-moroz-files.mjs";
-import { photoLimit, photoRoles, statuses, validateDraft } from "../shared/ded-moroz.ts";
+import { allDraftIssues, maxPhotos, orderPhotoPattern, orderPhotos, photoLimit, photoSlots, statuses } from "../shared/ded-moroz.ts";
 
 async function body(req, limit) {
   const parts = []; let size = 0;
@@ -50,7 +50,7 @@ export function greetingRequestHandler(store, servePage, notifyPendingOrders) {
       }
       if (action !== "orders") throw problem("Маршрут не найден.", 404);
       if (!id && req.method === "POST") {
-        const bytes = await body(req, 4 * photoLimit + 256 * 1024);
+        const bytes = await body(req, maxPhotos * photoLimit + 256 * 1024);
         let form;
         try { form = await new Response(bytes, { headers: { "Content-Type": req.headers["content-type"] || "" } }).formData(); }
         catch { throw problem("Не удалось прочитать форму заказа."); }
@@ -58,29 +58,28 @@ export function greetingRequestHandler(store, servePage, notifyPendingOrders) {
         const token = form.get("key");
         if (typeof token !== "string" || !/^[a-f\d-]{36}$/i.test(token)) throw problem("Обновите страницу и повторите отправку.");
         let issues;
-        try { issues = { ...validateDraft(draft, 0), ...validateDraft(draft, 2) }; } catch { throw problem("Проверьте поля анкеты."); }
+        try { issues = allDraftIssues(draft); } catch { throw problem("Проверьте поля анкеты."); }
         if (Object.keys(issues).length) throw problem(Object.values(issues)[0]);
-        const photos = [], positions = [];
-        for (const role of photoRoles) {
-          const file = form.get(role);
-          if (!file || typeof file === "string" || !file.size || file.size > photoLimit) throw problem("Нужны четыре фотографии до 15 МБ каждая.");
+        const photos = [];
+        for (const slot of photoSlots(draft.children)) {
+          const file = form.get(slot.file);
+          if (!file || typeof file === "string" || !file.size || file.size > photoLimit) throw problem("Загрузите фото «" + slot.label + "» до 15 МБ.");
           photos.push(Buffer.from(await file.arrayBuffer()));
-          positions.push(Number(form.get(role + "_position") ?? 50));
         }
         const staff = url.pathname === "/api/ded-moroz/staff/orders";
-        const order = await store.create(draft, token, photos, positions, { staff });
+        const order = await store.create(draft, token, photos, { staff });
         void notifyPendingOrders?.();
         return sendJson(res, 201, { order_id: order.order_id, ready_by: order.ready_by });
       }
       if (!id && req.method === "GET") return sendJson(res, 200, (await store.list()).map(publicOrder));
       if (!id || !orderPattern.test(id)) throw problem("Заказ не найден.", 404);
-      if (req.method === "GET" && /^photo[1-4]\.jpg$/.test(sub || "")) {
+      if (req.method === "GET" && orderPhotoPattern.test(sub || "")) {
         const photo = await store.photo(id, sub); res.writeHead(200, { "Content-Type": "image/jpeg" }); return res.end(photo);
       }
       if (req.method === "GET" && sub === "zip") {
         const item = publicOrder(await store.read(id));
         const files = [["order.json", Buffer.from(JSON.stringify(item, null, 2))]];
-        for (const name of Object.values(item.photos)) files.push([name, await store.photo(id, name)]);
+        for (const slot of orderPhotos(item)) files.push([slot.file, await store.photo(id, slot.file)]);
         res.writeHead(200, { "Content-Type": "application/zip", "Content-Disposition": `attachment; filename="${id}.zip"` }); return res.end(zipFiles(files));
       }
       if (req.method === "POST" && sub === "payment") {

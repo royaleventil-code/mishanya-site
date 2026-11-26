@@ -1,5 +1,17 @@
 export const isTelegramBotToken = value => typeof value === "string" && /^\d+:[A-Za-z0-9_-]{20,}$/.test(value);
 
+export function formatOrderNotice(order) {
+  const entered = order.parent?.whatsapp;
+  const phone = typeof entered === "string" ? entered.trim().replace(/\s+/g, " ").slice(0, 128) : "";
+  return [
+    "Новый заказ на видеопоздравление",
+    "Заказ " + order.order_id,
+    "Телефон: " + (phone || "не указан"),
+    "Детей в заказе — " + order.children.length,
+    "Открыть кабинет: https://mishanya-show.com/admin/ded-moroz",
+  ].join("\n");
+}
+
 export async function telegramRequest(token, method, payload = {}, request = fetch) {
   if (!isTelegramBotToken(token)) throw new Error("Проверьте токен из BotFather.");
   let response;

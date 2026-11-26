@@ -1,15 +1,15 @@
 import { canAccessOrders, accessIssuer } from "../../../shared/ded-moroz-access.js";
-import { photoRoles, preparedPhotoLimit, statuses, validateDraft } from "../../../shared/ded-moroz.ts";
+import { allDraftIssues, maxPhotos, orderPhotoPattern, photoIssue, photoSlots, preparedPhotoLimit, statuses } from "../../../shared/ded-moroz.ts";
 import { orderZip } from "../../../shared/ded-moroz-zip.js";
 import {
   checkOrderLimit, findOrderByRequest, getOrder, getOrderPhoto, listOrders, orderArchiveEntries,
-  orderError, orderPhotoPattern, orderReceipt, saveOrder, updateOrder,
+  orderError, orderReceipt, saveOrder, updateOrder,
 } from "../../../shared/ded-moroz-cloud.js";
 
 const headers = { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" };
 const json = (data, status = 200) => Response.json(data, { status, headers });
 const requestKeyPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const orderLimit = 4 * preparedPhotoLimit + 128 * 1024;
+const orderLimit = maxPhotos * preparedPhotoLimit + 128 * 1024;
 
 function limitedBody(request, limit) {
   if (Number(request.headers.get("Content-Length")) > limit) throw orderError("Данные заказа слишком большие.", 413);
@@ -39,7 +39,7 @@ function readDraft(value) {
     if (typeof value !== "string" || value.length > 32_768) throw new Error();
     const draft = JSON.parse(value);
     if (!Array.isArray(draft?.children)) throw new Error();
-    const issues = Object.assign(validateDraft(draft, 0), validateDraft(draft, 2));
+    const issues = allDraftIssues(draft);
     const error = Object.values(issues)[0];
     if (error) throw orderError(error);
     return draft;
@@ -66,19 +66,34 @@ async function verifyOrderToken(request, secret, token) {
     value.hostname === new URL(request.url).hostname;
 }
 
-async function readOrderPhotos(form) {
+function jpegDimensions(bytes) {
+  if (bytes[0] !== 255 || bytes[1] !== 216 || bytes.at(-2) !== 255 || bytes.at(-1) !== 217) return null;
+  let at = 2;
+  while (at + 8 < bytes.length && bytes[at] === 255) {
+    while (bytes[at] === 255) at++;
+    const marker = bytes[at++];
+    const size = bytes[at] * 256 + bytes[at + 1];
+    if (size < 2 || at + size > bytes.length || marker === 218) return null;
+    if ([192, 193, 194].includes(marker) && size >= 8) {
+      return { height: bytes[at + 3] * 256 + bytes[at + 4], width: bytes[at + 5] * 256 + bytes[at + 6] };
+    }
+    at += size;
+  }
+  return null;
+}
+
+async function readOrderPhotos(form, draft) {
   const files = [];
-  for (const role of photoRoles) {
-    const file = form.get(role);
+  for (const slot of photoSlots(draft.children)) {
+    const file = form.get(slot.file);
     if (!file || typeof file === "string" || file.type !== "image/jpeg" ||
       file.size < 8 || file.size > preparedPhotoLimit) {
-      throw orderError("Нужны четыре фотографии. Перезагрузите выбранные снимки.");
+      throw orderError("Загрузите фотографию «" + slot.label + "».");
     }
-    const start = new Uint8Array(await file.slice(0, 3).arrayBuffer());
-    const end = new Uint8Array(await file.slice(-2).arrayBuffer());
-    if (start[0] !== 255 || start[1] !== 216 || start[2] !== 255 || end[0] !== 255 || end[1] !== 217) {
-      throw orderError("Не удалось прочитать фотографию. Выберите другой снимок.");
-    }
+    const size = jpegDimensions(new Uint8Array(await file.arrayBuffer()));
+    if (!size) throw orderError("Не удалось прочитать фотографию. Выберите другой снимок.");
+    const issue = photoIssue(size.width, size.height, slot.kind);
+    if (issue) throw orderError(slot.label + ". " + issue);
     files.push(file);
   }
   return files;
@@ -102,7 +117,7 @@ async function postOrder(env, request, staff = false) {
       throw orderError("Слишком много заявок с этого подключения. Попробуйте позже.", 429);
     }
   }
-  const order = await saveOrder(env, draft, key, await readOrderPhotos(form));
+  const order = await saveOrder(env, draft, key, await readOrderPhotos(form, draft));
   return json(orderReceipt(order), 201);
 }
 

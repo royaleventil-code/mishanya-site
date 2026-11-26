@@ -4,7 +4,7 @@ import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 import sharp from "sharp";
 import { onRequest } from "../functions/api/ded-moroz/[[path]].js";
-import { earliestDate, newDraft, photoRoles } from "../shared/ded-moroz.ts";
+import { newChild, newDraft, orderPhotos, photoSlots } from "../shared/ded-moroz.ts";
 import { deliverOrderNotices } from "../shared/ded-moroz-notices.js";
 import { getOrderPhoto, saveOrder } from "../shared/ded-moroz-cloud.js";
 
@@ -13,11 +13,11 @@ const api = origin + "/api/ded-moroz";
 const upload = api + "/orders";
 const staff = api + "/staff/orders";
 const draft = {
-  ...newDraft(), city: "Хайфа", parentName: "Тест", whatsapp: "+972 (50) 555-0100",
-  parents_words: "Мы очень вами гордимся!", ready_by: earliestDate(), consent: true,
+  ...newDraft(), children_count: 2, city: "Хайфа", parentName: "Тест", whatsapp: "+972505550100",
+  parents_words: "Мы очень вами гордимся!", consent: true,
   children: [
-    { name: "Соня", name_pronounce: "", gender: "girl", age: "1", fact_learned: "научилась бегать сама", fact_kind: "" },
-    { name: "Саша", name_pronounce: "", gender: "boy", age: "7", fact_learned: "научился плавать в море", fact_kind: "" },
+    { ...newChild(), name: "Соня", stress: 1, gender: "girl", age: "1", fact_learned: "научилась бегать сама", fact_kind: "" },
+    { ...newChild(), name: "Саша", stress: 1, gender: "boy", age: "7", fact_learned: "научился плавать в море", fact_kind: "" },
   ],
 };
 
@@ -63,11 +63,15 @@ function fixture(t) {
   return { db, env };
 }
 
+const familyJpeg = new Blob([await sharp({ create: { width: 1000, height: 800, channels: 3, background: "#95b4c7" } }).jpeg().toBuffer()], { type: "image/jpeg" });
+
 function orderForm(key, jpeg, payload = draft) {
   const form = new FormData();
   form.set("draft", JSON.stringify(payload));
   form.set("key", key);
-  for (const role of photoRoles) form.set(role, jpeg, role + ".jpg");
+  for (const slot of photoSlots(payload.children)) {
+    form.set(slot.file, slot.kind === "family" ? familyJpeg : jpeg, slot.file);
+  }
   return form;
 }
 async function submit(env, key, jpeg, turnstile = "pass") {
@@ -104,7 +108,7 @@ test("the Pages API saves a single complete order, protects access and preserves
     const signature = await crypto.subtle.sign(algorithm, signingKeys.privateKey, new TextEncoder().encode(header + "." + body));
     return [header, body, Buffer.from(signature).toString("base64url")].join(".");
   };
-  const jpeg = new Blob([await sharp({ create: { width: 120, height: 150, channels: 3, background: "#8d5260" } }).jpeg().toBuffer()], { type: "image/jpeg" });
+  const jpeg = new Blob([await sharp({ create: { width: 800, height: 1000, channels: 3, background: "#8d5260" } }).jpeg().toBuffer()], { type: "image/jpeg" });
   const key = crypto.randomUUID();
   const readiness = await onRequest({ env, request: new Request(upload, { method: "HEAD" }) });
   assert.equal(readiness.status, 204);
@@ -118,15 +122,15 @@ test("the Pages API saves a single complete order, protects access and preserves
   assert.equal(retry.ok, true);
   const receipt = await first.json();
   assert.deepEqual(await retry.json(), receipt);
-  assert.deepEqual(Object.keys(receipt).sort(), ["order_id", "ready_by"]);
-  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM dm_order_photo_parts").get().n, 4);
+  assert.deepEqual(Object.keys(receipt), ["order_id"]);
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM dm_order_photo_parts").get().n, 3);
   assert.equal(db.prepare("SELECT COUNT(*) AS n FROM dm_photo_uploads").get().n, 1);
   const raw = db.prepare("SELECT * FROM dm_orders").all();
   assert.equal(raw.length, 1);
   assert.ok(!raw[0].payload_ciphertext.includes(draft.whatsapp));
 
   const order = staff + "/" + receipt.order_id;
-  for (const path of [staff, order + "/photo1.jpg", order + "/zip"]) {
+  for (const path of [staff, order + "/child1_1.jpg", order + "/zip"]) {
     const denied = await onRequest({ env, request: new Request(path) });
     assert.equal(denied.status, 403);
     assert.match(denied.headers.get("Cache-Control"), /no-store/);
@@ -141,13 +145,19 @@ test("the Pages API saves a single complete order, protects access and preserves
   keysResponse = Response.json({ keys: [jwk] });
   const [item] = await (await call(staff)).json();
   assert.equal(item.parent.whatsapp, draft.whatsapp);
+  assert.equal(Object.hasOwn(item, "ready_by"), false);
   assert.deepEqual(item.children.map(child => child.age), [1, 7]);
   const update = await call(order, { method: "PATCH", body: JSON.stringify({
     status: "review", video_url: "https://drive.google.com/file/d/demo/view",
   }) });
   assert.equal(update.status, 200);
   assert.equal((await update.json()).status, "review");
-  const photo = await call(order + "/photo1.jpg");
+  const cancel = await call(order, { method: "PATCH", body: JSON.stringify({
+    status: "cancelled", video_url: "",
+  }) });
+  assert.equal(cancel.status, 200);
+  assert.equal((await (await call(staff)).json())[0].status, "cancelled");
+  const photo = await call(order + "/child1_1.jpg");
   assert.equal(photo.headers.get("Content-Type"), "image/jpeg");
   assert.deepEqual(await photo.arrayBuffer(), await jpeg.arrayBuffer());
   const archive = await call(order + "/zip");
@@ -176,8 +186,13 @@ test("the Pages API saves a single complete order, protects access and preserves
   time += 66_000;
   await Promise.all([deliverOrderNotices(env, options), deliverOrderNotices(env, options)]);
   assert.equal(notices.length, 3);
-  assert.ok(notices[2].text.includes(receipt.order_id));
-  assert.ok(!notices[2].text.includes(draft.whatsapp));
+  assert.equal(notices[2].text, [
+    "Новый заказ на видеопоздравление",
+    "Заказ " + receipt.order_id,
+    "Телефон: " + draft.whatsapp,
+    "Детей в заказе — 2",
+    "Открыть кабинет: https://mishanya-show.com/admin/ded-moroz",
+  ].join("\n"));
   assert.ok(!notices[2].text.includes(draft.children[0].name));
   assert.equal(db.prepare("SELECT telegram_sent_at FROM dm_orders").get().telegram_sent_at, time);
 
@@ -189,7 +204,7 @@ test("the Pages API saves a single complete order, protects access and preserves
     }) });
     assert.equal(denied.status, 403);
     const incomplete = orderForm(manualKey, jpeg);
-    incomplete.delete("family");
+    incomplete.delete("family.jpg");
     assert.equal((await post(incomplete)).status, 400);
     assert.equal((await post(orderForm(manualKey, jpeg, { ...draft, consent: false }))).status, 400);
     assert.equal(db.prepare("SELECT count(*) AS n FROM dm_orders").get().n, 1);
@@ -208,9 +223,9 @@ test("the Pages API saves a single complete order, protects access and preserves
     assert.equal(orders[0].status, "new");
     assert.equal(orders[0].parent.whatsapp, draft.whatsapp);
     assert.deepEqual(orders[0].children.map(c => c.name), draft.children.map(c => c.name));
-    for (const name of Object.values(orders[0].photos)) {
+    for (const { file: name, kind } of orderPhotos(orders[0])) {
       const stored = await call(staff + "/" + manual.order_id + "/" + name);
-      assert.deepEqual(await stored.arrayBuffer(), await jpeg.arrayBuffer());
+      assert.deepEqual(await stored.arrayBuffer(), await (kind === "family" ? familyJpeg : jpeg).arrayBuffer());
     }
   });
 });
@@ -218,9 +233,9 @@ test("the Pages API saves a single complete order, protects access and preserves
 test("large photos survive D1 chunking and a partial upload can be retried", async t => {
   const { db, env } = fixture(t);
   const file = new Blob([Buffer.alloc(3 * 1024 * 1024, 173)], { type: "image/jpeg" });
-  const files = Array.from({ length: 4 }, () => file);
+  const files = photoSlots(draft.children).map(() => file);
   const key = crypto.randomUUID();
-  db.exec("CREATE TRIGGER fail_photo BEFORE INSERT ON dm_order_photo_parts WHEN NEW.filename = 'photo2.jpg' AND NEW.part = 2 BEGIN SELECT RAISE(ABORT, 'test'); END");
+  db.exec("CREATE TRIGGER fail_photo BEFORE INSERT ON dm_order_photo_parts WHEN NEW.filename = 'child2_1.jpg' AND NEW.part = 2 BEGIN SELECT RAISE(ABORT, 'test'); END");
   await assert.rejects(saveOrder(env, draft, key, files), /фотографии/);
   for (const table of ["dm_orders", "dm_photo_uploads", "dm_order_photo_parts"]) {
     assert.equal(db.prepare("SELECT COUNT(*) AS n FROM " + table).get().n, 0);
@@ -231,7 +246,7 @@ test("large photos survive D1 chunking and a partial upload can be retried", asy
   const stored = db.prepare("SELECT content FROM dm_order_photo_parts WHERE part = 0 LIMIT 1").get().content;
   assert.ok(stored.byteLength < 2_000_000);
   assert.notDeepEqual(stored.slice(0, 100), new Uint8Array(100).fill(173));
-  for (const name of ["photo1.jpg", "photo2.jpg", "photo3.jpg", "photo4.jpg"]) {
+  for (const name of ["child1_1.jpg", "child2_1.jpg", "family.jpg"]) {
     assert.deepEqual(await getOrderPhoto(env, row, name), await file.arrayBuffer());
   }
   db.prepare("INSERT INTO dm_photo_uploads (upload_id, expires_at) VALUES ('abandoned', 1)").run();

@@ -6,7 +6,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { orderZip } from "../shared/ded-moroz-zip.js";
 import sharp from "sharp";
-import { cropFrame, orderFromDraft, photoLimit } from "../shared/ded-moroz.ts";
+import { orderFromDraft, orderPhotoPattern, photoIssue, photoLimit, photoSlots } from "../shared/ded-moroz.ts";
 
 const run = promisify(execFile);
 const imageOptions = { limitInputPixels: 65_000_000, failOn: "error" };
@@ -33,8 +33,7 @@ export async function decodePhoto(bytes) {
   const jpg = bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
   const png = bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
   if (!(jpg || png || heic)) throw problem("Выберите файл JPG, PNG или HEIC.");
-  const toJpeg = input => sharp(input, imageOptions).rotate().flatten({ background: "#ffffff" })
-    .resize({ width: 2560, height: 2560, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 90, mozjpeg: true }).toBuffer();
+  const toJpeg = input => sharp(input, imageOptions).rotate().flatten({ background: "#ffffff" }).jpeg({ quality: 90 }).toBuffer();
   try { return await toJpeg(bytes); } catch {
     if (!heic) throw problem("Не удалось открыть фотографию. Попробуйте другой файл.");
   }
@@ -51,11 +50,20 @@ export async function decodePhoto(bytes) {
 
 export function orderStore(root, { telegramNotifications = false } = {}) {
   const orders = path.join(root, "orders");
+  const stateDir = path.join(root, "order-state");
+  const statePath = id => path.join(stateDir, id + ".json");
   let writes = Promise.resolve();
   const exclusive = fn => { const result = writes.then(fn); writes = result.catch(() => {}); return result; };
   const read = async id => {
     if (!orderPattern.test(id)) throw problem("Заказ не найден.", 404);
-    try { return JSON.parse(await readFile(path.join(orders, id, "order.json"), "utf8")); }
+    try {
+      const data = JSON.parse(await readFile(path.join(orders, id, "order.json"), "utf8"));
+      const state = await readFile(statePath(id), "utf8").catch(error => {
+        if (error.code === "ENOENT") return "{}";
+        throw error;
+      });
+      return { ...data, ...JSON.parse(state) };
+    }
     catch (error) { if (error.code === "ENOENT") throw problem("Заказ не найден.", 404); throw error; }
   };
   async function list() {
@@ -63,7 +71,7 @@ export function orderStore(root, { telegramNotifications = false } = {}) {
     const names = (await readdir(orders)).filter(name => orderPattern.test(name));
     return (await Promise.all(names.map(read))).sort((a,b) => b.created_at.localeCompare(a.created_at));
   }
-  const create = (draft, token, photos, positions, { staff = false } = {}) => exclusive(async () => {
+  const create = (draft, token, photos, { staff = false } = {}) => exclusive(async () => {
     const records = await list();
     const requestId = (staff ? "staff:" : "") + token;
     const previous = records.find(item => item.request_id === requestId);
@@ -78,28 +86,42 @@ export function orderStore(root, { telegramNotifications = false } = {}) {
     const id = prefix + String(sequence).padStart(4, "0");
     const stage = await mkdtemp(path.join(root, "pending-"));
     try {
-      for (let i = 0; i < 4; i++) {
+      const slots = photoSlots(draft.children);
+      if (photos.length !== slots.length) throw problem("Проверьте комплект фотографий.");
+      for (const [i, slot] of slots.entries()) {
         const jpeg = await decodePhoto(photos[i]);
         const { width, height } = await sharp(jpeg).metadata();
-        const { width: w, height: h, left, top } = cropFrame(width, height, i, positions[i]);
-        await sharp(jpeg).extract({ left, top, width: w, height: h }).jpeg({ quality: 90 }).toFile(path.join(stage, `photo${i + 1}.jpg`));
+        const issue = photoIssue(width, height, slot.kind);
+        if (issue) throw problem(slot.label + ". " + issue);
+        await writeFile(path.join(stage, slot.file), jpeg);
       }
-      const order = { ...orderFromDraft(draft, id, now), request_id: requestId };
-      if (telegramNotifications) order.telegram_notification = { attempts: 0, nextAttemptAt: now.getTime() };
+      const order = orderFromDraft(draft, id, now);
+      const state = { request_id: requestId };
+      if (telegramNotifications) state.telegram_notification = { attempts: 0, nextAttemptAt: now.getTime() };
       await writeFile(path.join(stage, "order.json"), JSON.stringify(order, null, 2));
+      await mkdir(stateDir, { recursive: true });
+      await writeFile(path.join(stage, "state"), JSON.stringify(state));
       const nextCounter = path.join(stage, "next-counter");
       await writeFile(nextCounter, String(sequence));
       await rename(nextCounter, counter);
+      await rename(path.join(stage, "state"), statePath(id));
       await rename(stage, path.join(orders, id));
-      return order;
+      return { ...order, ...state };
     } finally { await rm(stage, { recursive: true, force: true }); }
   });
   const update = (id, patch) => exclusive(async () => {
     const order = { ...await read(id), ...patch };
-    const file = path.join(orders, id, "order.json");
+    const { request_id, telegram_notification, ...publicData } = order;
+    const internal = Object.hasOwn(patch, "telegram_notification");
+    const file = internal ? statePath(id) : path.join(orders, id, "order.json");
+    // A legacy order stores both in one file until it first changes.
+    await mkdir(stateDir, { recursive: true });
+    if (!internal) await writeFile(statePath(id), JSON.stringify({ request_id, telegram_notification }), { flag: "wx" }).catch(error => {
+      if (error.code !== "EEXIST") throw error;
+    });
     const temp = file + "." + randomUUID() + ".tmp";
     try {
-      await writeFile(temp, JSON.stringify(order, null, 2));
+      await writeFile(temp, JSON.stringify(internal ? { request_id, telegram_notification } : publicData, null, 2));
       await rename(temp, file);
     } finally { await rm(temp, { force: true }); }
     return order;
@@ -107,11 +129,14 @@ export function orderStore(root, { telegramNotifications = false } = {}) {
   const clean = () => exclusive(async () => {
     const oldest = Date.now() - 60 * 86400000;
     for (const order of await list()) {
-      if (Date.parse(order.created_at) < oldest && orderPattern.test(order.order_id)) await rm(path.join(orders, order.order_id), { recursive: true });
+      if (Date.parse(order.created_at) < oldest && orderPattern.test(order.order_id)) {
+        await rm(path.join(orders, order.order_id), { recursive: true });
+        await rm(statePath(order.order_id), { force: true });
+      }
     }
   });
   const photo = async (id, file) => {
-    if (!orderPattern.test(id) || !/^photo[1-4]\.jpg$/.test(file)) throw problem("Фото не найдено.", 404);
+    if (!orderPattern.test(id) || !orderPhotoPattern.test(file)) throw problem("Фото не найдено.", 404);
     try { return await readFile(path.join(orders, id, file)); }
     catch (error) { if (error.code === "ENOENT") throw problem("Фото не найдено.", 404); throw error; }
   };

@@ -229,6 +229,7 @@ export const NEW_YEAR_PROGRAMS: NewYearProgram[] = [
 export const newYearProgram = (id: string) => NEW_YEAR_PROGRAMS.find((p) => p.id === id);
 export const newYearPath = (locale: Locale, id?: string) => `/${locale}/holiday/new-year${id ? `/${id}` : ""}`;
 export const greetingOrderPath = newYearPath("ru", NEW_YEAR_VIDEO_GREETING_ID);
+export const greetingQuizPath = "/ded-moroz/order";
 
 export const NEW_YEAR_HERO_PHOTO = "ensemble-photo-collage-v2";
 

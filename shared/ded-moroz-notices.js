@@ -1,5 +1,5 @@
-import { orderReceipt } from "./ded-moroz-cloud.js";
-import { isTelegramBotToken, sendTelegramMessage } from "./ded-moroz-telegram.js";
+import { toOrder } from "./ded-moroz-cloud.js";
+import { formatOrderNotice, isTelegramBotToken, sendTelegramMessage } from "./ded-moroz-telegram.js";
 
 export async function deliverOrderNotices(env, { clock = Date.now, request = fetch } = {}) {
   if (!env.GIFT_DB) return;
@@ -13,7 +13,7 @@ export async function deliverOrderNotices(env, { clock = Date.now, request = fet
 
   await env.GIFT_DB.prepare("DELETE FROM dm_order_limits WHERE window_start < ?").bind(now - 172_800_000).run();
   const { results } = await env.GIFT_DB.prepare(
-    "SELECT id, season_year, ready_by, child_count, telegram_attempts FROM dm_orders " +
+    "SELECT id FROM dm_orders " +
     "WHERE telegram_sent_at IS NULL AND telegram_next_at <= ? ORDER BY telegram_next_at LIMIT 10",
   ).bind(now).all();
 
@@ -22,22 +22,15 @@ export async function deliverOrderNotices(env, { clock = Date.now, request = fet
     const lease = claimAt + 120_000;
     const claimed = await env.GIFT_DB.prepare(
       "UPDATE dm_orders SET telegram_next_at = ? " +
-      "WHERE id = ? AND telegram_sent_at IS NULL AND telegram_next_at <= ? RETURNING id",
+      "WHERE id = ? AND telegram_sent_at IS NULL AND telegram_next_at <= ? RETURNING *",
     ).bind(lease, row.id, claimAt).first();
     if (!claimed) continue;
 
-    const order = orderReceipt(row);
-    const text = [
-      "Новый заказ на видеопоздравление",
-      "Заказ " + order.order_id,
-      "Видео нужно к " + order.ready_by.split("-").reverse().join("."),
-      "Детей в заказе — " + row.child_count,
-      "Открыть кабинет: https://mishanya-show.com/admin/ded-moroz",
-    ].join("\n");
     try {
-      await sendTelegramMessage({ token, chatId, threadId }, text, request);
+      const order = await toOrder(env, claimed);
+      await sendTelegramMessage({ token, chatId, threadId }, formatOrderNotice(order), request);
     } catch (error) {
-      const backoff = 30_000 * 2 ** Math.min(row.telegram_attempts, 5);
+      const backoff = 30_000 * 2 ** Math.min(claimed.telegram_attempts, 5);
       await env.GIFT_DB.prepare(
         "UPDATE dm_orders SET telegram_attempts = telegram_attempts + 1, telegram_next_at = ? " +
         "WHERE id = ? AND telegram_sent_at IS NULL AND telegram_next_at = ?",

@@ -1,24 +1,19 @@
 import { parsePhoneNumberFromString } from "libphonenumber-js/min";
 
-export type Child = { name: string; name_pronounce: string; gender: string; age: string; fact_learned: string; fact_kind: string };
+export type Child = { name: string; stress: number; distinction: string; gender: string; age: string; fact_learned: string; fact_kind: string };
 export type Draft = {
-  children: Child[]; city: string; otherCity: string; parents_words: string;
-  parentName: string; whatsapp: string; email: string; ready_by: string; consent: boolean;
+  children_count: number; children: Child[]; shared_fact: string; city: string; otherCity: string; parents_words: string;
+  parentName: string; whatsapp: string; email: string; consent: boolean;
 };
-
-export const newChild = (): Child => ({ name: "", name_pronounce: "", gender: "", age: "", fact_learned: "", fact_kind: "" });
+export const newChild = (): Child => ({ name: "", stress: -1, distinction: "", gender: "", age: "", fact_learned: "", fact_kind: "" });
 export const newDraft = (): Draft => ({
-  children: [newChild()], city: "", otherCity: "", parents_words: "", parentName: "",
-  whatsapp: "", email: "", ready_by: "", consent: false,
+  children_count: 0, children: [], shared_fact: "", city: "", otherCity: "", parents_words: "",
+  parentName: "", whatsapp: "", email: "", consent: false,
 });
-
+export const counts = [1, 2, 3, 4, 5];
 export const minimumChildAge = 1;
-export const maximumChildAge = 12;
-export const childAges = Array.from(
-  { length: maximumChildAge - minimumChildAge + 1 },
-  (_, index) => String(minimumChildAge + index),
-);
-
+export const maximumChildAge = 14;
+export const childAges = Array.from({ length: maximumChildAge }, (_, i) => String(i + 1));
 export const cities = [
   "Нетания", "Тель-Авив", "Хайфа", "Иерусалим", "Ришон-ле-Цион", "Бат-Ям", "Ашдод", "Ашкелон",
   "Беэр-Шева", "Петах-Тиква", "Холон", "Реховот", "Герцлия", "Кфар-Саба", "Раанана", "Хадера",
@@ -26,10 +21,11 @@ export const cities = [
   "Кирьят-Бялик", "Кирьят-Моцкин", "Кирьят-Ата", "Эйлат", "Модиин", "Рамат-Ган", "Гиватаим",
   "Ор-Акива", "Мигдаль-ха-Эмек", "Тират-Кармель",
 ].sort(new Intl.Collator("ru").compare).concat("Другой");
-export const photoRoles = ["portrait", "activity", "drawing", "family"] as const;
-export const statuses = { new: "Оформлен", paid: "Оплачен", in_work: "В работе", review: "На проверке", done: "Отправлен клиенту" };
+export const statuses = { new: "Оформлен", paid: "Оплачен", in_work: "В работе", review: "На проверке", done: "Отправлен клиенту", cancelled: "Отменён" };
 export const photoLimit = 15 * 1024 * 1024;
 export const preparedPhotoLimit = 3 * 1024 * 1024;
+export const maxPhotos = 6;
+export const orderPhotoPattern = /^(?:child[1-5]_1|child1_2|family|photo[1-4])\.jpg$/;
 export const bookText = /^[\p{Script=Cyrillic}0-9 .,!-]+$/u;
 export const formattedName = (name: string) => name.slice(0, 1).toLocaleUpperCase("ru") + name.slice(1).toLocaleLowerCase("ru");
 export const familyCity = (draft: Draft) => (draft.city === "Другой" ? draft.otherCity : draft.city).trim();
@@ -37,68 +33,114 @@ export function whatsappContactDigits(value: string) {
   const phone = parsePhoneNumberFromString(value, { defaultCountry: "IL", extract: false });
   return phone?.isValid() && !phone.ext ? phone.number.slice(1) : "";
 }
-export function earliestDate(now = new Date()) {
-  const local = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Jerusalem" }).format(now);
-  const day = new Date(local + "T12:00:00Z");
-  day.setUTCDate(day.getUTCDate() + 2);
-  return day.toISOString().slice(0, 10);
+export const isVowel = (letter: string) => /^[аеёиоуыэюяєіїaeiouyáéíóúäöü]$/iu.test(letter || "");
+export const isNamesake = (children: Child[], index: number) => {
+  const name = children[index].name.trim().toLowerCase();
+  return !!name && children.some((c, i) => i !== index && c.name.trim().toLowerCase() === name);
+};
+function qualifier(children: Child[], index: number) {
+  return isNamesake(children, index) ? children[index].distinction.trim() : "";
 }
-export function validateDraft(draft: Draft, step: 0 | 2, now = new Date()) {
-  const errors: Record<string, string> = {};
-  const story = (key: string, value: string, min: number, max: number) => {
-    if (value.trim().length < min || value.length > max) errors[key] = `Введите от ${min} до ${max} знаков.`;
-    else if (value && (!bookText.test(value) || /[\p{L}\d-]+\.(?:рф|рус|онлайн|сайт|дети|укр)(?=[\s.,!]|$)/iu.test(value))) errors[key] = "Подойдут русские буквы, цифры, пробел и знаки . , ! -";
-  };
-  if (step === 0) {
-    if (!draft.children.length) errors.children = "Добавьте хотя бы одного ребёнка.";
-    draft.children.forEach((child, index) => {
-      const prefix = `child-${index}-`;
-      if (!/^\p{L}{2,12}$/u.test(child.name.trim())) errors[prefix + "name"] = "Введите одно имя, от 2 до 12 букв.";
-      if (child.name_pronounce.length > 30) errors[prefix + "name_pronounce"] = "Можно ввести до 30 знаков.";
-      if (!["boy", "girl"].includes(child.gender)) errors[prefix + "gender"] = "Выберите вариант для обращения.";
-      if (!childAges.includes(String(child.age))) {
-        errors[prefix + "age"] = `Выберите возраст от ${minimumChildAge} до ${maximumChildAge} лет.`;
+export function childLabel(children: Child[], index: number) {
+  return [formattedName(children[index].name.trim()), qualifier(children, index)].filter(Boolean).join(" ");
+}
+export type PhotoSlotInfo = { file: string; kind: "portrait" | "activity" | "family" | "legacy"; label: string; hint: string };
+export function photoSlots(children: { name: string }[]): PhotoSlotInfo[] {
+  if (!children.length) return [];
+  const slots: PhotoSlotInfo[] = children.map((child, i) => ({
+    file: "child" + (i + 1) + "_1.jpg", kind: "portrait", label: "Портрет · " + (child.name || "ребёнок " + (i + 1)),
+    hint: "Вертикальный или квадратный кадр. Лицо крупно, ребёнок в кадре один.",
+  }));
+  if (children.length === 1) slots.push({ file: "child1_2.jpg", kind: "activity", label: "Любимое занятие", hint: "Вертикальное или квадратное фото ребёнка за любимым занятием." });
+  slots.push({ file: "family.jpg", kind: "family", label: "Семейное фото", hint: "Горизонтальный снимок всей семьи. Оставьте немного места вокруг лиц." });
+  return slots;
+}
+export function photoIssue(width: number, height: number, kind: PhotoSlotInfo["kind"]) {
+  if (Math.min(width, height) < 800) return "Фото слишком маленькое, выберите другое";
+  if (kind === "family" && width <= height) return "Выберите горизонтальное семейное фото.";
+  if ((kind === "portrait" || kind === "activity") && width > height) return "Выберите вертикальное или квадратное фото ребёнка.";
+  return "";
+}
+
+type Issues = Record<string, string>;
+function storyIssue(text: string, max: number, fact = false) {
+  const trimmed = text.trim();
+  if (trimmed.length < 15 || trimmed.length > max) return "Введите от 15 до " + max + " знаков.";
+  if (!bookText.test(trimmed) || /[\p{L}\d-]+\.(?:рф|рус|онлайн|сайт|дети|укр)(?=[\s.,!]|$)/iu.test(trimmed)) return "Напишите фразу по-русски, без ссылок.";
+  if (fact) {
+    const first = trimmed.toLocaleLowerCase("ru").split(/[\s,.!]+/u)[0].replace(/(?:ся|сь)$/u, "");
+    if (!/(?:л[аои]?|[еёиюяау]т|[еи]м|ишь|ешь|[иы]ть|ать|ять|[её]ть|ти|чь|с|г|рос|нёс|шёл)$/u.test(first))
+      return "Начните с действия, например «помогает маме по дому».";
+  }
+  return "";
+}
+export function validateDraft(draft: Draft, step: number): Issues {
+  const errors: Issues = {};
+  const mark = (key: string, error: string) => { if (error) errors[key] = error; };
+  if (!counts.includes(draft.children_count) || !Array.isArray(draft.children) || draft.children.length !== draft.children_count)
+    return { count: "Выберите от одного до пяти детей." };
+  if (step === 1) {
+    draft.children.forEach((child, i) => {
+      const id = "child-" + i + "-";
+      const name = child.name.trim();
+      if (!/^\p{L}{1,12}$/u.test(name)) errors[id + "name"] = "Введите имя до 12 букв.";
+      if (!Number.isInteger(child.stress) || !isVowel(Array.from(name)[child.stress])) errors[id + "stress"] = "Нажмите на ударную гласную в имени.";
+      if (isNamesake(draft.children, i)) {
+        const note = qualifier(draft.children, i);
+        if (!/^[\p{L} -]{1,24}$/u.test(note) || draft.children.some((c, j) => j !== i && c.name.trim().toLowerCase() === name.toLowerCase() && c.distinction.trim().toLowerCase() === note.toLowerCase()))
+          errors[id + "distinction"] = "Уточните, как различить детей, например «старший» или «младший».";
       }
-      story(prefix + "fact_learned", child.fact_learned, 15, 60);
-      story(prefix + "fact_kind", child.fact_kind, 0, 60);
+      if (!["boy", "girl"].includes(child.gender)) errors[id + "gender"] = "Выберите пол ребёнка.";
+      if (!childAges.includes(String(child.age))) errors[id + "age"] = "Выберите возраст от 1 до 14 лет.";
+      if (draft.children_count <= 2) mark(id + "fact_learned", storyIssue(child.fact_learned, 60, true));
+      if (draft.children_count === 1) mark(id + "fact_kind", storyIssue(child.fact_kind, 60, true));
     });
-    if (!cities.includes(draft.city) || !familyCity(draft) || (draft.city === "Другой" && familyCity(draft).length > 25)) errors.city = "Укажите город.";
-    story("parents_words", draft.parents_words, 15, 70);
-  } else {
+  }
+  if (step === 2) {
+    if (!cities.includes(draft.city) || !familyCity(draft) || familyCity(draft).length > 40) errors.city = "Укажите город.";
+    mark("parents_words", storyIssue(draft.parents_words, 70));
+    if (draft.children_count === 3) mark("shared_fact", storyIssue(draft.shared_fact, 60, true));
+  }
+  if (step === 4) {
     if (!draft.parentName.trim() || draft.parentName.length > 30) errors.parentName = "Введите имя родителя, до 30 знаков.";
-    if (typeof draft.whatsapp !== "string" || !draft.whatsapp.trim()) {
-      errors.whatsapp = "Введите номер телефона.";
-    }
-    if (draft.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.email)) errors.email = "Проверьте адрес почты.";
-    const date = new Date(draft.ready_by + "T12:00:00Z");
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.ready_by) || !Number.isFinite(+date) || date.toISOString().slice(0, 10) !== draft.ready_by || draft.ready_by < earliestDate(now)) errors.ready_by = "Выберите дату минимум через два дня.";
+    if (!whatsappContactDigits(draft.whatsapp).startsWith("972")) errors.whatsapp = "Введите израильский номер, например 050-123-4567.";
+    if (draft.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.email.trim())) errors.email = "Проверьте адрес электронной почты.";
     if (draft.consent !== true) errors.consent = "Для создания видео нужно согласие родителя.";
   }
   return errors;
 }
-
+export function allDraftIssues(draft: Draft): Issues {
+  return Object.assign({}, ...[0, 1, 2, 4].map(step => validateDraft(draft, step)));
+}
 export function orderFromDraft(draft: Draft, id: string, now: Date) {
-  const children = draft.children.map(c => ({
-    name: formattedName(c.name.trim()), name_pronounce: c.name_pronounce.trim(), gender: c.gender,
-    age: Number(c.age), fact_learned: c.fact_learned.trim(), fact_kind: c.fact_kind.trim(),
-  }));
-  const { name, name_pronounce, gender, age, fact_learned, fact_kind } = children[0];
+  const count = draft.children.length;
+  const children = draft.children.map((c, i) => {
+    const name = formattedName(c.name.trim());
+    const letters = Array.from(name);
+    letters[c.stress] = letters[c.stress].toLocaleUpperCase("ru");
+    return {
+      name: childLabel(draft.children, i), name_stress: [letters.join(""), qualifier(draft.children, i)].filter(Boolean).join(" "),
+      gender: c.gender, age: Number(c.age), photos: count === 1 ? ["child1_1.jpg", "child1_2.jpg"] : ["child" + (i + 1) + "_1.jpg"],
+      facts: count === 1 ? [c.fact_learned.trim(), c.fact_kind.trim()] : count === 2 ? [c.fact_learned.trim()] : [],
+    };
+  });
   return {
-    order_id: id, created_at: now.toISOString(), status: "new" as keyof typeof statuses,
-    child: { name, name_pronounce, gender, age }, children, city: familyCity(draft),
-    fact_learned, fact_kind, parents_words: draft.parents_words.trim(),
-    photos: { portrait: "photo1.jpg", activity: "photo2.jpg", drawing: "photo3.jpg", family: "photo4.jpg" },
-    parent: { name: draft.parentName.trim(), whatsapp: draft.whatsapp.trim(), email: draft.email.trim() },
-    ready_by: draft.ready_by, consent: true,
+    order_id: id, created_at: now.toISOString(), status: "new" as keyof typeof statuses, children_count: count, children,
+    shared_fact: count === 3 ? draft.shared_fact.trim() : "", city: familyCity(draft), parents_words: draft.parents_words.trim(),
+    family_photo: "family.jpg", parent: { name: draft.parentName.trim(), whatsapp: "+" + whatsappContactDigits(draft.whatsapp), email: draft.email.trim() },
+    consent: true,
   };
 }
-export type Order = ReturnType<typeof orderFromDraft> & { video_url?: string; payment_reported?: string };
-
-export function cropFrame(width: number, height: number, slot: number, position: number) {
-  const aspect = width / height;
-  const ratio = slot === 3 ? Math.min(16 / 9, Math.max(1.5, aspect)) : Math.min(1, Math.max(0.75, aspect));
-  const w = Math.min(width, Math.round(height * ratio));
-  const h = Math.min(height, Math.round(width / ratio));
-  const fraction = Number.isFinite(position) ? Math.max(0, Math.min(1, position / 100)) : 0.5;
-  return { width: w, height: h, left: Math.round((width - w) * fraction), top: Math.round((height - h) * fraction), ratio, cropped: w !== width || h !== height };
+type LegacyChild = { name: string; name_pronounce?: string; gender: string; age: number; fact_learned: string; fact_kind?: string };
+type NewOrder = ReturnType<typeof orderFromDraft>;
+type LegacyOrder = Omit<NewOrder,"children_count"|"children"|"family_photo"|"shared_fact"> & {
+  children: LegacyChild[]; photos: Record<string,string>; ready_by?: string;
+};
+export type Order = (NewOrder | LegacyOrder) & { video_url?: string; payment_reported?: string };
+export function orderPhotos(order: Order): PhotoSlotInfo[] {
+  if ("family_photo" in order) return photoSlots(order.children);
+  const labels = ["Портрет", "Любимое занятие", "Рисунок или поделка", "Вся семья"];
+  return ["portrait","activity","drawing","family"].map((role, i) => ({
+    file: order.photos[role], label: labels[i], kind: "legacy", hint: "",
+  }));
 }

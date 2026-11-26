@@ -1,246 +1,222 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { Check, CircleCheck, Plus, Trash2 } from "lucide-react";
-import { childAges, cities, earliestDate, formattedName, newChild, newDraft, photoRoles, validateDraft, type Child, type Draft } from "@/shared/ded-moroz";
-import { copy } from "./copy";
-import { draftKey, loadText, persistPhoto, storedPhotos, type Photo } from "./draft";
-import { apiIssue, isLocalPreview, PhotoSlot, prepareOrderPhoto } from "./Photos";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Check, CircleCheck, MessageCircle } from "lucide-react";
+import { childLabel, counts, newChild, newDraft, photoSlots, validateDraft, type Child, type Draft } from "@/shared/ded-moroz";
+import { whatsappLink } from "@/lib/whatsapp";
 import { RsvpTurnstile } from "@/components/rsvp/RsvpTurnstile";
-import "@/app/(ded-moroz)/greeting.css";
+import { draftKey, loadText, persistPhoto, storedPhotos, type Photo, type Photos } from "./draft";
+import { apiIssue, isLocalPreview, PhotoSlot } from "./Photos";
+import { ChildrenFields, FamilyFields, TextField } from "./QuizFields";
+import s from "./quiz.module.css";
 
-type Receipt = { order_id: string; ready_by: string; reported?: string };
-type FormProps =
-  | { price: number | null; staff?: undefined }
-  | { price?: undefined; staff: { onCreated: (id: string) => void; onCancel: () => void } };
-type SharedFields = Exclude<keyof Draft, "children" | "consent">;
-const emptyPhotos = () => [null, null, null, null] as (Photo | null)[];
-const dateLabel = (value: string) => new Intl.DateTimeFormat("ru", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(value + "T12:00:00Z"));
+type Receipt = { order_id: string; reported?: string };
+type FormProps = { price: number | null; staff?: undefined } | { price?: undefined; staff: { onCreated: (id: string) => void; onCancel: () => void } };
+const steps = ["Участники", "Дети", "Семья", "Фотографии", "Контакты"];
+const titles = ["Сколько планируется детей поздравить?", "Расскажите о каждом ребёнке", "Расскажите о вашей семье", "Добавьте фотографии для ролика", "Куда прислать поздравление?"];
+const anchors = ["kolichestvo", "deti", "semya", "foto", "kontakty"];
+const manyChildren = whatsappLink("Здравствуйте! Хотим заказать видеопоздравление для более чем пяти детей.");
+const receiptKey = draftKey + "-receipt";
 
-function Field({ id, label, hint, count, max, error, optional, children }: {
-  id: string; label: string; hint?: string; count?: number; max?: number; error?: string; optional?: boolean; children: ReactNode;
-}) {
-  return <div className="dm-field" data-issue={!!error}>
-    <div className="dm-label-row"><label htmlFor={id}>{label}{optional && <small> · по желанию</small>}</label>
-      {typeof count === "number" && <span aria-label={`${count} из ${max}`}>{count}/{max}</span>}</div>
-    {children}
-    {(hint || error) && <span id={id + "-help"} className={error ? "dm-error" : "dm-hint"} role={error ? "alert" : undefined}>{error || hint}</span>}
-  </div>;
+function issuesAt(draft: Draft, photos: Photos, step: number) {
+  if (step !== 3) return validateDraft(draft, step);
+  const errors: Record<string,string> = {};
+  for (const slot of photoSlots(draft.children)) if (!photos[slot.file]) errors["photo-" + slot.file] = "Выберите фотографию.";
+  return errors;
+}
+function reachable(draft: Draft, photos: Photos, step: number) {
+  for (let i = 0; i < step; i++) if (Object.keys(issuesAt(draft, photos, i)).length) return i;
+  return step;
 }
 export function OrderForm({ price, staff }: FormProps) {
   const isStaff = !!staff;
-  const [draft, setDraft] = useState<Draft>(newDraft), [photos, setPhotos] = useState(emptyPhotos);
+  const [draft, setDraft] = useState<Draft>(newDraft), [photos, setPhotos] = useState<Photos>({});
   const [step, setStep] = useState(0), [key, setKey] = useState("");
-  const [errors, setErrors] = useState<Record<string, string>>({}), [issue, setIssue] = useState("");
+  const [errors, setErrors] = useState<Record<string,string>>({}), [issue, setIssue] = useState(""), [storageNote, setStorageNote] = useState("");
   const [busyPhotos, setBusyPhotos] = useState(0), [submitting, setSubmitting] = useState(false);
-  const [receipt, setReceipt] = useState<Receipt | null>(null), [method, setMethod] = useState("Bit");
-  const [storageNote, setStorageNote] = useState("");
-  const [preview, setPreview] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState("");
-  const [verification, setVerification] = useState(0);
+  const [preview, setPreview] = useState(false), [receipt, setReceipt] = useState<Receipt | null>(null);
+  const [method, setMethod] = useState("Bit"), [token, setToken] = useState(""), [verification, setVerification] = useState(0);
+  const title = useRef<HTMLHeadingElement>(null), sending = useRef(false);
+  const Heading = isStaff ? "h2" : "h1";
+  const slots = photoSlots(draft.children.map((_, i) => ({ name: childLabel(draft.children, i) })));
   const needsVerification = !isStaff && !preview;
-  const panel = useRef<HTMLDivElement>(null), sending = useRef(false);
-  const formBody = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     let active = true;
     async function restore() {
-      if (isStaff) {
-        // Each manual order starts with a fresh family and never touches the customer draft.
-        setKey(crypto.randomUUID());
-        setPreview(isLocalPreview());
-        return;
-      }
-      const saved = loadText();
-      const images = await (saved.restorePhotos ? storedPhotos() : persistPhoto(null).then(emptyPhotos)).catch(() => null);
-      if (!active) return;
       setPreview(isLocalPreview());
-      if (images) setPhotos(images); else setStorageNote("Браузер не смог сохранить фотографии для следующего посещения.");
-      setDraft(saved.data); setStep(saved.step); setKey(saved.key);
-      try { const last = sessionStorage.getItem(draftKey + "-receipt"); if (last) setReceipt(JSON.parse(last)); } catch { /* In-memory mode. */ }
+      if (isStaff) { setKey(crypto.randomUUID()); return; }
+      const saved = loadText();
+      let restored: Photos = {};
+      if (saved.legacy) setStorageNote("Сохранили текст вашей анкеты. Выберите число детей, проверьте ударения и добавьте фотографии.");
+      else if (saved.data.children_count) {
+        try { restored = await storedPhotos(saved.key); }
+        catch { if (active) setStorageNote("Фотографии не удалось восстановить. Добавьте их ещё раз."); }
+      }
+      if (!active) return;
+      const next = reachable(saved.data, restored, saved.step);
+      setDraft(saved.data); setPhotos(restored); setStep(next); setKey(saved.key);
+      try {
+        const last = JSON.parse(sessionStorage.getItem(receiptKey) || "null");
+        if (last?.order_id) setReceipt(last);
+        window.history.replaceState({ ...window.history.state, greetingKey: saved.key, greetingStep: next }, "", "#" + anchors[next]);
+      } catch { /* The form also works without browser storage. */ }
     }
     void restore(); return () => { active = false; };
   }, [isStaff]);
   useEffect(() => {
+    if (!isStaff && key && !receipt) {
+      try { localStorage.setItem(draftKey, JSON.stringify({ version: 2, data: draft, step, key, savedAt: Date.now() })); }
+      catch { /* Keep the draft in memory. */ }
+    }
+  }, [isStaff, key, draft, step, receipt]);
+  useEffect(() => {
     if (isStaff || !key || receipt) return;
-    try { localStorage.setItem(draftKey, JSON.stringify({ data: draft, step, key, savedAt: Date.now() })); }
-    catch { /* The form also works in memory. */ }
-  }, [draft, step, key, receipt, isStaff]);
-  const focusPanel = () => requestAnimationFrame(() => {
-    formBody.current?.scrollTo({ top: 0 });
-    panel.current?.focus({ preventScroll: true });
-    panel.current?.scrollIntoView({ block: "start" });
-  });
-  const go = (index: number) => { setErrors({}); setIssue(""); setStep(index); focusPanel(); };
-  const mark = (id: string) => setErrors(old => { if (!(id in old)) return old; const next = { ...old }; delete next[id]; return next; });
-  const update = (field: SharedFields, value: string) => { setDraft(old => ({ ...old, [field]: value })); mark(field === "otherCity" ? "city" : field); };
-  const editChild = (index: number, field: keyof Child, value: string) => {
-    setDraft(old => ({ ...old, children: old.children.map((c, i) => i === index ? { ...c, [field]: value } : c) }));
-    mark(`child-${index}-${field}`);
-  };
-  const updatePhoto = (index: number, photo: Photo) => {
-    setPhotos(old => old.map((p, i) => i === index ? photo : p)); mark("photo-" + index);
-    if (!isStaff) void persistPhoto(index, photo).catch(() => setStorageNote("Фото открыто, но браузер не смог сохранить его в черновике."));
-  };
-  const checkPhotos = () => Object.fromEntries(photos.flatMap((p, i) => p ? [] : [["photo-" + i, "Выберите фотографию."]]));
-  function highlight(found: Record<string, string>, target: number) {
-    setStep(target); setErrors(found);
-    const first = Object.keys(found)[0];
-    requestAnimationFrame(() => { const el = document.getElementById(first.startsWith("photo-") ? first.replace("photo-", "photo-button-") : first); el?.focus(); el?.scrollIntoView({ block: "center" }); });
+    const back = (event: PopStateEvent) => {
+      if (event.state?.greetingKey !== key) return;
+      const next = reachable(draft, photos, Math.max(0, Math.min(4, Number(event.state.greetingStep) || 0)));
+      setErrors({}); setIssue(""); setStep(next);
+      requestAnimationFrame(() => title.current?.focus());
+    };
+    window.addEventListener("popstate", back);
+    return () => window.removeEventListener("popstate", back);
+  }, [isStaff, key, draft, photos, receipt]);
+
+  function go(next: number) {
+    setErrors({}); setIssue(""); setStep(next);
+    if (!isStaff) {
+      const state = { ...window.history.state, greetingKey: key, greetingStep: next };
+      if (next < step) window.history.replaceState(state, "", "#" + anchors[next]);
+      else window.history.pushState(state, "", "#" + anchors[next]);
+    }
+    requestAnimationFrame(() => { title.current?.focus({ preventScroll: true }); title.current?.scrollIntoView({ block: "start" }); });
+  }
+  function change(patch: Partial<Draft>) {
+    setDraft(old => ({ ...old, ...patch })); setErrors({});
+  }
+  function changeCount(count: number) {
+    if (!key) return;
+    const children = Array.from({ length: count }, (_, i) => draft.children[i] || newChild());
+    const active = new Set(photoSlots(children).map(slot => slot.file));
+    const keep: Photos = {};
+    for (const [file, photo] of Object.entries(photos)) {
+      if (active.has(file)) keep[file] = photo;
+      else if (!isStaff) void persistPhoto(key, file).catch(() => {});
+    }
+    setPhotos(keep); change({ children_count: count, children }); go(1);
+  }
+  function changeChild(index: number, patch: Partial<Child>) {
+    setDraft(old => ({ ...old, children: old.children.map((c, i) => i === index ? { ...c, ...patch } : c) }));
+    setErrors({});
+  }
+  function addPhoto(file: string, photo: Photo) {
+    setPhotos(old => ({ ...old, [file]: photo }));
+    setErrors(old => { const next = { ...old }; delete next["photo-" + file]; return next; });
+    if (!isStaff) void persistPhoto(key, file, photo).catch(() => setStorageNote("Фото добавлено. Держите эту страницу открытой до отправки."));
   }
   function keepReceipt(next: Receipt) {
     setReceipt(next);
-    try { sessionStorage.setItem(draftKey + "-receipt", JSON.stringify(next)); } catch { /* In-memory mode. */ }
+    try { sessionStorage.setItem(receiptKey, JSON.stringify(next)); } catch { /* In-memory mode. */ }
   }
   async function submit(event: FormEvent) {
-    event.preventDefault(); if (sending.current || busyPhotos) return;
+    event.preventDefault();
+    if (sending.current || busyPhotos || !key || !step) return;
     setIssue("");
-    const checks = [validateDraft(draft, 0), checkPhotos(), validateDraft(draft, 2)];
-    for (let i = 0; i <= step; i++) if (Object.keys(checks[i]).length) { highlight(checks[i], i); return; }
-    if (step < 2) { go(step + 1); return; }
-    if (needsVerification && !turnstileToken) return;
-    sending.current = true; setSubmitting(true);
-    try {
-      const form = new FormData();
-      form.set("draft", JSON.stringify(draft)); form.set("key", key);
-      if (needsVerification) form.set("turnstileToken", turnstileToken);
-      for (const [i, photo] of photos.entries()) {
-        if (!photo) continue;
-        const jpeg = preview ? photo.blob : await prepareOrderPhoto(photo, i);
-        form.set(photoRoles[i], jpeg, `photo${i + 1}.jpg`);
-        if (preview) form.set(photoRoles[i] + "_position", String(photo.position));
-      }
-      const endpoint = isStaff ? "/api/ded-moroz/staff/orders" : "/api/ded-moroz/orders";
-      const res = await fetch(endpoint, { method: "POST", body: form });
-      if (!res.ok) throw new Error(await apiIssue(res));
-      const result: Receipt = await res.json();
-      if (staff) {
-        staff.onCreated(result.order_id);
+    for (let i = 0; i <= step; i++) {
+      const found = issuesAt(draft, photos, i), first = Object.keys(found)[0];
+      if (first) {
+        if (i !== step) go(i);
+        setErrors(found);
+        requestAnimationFrame(() => document.getElementById(first)?.focus());
         return;
       }
-      keepReceipt(result); focusPanel();
+    }
+    if (step < 4) { go(step + 1); return; }
+    if (needsVerification && !token) return;
+    sending.current = true; setSubmitting(true);
+    try {
+      const body = new FormData();
+      body.set("key", key); body.set("draft", JSON.stringify(draft));
+      if (needsVerification) body.set("turnstileToken", token);
+      for (const slot of slots) body.set(slot.file, photos[slot.file].blob, slot.file);
+      const res = await fetch(isStaff ? "/api/ded-moroz/staff/orders" : "/api/ded-moroz/orders", { method: "POST", body });
+      if (!res.ok) throw new Error(await apiIssue(res));
+      const result: Receipt = await res.json();
+      if (staff) { staff.onCreated(result.order_id); return; }
+      keepReceipt(result);
       try { localStorage.removeItem(draftKey); } catch { /* In-memory mode. */ }
-      await persistPhoto(null).catch(() => {});
+      await persistPhoto(key).catch(() => {});
+      window.scrollTo({ top: 0 }); requestAnimationFrame(() => title.current?.focus());
     } catch (e) {
       setIssue(e instanceof Error ? e.message : "Не удалось оформить заказ.");
-      if (needsVerification) { setTurnstileToken(""); setVerification(value => value + 1); }
-    }
-    finally { sending.current = false; setSubmitting(false); }
+      if (needsVerification) { setToken(""); setVerification(v => v + 1); }
+    } finally { sending.current = false; setSubmitting(false); }
   }
   async function reportPayment() {
     if (!receipt || sending.current) return;
     sending.current = true; setSubmitting(true); setIssue("");
     try {
-      const res = await fetch(`/api/ded-moroz/orders/${receipt.order_id}/payment`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ method }) });
+      const res = await fetch("/api/ded-moroz/orders/" + receipt.order_id + "/payment", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ method }),
+      });
       if (!res.ok) throw new Error(await apiIssue(res));
       keepReceipt({ ...receipt, reported: method });
     } catch (e) { setIssue(e instanceof Error ? e.message : "Попробуйте ещё раз."); }
     finally { sending.current = false; setSubmitting(false); }
   }
   function restart() {
-    try { sessionStorage.removeItem(draftKey + "-receipt"); } catch { /* In-memory mode. */ }
-    setDraft(newDraft()); setPhotos(emptyPhotos()); setKey(crypto.randomUUID()); setReceipt(null); go(0);
+    try { sessionStorage.removeItem(receiptKey); } catch { /* In-memory mode. */ }
+    const fresh = crypto.randomUUID();
+    setKey(fresh); setDraft(newDraft()); setPhotos({}); setStep(0); setReceipt(null); setIssue(""); setErrors({}); setStorageNote(""); setToken(""); setVerification(v => v + 1);
+    if (!isStaff) window.history.replaceState({ ...window.history.state, greetingKey: fresh, greetingStep: 0 }, "", "#" + anchors[0]);
   }
-  const familyText = (field: SharedFields, label: string, max?: number, placeholder?: string, type = "text", optional = false) =>
-    <Field id={field} label={label} max={max} count={max ? draft[field].length : undefined} error={errors[field]} optional={optional}>
-      <input id={field} value={draft[field]} maxLength={max} placeholder={placeholder} type={type} aria-invalid={!!errors[field]}
-        aria-describedby={errors[field] ? field + "-help" : undefined} onChange={e => update(field, e.target.value)} />
-    </Field>;
-  return <div className="dm-panel" ref={panel} tabIndex={-1}>
-    {receipt ? <div className="dm-receipt">
-      <span className="dm-confirm-icon"><CircleCheck size={34} /></span><h3>Спасибо, заказ принят!</h3>
-      <p>Номер заказа <strong>{receipt.order_id}</strong>.</p>
-      <div className="dm-summary-line"><span>Желаемая дата</span><b>{dateLabel(receipt.ready_by)}</b></div>
-      <h4>Оплата {price ? `· ${price} ₪` : ""}</h4>
-      {!preview ? <p>Свяжемся с вами по указанному телефону и согласуем оплату и дату.</p> : receipt.reported ? <p role="status">Отметка об оплате через {receipt.reported} сохранена. Администратор подтвердит её вручную.</p> : <>
-        <p>Это проверка оплаты. Переводить деньги не нужно.</p>
-        <div className="dm-choice">{["Bit", "PayBox"].map(item => <button type="button" key={item} aria-pressed={method === item} onClick={() => setMethod(item)}>{item}</button>)}</div>
-        <button type="button" className="dm-btn dm-green" disabled={submitting} onClick={() => void reportPayment()}>Я оплатил · демо</button>
-      </>}
-      {issue && <p className="dm-error" role="alert">{issue}</p>}
-      <button className="dm-text-btn" type="button" onClick={restart}>Оформить ещё один заказ</button>
-    </div> : <>
-      <ol className="dm-steps" aria-label="Шаги оформления">{copy.steps.map((text, i) => <li key={text} data-state={i === step ? "current" : i < step ? "done" : "next"} aria-current={i === step ? "step" : undefined}>
-        <button type="button" disabled={i >= step || !!busyPhotos || submitting} onClick={() => go(i)}><span>{i < step ? <Check size={15} /> : i + 1}</span>{isStaff && i === 2 ? "Контакты" : text}</button>
-      </li>)}</ol>
-      <form className="dm-form" onSubmit={submit} noValidate>
-        <div className="dm-form-body" ref={formBody}>
-          <h3>{isStaff && step === 2 ? "Контакты родителя" : copy.stepTitles[step]}</h3>
-          <p className="dm-form-note">{isStaff && step === 2 ? "Укажите, куда отправить готовое видео и к какой дате оно нужно семье." : copy.stepNotes[step]}</p>
-          {step === 0 && <>
-            {draft.children.map((child, i) => {
-              const fieldId = (field: keyof Child) => `child-${i}-${field}`;
-              const field = (name: keyof Child, max: number, example: string, optional = false, multiline = false) => {
-                const id = fieldId(name);
-                const props = { id, value: child[name], maxLength: max, placeholder: example, "aria-invalid": !!errors[id],
-                  "aria-describedby": errors[id] ? id + "-help" : undefined,
-                  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => editChild(i, name, e.target.value) };
-                return <Field id={id} label={copy.fields[name]} count={child[name].length} max={max} error={errors[id]} optional={optional}>
-                  {multiline ? <textarea rows={2} {...props} /> : <input {...props} onBlur={() => {
-                    if (name !== "name") return;
-                    const formatted = formattedName(child.name.trim());
-                    if (formatted !== child.name) editChild(i, name, formatted);
-                  }} />}
-                </Field>;
-              };
-              return <fieldset className="dm-child" key={i} aria-label={`Ребёнок ${i + 1}`}>
-                {draft.children.length > 1 && <div className="dm-child-tools">
-                  <b>Ребёнок {i + 1}</b>
-                  <button type="button" className="dm-remove" aria-label={`Убрать ребёнка ${i + 1}`} onClick={() => { setDraft(d => ({ ...d, children: d.children.filter((_, n) => i !== n) })); setErrors({}); }}><Trash2 size={15} /> Убрать</button>
-                </div>}
-                <div className="dm-two">{field("name", 12, "Например, Соня")}{field("name_pronounce", 30, "Например, ЛиОр", true)}</div>
-                <div className="dm-two">
-                  <Field id={fieldId("gender")} label={copy.fields.gender} error={errors[fieldId("gender")]}>
-                    <select id={fieldId("gender")} value={child.gender} onChange={e => editChild(i, "gender", e.target.value)}>
-                      <option value="">Выберите</option><option value="boy">Мальчик</option><option value="girl">Девочка</option></select></Field>
-                  <Field id={fieldId("age")} label={copy.fields.age} error={errors[fieldId("age")]}>
-                    <select id={fieldId("age")} value={child.age} onChange={e => editChild(i, "age", e.target.value)}>
-                      <option value="">Сколько лет?</option>
-                      {childAges.map(age => <option value={age} key={age}>{age === "1" ? "1 год" : age}</option>)}
-                    </select>
-                  </Field>
-                </div>
-                <div className="dm-two">
-                  {field("fact_learned", 60, "Например, научилась кататься на велосипеде", false, true)}
-                  {field("fact_kind", 60, "Например, помогает заботиться о младшей сестре", true, true)}
-                </div>
-              </fieldset>;
-            })}
-            <button type="button" className="dm-add" onClick={() => { const index = draft.children.length; setDraft(d => ({ ...d, children: [...d.children, newChild()] })); requestAnimationFrame(() => document.getElementById(`child-${index}-name`)?.focus()); }}><Plus size={17} />Добавить ребёнка</button>
-            <div className="dm-family-fields">
-              <div>
-                <Field id="city" label={copy.fields.city} error={errors.city}><select id="city" value={draft.city} onChange={e => update("city", e.target.value)}><option value="">Выберите город</option>{cities.map(c => <option key={c}>{c}</option>)}</select></Field>
-                {draft.city === "Другой" && familyText("otherCity", copy.fields.otherCity, 25, "Ваш город")}
-              </div>
-              <Field id="parents_words" label={copy.fields.parents_words} max={70} count={draft.parents_words.length} error={errors.parents_words}>
-                <textarea id="parents_words" rows={2} maxLength={70} value={draft.parents_words} placeholder="Например, мы тобой очень гордимся и любим тебя!" onChange={e => update("parents_words", e.target.value)} />
-              </Field></div>
-          </>}
-          {step === 1 && <div className="dm-photo-grid">{photos.map((photo, i) => <PhotoSlot key={i} index={i} value={photo} error={errors["photo-" + i]} onChange={p => updatePhoto(i, p)} onBusy={delta => setBusyPhotos(x => x + delta)} />)}</div>}
-          {step === 2 && <div className="dm-contact">
-            <div className="dm-summary-line"><span>Для кого</span><b>{draft.children.map(c => formattedName(c.name)).join(", ")}</b></div>
-            <div className="dm-two">
-              {familyText("parentName", isStaff ? "Имя родителя" : copy.fields.parentName, 30, "Имя родителя")}
-              {familyText("whatsapp", copy.fields.whatsapp, undefined, "Номер в любом формате", "tel")}
-            </div>
-            <div className="dm-two">
-              {familyText("email", copy.fields.email, undefined, "name@example.com", "email", true)}
-              <Field id="ready_by" label={copy.fields.ready_by} error={errors.ready_by} hint={isStaff ? "Можно выбрать дату начиная с послезавтра." : "Выберите желаемую дату начиная с послезавтра. Точную дату подтвердим в WhatsApp."}>
-                <input id="ready_by" type="date" min={earliestDate()} value={draft.ready_by} aria-describedby="ready_by-help" aria-invalid={!!errors.ready_by} onChange={e => update("ready_by", e.target.value)} />
-              </Field>
-            </div>
-            <label className="dm-consent"><input id="consent" type="checkbox" checked={draft.consent} onChange={e => { const checked = e.target.checked; setDraft(d => ({ ...d, consent: checked })); mark("consent"); }} />{isStaff ? "Родитель дал согласие на обработку фотографий и данных детей для создания этого видео." : "Соглашаюсь на обработку фотографий и данных детей для создания этого видео."}</label>
-            {errors.consent && <span className="dm-error" role="alert">{errors.consent}</span>}
-            {needsVerification && <RsvpTurnstile locale="ru" action="ded_moroz_order" resetKey={verification} onTokenChange={setTurnstileToken} />}
-          </div>}
-          {storageNote && <p className="dm-small-note" role="status">{storageNote}</p>}
-          {issue && <p role="alert" className="dm-error">{issue}</p>}
-        </div>
-        <div className="dm-form-actions">
-          {staff && <button type="button" className="dm-back" disabled={submitting} onClick={staff.onCancel}>Отменить</button>}
-          {step > 0 && <button type="button" className="dm-back" disabled={submitting || !!busyPhotos} onClick={() => go(step - 1)}>Назад</button>}
-          <button type="submit" className="dm-btn dm-green" disabled={!key || !!busyPhotos || submitting || (step === 2 && needsVerification && !turnstileToken)}>{submitting ? "Сохраняем заказ…" : ["Перейти к фотографиям", "Перейти к контактам", isStaff ? "Создать заказ" : "Оформить заказ"][step]}</button>
-        </div>
-      </form>
+  if (receipt) return <section className={s.card + " " + s.receipt}>
+    <CircleCheck size={36} aria-hidden /><Heading ref={title} tabIndex={-1}>Спасибо, заказ принят!</Heading>
+    <p>Номер заказа <strong>{receipt.order_id}</strong></p><p>Срок изготовления — <strong>1–5 рабочих дней</strong>.</p>
+    <h3>Оплата {price ? "· " + price + " ₪" : ""}</h3>
+    {!preview ? <p>Свяжемся с вами в WhatsApp и согласуем оплату.</p> : receipt.reported ? <p role="status">Отметка об оплате через {receipt.reported} сохранена.</p> : <>
+      <p>Демонстрация оплаты. Переводить деньги не нужно.</p>
+      <div className="dm-choice">{["Bit", "PayBox"].map(name => <button key={name} aria-pressed={name === method} onClick={() => setMethod(name)}>{name}</button>)}</div>
+      <button className={s.primary} disabled={submitting} onClick={() => void reportPayment()}>Я оплатил · демо</button>
     </>}
-  </div>;
+    {issue && <p role="alert" className="dm-error">{issue}</p>}
+    <button className={s.back} onClick={restart}>Оформить ещё один заказ</button>
+  </section>;
+  return <section className={s.card} aria-labelledby="quiz-question">
+    <div className={s.progress}><span>Шаг {step + 1} из {steps.length}</span><b>{steps[step]}</b></div>
+    <div className={s.progressBars} aria-hidden>{steps.map((part, i) => <span key={part} data-complete={i <= step} />)}</div>
+    <Heading id="quiz-question" tabIndex={-1} ref={title}>{titles[step]}</Heading>
+    {storageNote && <p className={s.note} role="status">{storageNote}</p>}
+    {step === 0 ? <>
+      <div className={s.counts} role="group" aria-label="Количество детей" id="count">{counts.map(n =>
+        <button type="button" disabled={!key} key={n} aria-label={n + (n === 1 ? " ребёнок" : n === 5 ? " детей" : " ребёнка")} aria-pressed={draft.children_count === n} onClick={() => changeCount(n)}><strong>{n}</strong><span>{n === 1 ? "ребёнок" : n === 5 ? "детей" : "ребёнка"}</span></button>
+      )}</div>
+      <p className={s.more}><MessageCircle size={17} aria-hidden /><span>Если детей больше пяти, <a href={manyChildren} target="_blank" rel="noopener noreferrer">напишите нам в WhatsApp</a>.</span></p>
+      {staff && <button type="button" className={s.back} onClick={staff.onCancel}>Отменить</button>}
+    </> : <form onSubmit={submit} noValidate>
+      {step === 1 && <ChildrenFields childrenData={draft.children} errors={errors} edit={changeChild} />}
+      {step === 2 && <FamilyFields draft={draft} errors={errors} change={change} />}
+      {step === 3 && <>
+        <p className={s.note}>По короткой стороне — от 800 пикселей. JPG, PNG или HEIC, до 15 МБ за снимок.</p>
+        <div className={s.photos}>{slots.map(slot => <PhotoSlot key={slot.file} slot={slot} value={photos[slot.file]} error={errors["photo-" + slot.file]} onChange={p => addPhoto(slot.file, p)} onBusy={delta => setBusyPhotos(n => n + delta)} />)}</div>
+      </>}
+      {step === 4 && <>
+        <p className={s.note}>Видеопоздравление получит родитель в WhatsApp.</p>
+        <div className={s.two}>
+          <TextField id="parentName" label={isStaff ? "Имя родителя" : "Ваше имя"} value={draft.parentName} max={30} autoComplete="given-name" error={errors.parentName} onChange={parentName => change({ parentName })} />
+          <TextField id="whatsapp" type="tel" label="WhatsApp родителя" value={draft.whatsapp} autoComplete="tel" placeholder="050-123-4567" error={errors.whatsapp} onChange={whatsapp => change({ whatsapp })} />
+        </div>
+        <TextField id="email" type="email" label="Электронная почта · по желанию" value={draft.email} autoComplete="email" error={errors.email} onChange={email => change({ email })} />
+        <label className="dm-consent"><input id="consent" type="checkbox" checked={draft.consent} onChange={e => change({ consent: e.target.checked })} />{isStaff ? "Родитель дал согласие на обработку данных и фотографий для создания видео." : "Соглашаюсь на обработку данных и фотографий детей для создания видео."}</label>
+        {errors.consent && <span role="alert" className="dm-error">{errors.consent}</span>}
+        {needsVerification && <RsvpTurnstile locale="ru" action="ded_moroz_order" resetKey={verification} onTokenChange={setToken} />}
+      </>}
+      {issue && <p role="alert" className="dm-error">{issue}</p>}
+      <div className={s.actions}>
+        <button type="button" className={s.back} disabled={!!busyPhotos || submitting} onClick={() => go(step - 1)}>Назад</button>
+        {staff && <button type="button" className={s.cancel} disabled={!!busyPhotos || submitting} onClick={staff.onCancel}>Отменить</button>}
+        <button className={s.primary} type="submit" disabled={!key || !!busyPhotos || submitting || (step === 4 && needsVerification && !token)}>{submitting ? "Сохраняем…" : step === 4 ? <><Check size={17} aria-hidden />Оформить заказ</> : "Дальше"}</button>
+      </div>
+    </form>}
+  </section>;
 }

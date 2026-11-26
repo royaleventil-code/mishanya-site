@@ -1,15 +1,13 @@
-import { orderFromDraft } from "./ded-moroz.ts";
+import { orderFromDraft, orderPhotoPattern, orderPhotos } from "./ded-moroz.ts";
 import { decryptPayload, encryptPayload, phoneHash } from "./gift-core.js";
 
-export const orderPhotoPattern = /^photo[1-4]\.jpg$/;
-export const orderPhotoFiles = ["photo1.jpg", "photo2.jpg", "photo3.jpg", "photo4.jpg"];
 const hour = 3_600_000;
 const photoPartBytes = 192 * 1024;
 const encoder = new TextEncoder();
 const orderCodePattern = /^DM-(\d{4})-(\d{4,12})$/;
 const storageKey = env => "ded-moroz:" + env.GIFT_DATA_SECRET;
 const code = row => "DM-" + row.season_year + "-" + String(row.id).padStart(4, "0");
-export const orderReceipt = row => ({ order_id: code(row), ready_by: row.ready_by });
+export const orderReceipt = row => ({ order_id: code(row), ...(row.ready_by ? { ready_by: row.ready_by } : {}) });
 export function orderError(message, status = 400) {
   return Object.assign(new Error(message), { status });
 }
@@ -52,7 +50,8 @@ export async function saveOrder(env, draft, key, files, now = new Date()) {
   if (existing) return existing;
 
   const season = new Intl.DateTimeFormat("en", { year: "numeric", timeZone: "Asia/Jerusalem" }).format(now);
-  const payload = await encryptPayload(orderFromDraft(draft, "", now), storageKey(env));
+  const order = orderFromDraft(draft, "", now);
+  const payload = await encryptPayload(order, storageKey(env));
   const db = env.GIFT_DB;
   const upload = crypto.randomUUID();
   const cipher = await photoKey(env);
@@ -60,14 +59,16 @@ export async function saveOrder(env, draft, key, files, now = new Date()) {
     .bind(upload, +now + 24 * hour).run();
   const forgetPending = db.prepare("DELETE FROM dm_photo_uploads WHERE upload_id = ? AND expires_at IS NOT NULL").bind(upload);
   try {
-    const saved = await Promise.allSettled(files.map((file, i) => writePhoto(db, cipher, upload, orderPhotoFiles[i], file)));
+    const slots = orderPhotos(order);
+    if (files.length !== slots.length) throw orderError("Проверьте комплект фотографий.");
+    const saved = await Promise.allSettled(files.map((file, i) => writePhoto(db, cipher, upload, slots[i].file, file)));
     if (saved.some(result => result.status === "rejected")) throw orderError("Не удалось сохранить фотографии. Попробуйте ещё раз.", 503);
     // Only the winner for a request key publishes an order and keeps its photo upload.
     await db.batch([
       db.prepare(
         "INSERT INTO dm_orders (request_key, season_year, created_at, ready_by, child_count, payload_ciphertext, photo_prefix, telegram_next_at) " +
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(request_key) DO NOTHING",
-      ).bind(key, season, now.toISOString(), draft.ready_by, draft.children.length, payload, upload, +now),
+      ).bind(key, season, now.toISOString(), "", order.children.length, payload, upload, +now),
       db.prepare(
         "UPDATE dm_photo_uploads SET expires_at = NULL WHERE upload_id = ? AND EXISTS (SELECT 1 FROM dm_orders WHERE photo_prefix = ?)",
       ).bind(upload, upload),
@@ -85,7 +86,7 @@ export async function saveOrder(env, draft, key, files, now = new Date()) {
   throw orderError("Не удалось сохранить заказ. Попробуйте ещё раз.", 503);
 }
 
-async function toOrder(env, row) {
+export async function toOrder(env, row) {
   const stored = await decryptPayload(row.payload_ciphertext, storageKey(env));
   return { ...stored, order_id: code(row), status: row.status, video_url: row.video_url || undefined };
 }
@@ -129,10 +130,10 @@ export async function getOrderPhoto(env, row, name) {
 }
 
 export async function orderArchiveEntries(env, row) {
-  const files = await Promise.all(orderPhotoFiles.map(async name => {
-    const photo = await getOrderPhoto(env, row, name);
-    return [name, new Uint8Array(photo)];
-  }));
   const order = await toOrder(env, row);
+  const files = await Promise.all(orderPhotos(order).map(async slot => {
+    const photo = await getOrderPhoto(env, row, slot.file);
+    return [slot.file, new Uint8Array(photo)];
+  }));
   return [["order.json", new TextEncoder().encode(JSON.stringify(order, null, 2))], ...files];
 }
