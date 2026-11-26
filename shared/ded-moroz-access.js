@@ -35,7 +35,7 @@ export async function orderAccessRole(request, env, fetchKeys = fetch, now = Dat
     const { alg, kid } = read(header);
     const { type, iss, aud, exp, nbf, email, common_name: clientId, sub } = read(claims);
     if (alg !== "RS256" || typeof kid !== "string" || type !== "app" || iss !== issuer ||
-      !Array.isArray(aud) || !aud.includes(audience) ||
+      !(Array.isArray(aud) ? aud.includes(audience) : aud === audience) ||
       !Number.isFinite(exp) || exp <= now / 1000 ||
       (nbf !== undefined && (!Number.isFinite(nbf) || nbf > now / 1000))) return null;
 
