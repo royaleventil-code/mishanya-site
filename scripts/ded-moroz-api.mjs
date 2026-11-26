@@ -67,7 +67,8 @@ export function greetingRequestHandler(store, servePage, notifyPendingOrders) {
           photos.push(Buffer.from(await file.arrayBuffer()));
           positions.push(Number(form.get(role + "_position") ?? 50));
         }
-        const order = await store.create(draft, token, photos, positions);
+        const staff = url.pathname === "/api/ded-moroz/staff/orders";
+        const order = await store.create(draft, token, photos, positions, { staff });
         void notifyPendingOrders?.();
         return sendJson(res, 201, { order_id: order.order_id, ready_by: order.ready_by });
       }

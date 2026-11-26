@@ -10,6 +10,9 @@ import { RsvpTurnstile } from "@/components/rsvp/RsvpTurnstile";
 import "@/app/(ded-moroz)/greeting.css";
 
 type Receipt = { order_id: string; ready_by: string; reported?: string };
+type FormProps =
+  | { price: number | null; staff?: undefined }
+  | { price?: undefined; staff: { onCreated: (id: string) => void; onCancel: () => void } };
 type SharedFields = Exclude<keyof Draft, "children" | "consent">;
 const emptyPhotos = () => [null, null, null, null] as (Photo | null)[];
 const dateLabel = (value: string) => new Intl.DateTimeFormat("ru", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(value + "T12:00:00Z"));
@@ -24,7 +27,8 @@ function Field({ id, label, hint, count, max, error, optional, children }: {
     {(hint || error) && <span id={id + "-help"} className={error ? "dm-error" : "dm-hint"} role={error ? "alert" : undefined}>{error || hint}</span>}
   </div>;
 }
-export function OrderForm({ price }: { price: number | null }) {
+export function OrderForm({ price, staff }: FormProps) {
+  const isStaff = !!staff;
   const [draft, setDraft] = useState<Draft>(newDraft), [photos, setPhotos] = useState(emptyPhotos);
   const [step, setStep] = useState(0), [key, setKey] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({}), [issue, setIssue] = useState("");
@@ -34,11 +38,18 @@ export function OrderForm({ price }: { price: number | null }) {
   const [preview, setPreview] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
   const [verification, setVerification] = useState(0);
+  const needsVerification = !isStaff && !preview;
   const panel = useRef<HTMLDivElement>(null), sending = useRef(false);
   const formBody = useRef<HTMLDivElement>(null);
   useEffect(() => {
     let active = true;
     async function restore() {
+      if (isStaff) {
+        // Each manual order starts with a fresh family and never touches the customer draft.
+        setKey(crypto.randomUUID());
+        setPreview(isLocalPreview());
+        return;
+      }
       const saved = loadText();
       const images = await (saved.restorePhotos ? storedPhotos() : persistPhoto(null).then(emptyPhotos)).catch(() => null);
       if (!active) return;
@@ -48,12 +59,12 @@ export function OrderForm({ price }: { price: number | null }) {
       try { const last = sessionStorage.getItem(draftKey + "-receipt"); if (last) setReceipt(JSON.parse(last)); } catch { /* In-memory mode. */ }
     }
     void restore(); return () => { active = false; };
-  }, []);
+  }, [isStaff]);
   useEffect(() => {
-    if (!key || receipt) return;
+    if (isStaff || !key || receipt) return;
     try { localStorage.setItem(draftKey, JSON.stringify({ data: draft, step, key, savedAt: Date.now() })); }
     catch { /* The form also works in memory. */ }
-  }, [draft, step, key, receipt]);
+  }, [draft, step, key, receipt, isStaff]);
   const focusPanel = () => requestAnimationFrame(() => {
     formBody.current?.scrollTo({ top: 0 });
     panel.current?.focus({ preventScroll: true });
@@ -68,7 +79,7 @@ export function OrderForm({ price }: { price: number | null }) {
   };
   const updatePhoto = (index: number, photo: Photo) => {
     setPhotos(old => old.map((p, i) => i === index ? photo : p)); mark("photo-" + index);
-    void persistPhoto(index, photo).catch(() => setStorageNote("Фото открыто, но браузер не смог сохранить его в черновике."));
+    if (!isStaff) void persistPhoto(index, photo).catch(() => setStorageNote("Фото открыто, но браузер не смог сохранить его в черновике."));
   };
   const checkPhotos = () => Object.fromEntries(photos.flatMap((p, i) => p ? [] : [["photo-" + i, "Выберите фотографию."]]));
   function highlight(found: Record<string, string>, target: number) {
@@ -86,27 +97,32 @@ export function OrderForm({ price }: { price: number | null }) {
     const checks = [validateDraft(draft, 0), checkPhotos(), validateDraft(draft, 2)];
     for (let i = 0; i <= step; i++) if (Object.keys(checks[i]).length) { highlight(checks[i], i); return; }
     if (step < 2) { go(step + 1); return; }
-    if (!preview && !turnstileToken) return;
+    if (needsVerification && !turnstileToken) return;
     sending.current = true; setSubmitting(true);
     try {
       const form = new FormData();
       form.set("draft", JSON.stringify(draft)); form.set("key", key);
-      if (!preview) form.set("turnstileToken", turnstileToken);
+      if (needsVerification) form.set("turnstileToken", turnstileToken);
       for (const [i, photo] of photos.entries()) {
         if (!photo) continue;
         const jpeg = preview ? photo.blob : await prepareOrderPhoto(photo, i);
         form.set(photoRoles[i], jpeg, `photo${i + 1}.jpg`);
         if (preview) form.set(photoRoles[i] + "_position", String(photo.position));
       }
-      const res = await fetch("/api/ded-moroz/orders", { method: "POST", body: form });
+      const endpoint = isStaff ? "/api/ded-moroz/staff/orders" : "/api/ded-moroz/orders";
+      const res = await fetch(endpoint, { method: "POST", body: form });
       if (!res.ok) throw new Error(await apiIssue(res));
       const result: Receipt = await res.json();
+      if (staff) {
+        staff.onCreated(result.order_id);
+        return;
+      }
       keepReceipt(result); focusPanel();
       try { localStorage.removeItem(draftKey); } catch { /* In-memory mode. */ }
       await persistPhoto(null).catch(() => {});
     } catch (e) {
       setIssue(e instanceof Error ? e.message : "Не удалось оформить заказ.");
-      if (!preview) { setTurnstileToken(""); setVerification(value => value + 1); }
+      if (needsVerification) { setTurnstileToken(""); setVerification(value => value + 1); }
     }
     finally { sending.current = false; setSubmitting(false); }
   }
@@ -144,11 +160,12 @@ export function OrderForm({ price }: { price: number | null }) {
       <button className="dm-text-btn" type="button" onClick={restart}>Оформить ещё один заказ</button>
     </div> : <>
       <ol className="dm-steps" aria-label="Шаги оформления">{copy.steps.map((text, i) => <li key={text} data-state={i === step ? "current" : i < step ? "done" : "next"} aria-current={i === step ? "step" : undefined}>
-        <button type="button" disabled={i >= step || !!busyPhotos || submitting} onClick={() => go(i)}><span>{i < step ? <Check size={15} /> : i + 1}</span>{text}</button>
+        <button type="button" disabled={i >= step || !!busyPhotos || submitting} onClick={() => go(i)}><span>{i < step ? <Check size={15} /> : i + 1}</span>{isStaff && i === 2 ? "Контакты" : text}</button>
       </li>)}</ol>
       <form className="dm-form" onSubmit={submit} noValidate>
         <div className="dm-form-body" ref={formBody}>
-          <h3>{copy.stepTitles[step]}</h3><p className="dm-form-note">{copy.stepNotes[step]}</p>
+          <h3>{isStaff && step === 2 ? "Контакты родителя" : copy.stepTitles[step]}</h3>
+          <p className="dm-form-note">{isStaff && step === 2 ? "Укажите, куда отправить готовое видео и к какой дате оно нужно семье." : copy.stepNotes[step]}</p>
           {step === 0 && <>
             {draft.children.map((child, i) => {
               const fieldId = (field: keyof Child) => `child-${i}-${field}`;
@@ -202,24 +219,26 @@ export function OrderForm({ price }: { price: number | null }) {
           {step === 2 && <div className="dm-contact">
             <div className="dm-summary-line"><span>Для кого</span><b>{draft.children.map(c => formattedName(c.name)).join(", ")}</b></div>
             <div className="dm-two">
-              {familyText("parentName", copy.fields.parentName, 30, "Имя родителя")}
+              {familyText("parentName", isStaff ? "Имя родителя" : copy.fields.parentName, 30, "Имя родителя")}
               {familyText("whatsapp", copy.fields.whatsapp, undefined, "Номер в любом формате", "tel")}
             </div>
             <div className="dm-two">
               {familyText("email", copy.fields.email, undefined, "name@example.com", "email", true)}
-              <Field id="ready_by" label={copy.fields.ready_by} error={errors.ready_by} hint="Выберите желаемую дату начиная с послезавтра. Точную дату подтвердим в WhatsApp.">
+              <Field id="ready_by" label={copy.fields.ready_by} error={errors.ready_by} hint={isStaff ? "Можно выбрать дату начиная с послезавтра." : "Выберите желаемую дату начиная с послезавтра. Точную дату подтвердим в WhatsApp."}>
                 <input id="ready_by" type="date" min={earliestDate()} value={draft.ready_by} aria-describedby="ready_by-help" aria-invalid={!!errors.ready_by} onChange={e => update("ready_by", e.target.value)} />
               </Field>
             </div>
-            <label className="dm-consent"><input id="consent" type="checkbox" checked={draft.consent} onChange={e => { const checked = e.target.checked; setDraft(d => ({ ...d, consent: checked })); mark("consent"); }} />Соглашаюсь на обработку фотографий и данных детей для создания этого видео.</label>
+            <label className="dm-consent"><input id="consent" type="checkbox" checked={draft.consent} onChange={e => { const checked = e.target.checked; setDraft(d => ({ ...d, consent: checked })); mark("consent"); }} />{isStaff ? "Родитель дал согласие на обработку фотографий и данных детей для создания этого видео." : "Соглашаюсь на обработку фотографий и данных детей для создания этого видео."}</label>
             {errors.consent && <span className="dm-error" role="alert">{errors.consent}</span>}
-            {!preview && <RsvpTurnstile locale="ru" action="ded_moroz_order" resetKey={verification} onTokenChange={setTurnstileToken} />}
+            {needsVerification && <RsvpTurnstile locale="ru" action="ded_moroz_order" resetKey={verification} onTokenChange={setTurnstileToken} />}
           </div>}
           {storageNote && <p className="dm-small-note" role="status">{storageNote}</p>}
           {issue && <p role="alert" className="dm-error">{issue}</p>}
         </div>
-        <div className="dm-form-actions">{step > 0 && <button type="button" className="dm-back" disabled={submitting || !!busyPhotos} onClick={() => go(step - 1)}>Назад</button>}
-          <button type="submit" className="dm-btn dm-green" disabled={!key || !!busyPhotos || submitting || (step === 2 && !preview && !turnstileToken)}>{submitting ? "Сохраняем заказ…" : ["Перейти к фотографиям", "Перейти к контактам", "Оформить заказ"][step]}</button>
+        <div className="dm-form-actions">
+          {staff && <button type="button" className="dm-back" disabled={submitting} onClick={staff.onCancel}>Отменить</button>}
+          {step > 0 && <button type="button" className="dm-back" disabled={submitting || !!busyPhotos} onClick={() => go(step - 1)}>Назад</button>}
+          <button type="submit" className="dm-btn dm-green" disabled={!key || !!busyPhotos || submitting || (step === 2 && needsVerification && !turnstileToken)}>{submitting ? "Сохраняем заказ…" : ["Перейти к фотографиям", "Перейти к контактам", isStaff ? "Создать заказ" : "Оформить заказ"][step]}</button>
         </div>
       </form>
     </>}

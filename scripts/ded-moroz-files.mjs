@@ -63,12 +63,13 @@ export function orderStore(root, { telegramNotifications = false } = {}) {
     const names = (await readdir(orders)).filter(name => orderPattern.test(name));
     return (await Promise.all(names.map(read))).sort((a,b) => b.created_at.localeCompare(a.created_at));
   }
-  const create = (draft, token, photos, positions) => exclusive(async () => {
+  const create = (draft, token, photos, positions, { staff = false } = {}) => exclusive(async () => {
     const records = await list();
-    const previous = records.find(item => item.request_id === token);
+    const requestId = (staff ? "staff:" : "") + token;
+    const previous = records.find(item => item.request_id === requestId);
     if (previous) return previous;
     const now = new Date();
-    if (records.filter(item => now.getTime() - Date.parse(item.created_at) < 3600000).length >= 5) throw problem("За час можно оформить до пяти заказов. Попробуйте позже.", 429);
+    if (!staff && records.filter(item => !item.request_id?.startsWith("staff:") && now.getTime() - Date.parse(item.created_at) < 3600000).length >= 5) throw problem("За час можно оформить до пяти заказов. Попробуйте позже.", 429);
     const year = new Intl.DateTimeFormat("en", { year: "numeric", timeZone: "Asia/Jerusalem" }).format(now);
     const prefix = "DM-" + year + "-";
     const counter = path.join(root, "sequence-" + year);
@@ -83,7 +84,7 @@ export function orderStore(root, { telegramNotifications = false } = {}) {
         const { width: w, height: h, left, top } = cropFrame(width, height, i, positions[i]);
         await sharp(jpeg).extract({ left, top, width: w, height: h }).jpeg({ quality: 90 }).toFile(path.join(stage, `photo${i + 1}.jpg`));
       }
-      const order = { ...orderFromDraft(draft, id, now), request_id: token };
+      const order = { ...orderFromDraft(draft, id, now), request_id: requestId };
       if (telegramNotifications) order.telegram_notification = { attempts: 0, nextAttemptAt: now.getTime() };
       await writeFile(path.join(stage, "order.json"), JSON.stringify(order, null, 2));
       const nextCounter = path.join(stage, "next-counter");

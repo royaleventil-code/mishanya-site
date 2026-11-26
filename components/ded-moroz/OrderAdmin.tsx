@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { greetingOrderPath } from "@/data/new-year";
-import { Download, MessageCircle, RefreshCw } from "lucide-react";
+import { CircleCheck, Download, MessageCircle, Plus, RefreshCw } from "lucide-react";
 import { photoRoles, statuses, whatsappContactDigits, type Order } from "@/shared/ded-moroz";
 import { Brand } from "./GreetingPage";
+import { OrderForm } from "./OrderForm";
 import { apiIssue } from "./Photos";
 import { copy } from "./copy";
 
@@ -16,6 +17,8 @@ async function fetchOrders(signal: AbortSignal): Promise<Order[]> {
   return res.json();
 }
 function Editor({ item, onSaved }: { item: Order; onSaved: (o: Order) => void }) {
+  const title = useRef<HTMLHeadingElement>(null);
+  useEffect(() => { title.current?.focus(); }, []);
   const [status, setStatus] = useState(item.status), [url, setUrl] = useState(item.video_url || "");
   const [info, setInfo] = useState(""), [busy, setBusy] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -43,7 +46,7 @@ function Editor({ item, onSaved }: { item: Order; onSaved: (o: Order) => void })
     } catch (e) { setInfo(e instanceof Error ? e.message : "Не удалось сохранить."); }
     finally { setBusy(false); }
   };
-  return <section className="dm-panel dm-admin-card" aria-labelledby="detail-title"><h2 id="detail-title">{item.order_id}</h2>
+  return <section className="dm-panel dm-admin-card" aria-labelledby="detail-title"><h2 id="detail-title" ref={title} tabIndex={-1}>{item.order_id}</h2>
     <dl className="dm-dl"><dt>Город</dt><dd>{item.city}</dd><dt>К какой дате</dt><dd>{item.ready_by}</dd>
       <dt>Родитель</dt><dd>{item.parent.name}</dd><dt>Телефон</dt><dd>{item.parent.whatsapp}</dd>
       {item.parent.email && <><dt>Email</dt><dd>{item.parent.email}</dd></>}
@@ -65,22 +68,42 @@ function Editor({ item, onSaved }: { item: Order; onSaved: (o: Order) => void })
 }
 export function OrderAdmin() {
   const [orders, setOrders] = useState<Order[]>([]), [selected, setSelected] = useState(""), [loading, setLoading] = useState(true), [issue, setIssue] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [createdId, setCreatedId] = useState("");
   const [revision, setRevision] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
-    fetchOrders(controller.signal).then(items => { setOrders(items); setIssue(""); })
+    fetchOrders(controller.signal).then(items => { if (!controller.signal.aborted) { setOrders(items); setIssue(""); } })
       .catch(e => { if (!controller.signal.aborted) setIssue(e instanceof Error ? e.message : "Не удалось загрузить заказы."); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [revision]);
   const item = orders.find(o => o.order_id === selected);
+  function refresh() {
+    setLoading(true);
+    setRevision(r => r + 1);
+  }
+  function orderCreated(id: string) {
+    setCreatedId(id);
+    setSelected(id);
+    setCreating(false);
+    refresh();
+  }
   return <><header className="dm-head"><div className="dm-wrap dm-top"><Brand /><Link className="dm-nav-cta" href={greetingOrderPath} prefetch={false}>Страница заказа</Link></div></header>
-    <main className="dm-wrap dm-admin"><h1>Заказы видеопоздравлений</h1>
-      <button type="button" className="dm-btn dm-outline" disabled={loading} onClick={() => { setLoading(true); setRevision(r => r + 1); }}><RefreshCw size={16} />Обновить</button>
+    <main className="dm-wrap dm-admin"><h1>{creating ? "Новый заказ" : "Заказы видеопоздравлений"}</h1>
+      {creating ? <div className="dm-admin-create">
+        <OrderForm staff={{ onCreated: orderCreated, onCancel: () => setCreating(false) }} />
+      </div> : <>
+      <div className="dm-admin-actions">
+        <button type="button" className="dm-btn dm-green" disabled={loading || !!issue} onClick={() => { setCreatedId(""); setSelected(""); setCreating(true); }}><Plus size={18} />Создать заказ</button>
+        <button type="button" className="dm-btn dm-outline" disabled={loading} onClick={refresh}><RefreshCw size={16} />Обновить</button>
+      </div>
+      {createdId && <p className="dm-admin-success" role="status"><CircleCheck size={18} />Заказ {createdId} создан.</p>}
       {issue && <p role="alert" className="dm-error">{issue}</p>}
       {loading ? <p role="status">Загружаем заказы…</p> : !orders.length && !issue ? <p className="dm-empty">Пока нет заказов. После оформления здесь появятся анкета и фотографии.</p> :
         orders.length > 0 && <div className="dm-table-scroll"><table><caption>Заказы · {orders.length}</caption><thead><tr>{["Номер", "Оформлен", "Дети", "Телефон", "Город", "К какой дате", "Статус"].map(t => <th key={t}>{t}</th>)}</tr></thead>
-          <tbody>{orders.map(o => <tr key={o.order_id}><td><button className="dm-text-btn" onClick={() => setSelected(o.order_id)}>{o.order_id}</button></td><td>{new Date(o.created_at).toLocaleDateString("ru")}</td><td>{o.children.map(c => c.name).join(", ")}</td><td>{o.parent.whatsapp}</td><td>{o.city}</td><td>{o.ready_by}</td><td>{statuses[o.status]}</td></tr>)}</tbody></table></div>}
+          <tbody>{orders.map(o => <tr key={o.order_id}><td><button className="dm-text-btn" onClick={() => { setCreatedId(""); setSelected(o.order_id); }}>{o.order_id}</button></td><td>{new Date(o.created_at).toLocaleDateString("ru")}</td><td>{o.children.map(c => c.name).join(", ")}</td><td>{o.parent.whatsapp}</td><td>{o.city}</td><td>{o.ready_by}</td><td>{statuses[o.status]}</td></tr>)}</tbody></table></div>}
       {item && <Editor key={item.order_id} item={item} onSaved={next => setOrders(list => list.map(o => o.order_id === next.order_id ? next : o))} />}
+      </>}
     </main></>;
 }

@@ -63,12 +63,16 @@ function fixture(t) {
   return { db, env };
 }
 
-async function submit(env, key, jpeg, turnstile = "pass") {
+function orderForm(key, jpeg, payload = draft) {
   const form = new FormData();
-  form.set("draft", JSON.stringify(draft));
+  form.set("draft", JSON.stringify(payload));
   form.set("key", key);
-  form.set("turnstileToken", turnstile);
   for (const role of photoRoles) form.set(role, jpeg, role + ".jpg");
+  return form;
+}
+async function submit(env, key, jpeg, turnstile = "pass") {
+  const form = orderForm(key, jpeg);
+  form.set("turnstileToken", turnstile);
   return onRequest({ env, request: new Request(upload, {
     method: "POST", headers: { Origin: origin, "CF-Connecting-IP": "192.0.2.1" }, body: form,
   }) });
@@ -176,6 +180,39 @@ test("the Pages API saves a single complete order, protects access and preserves
   assert.ok(!notices[2].text.includes(draft.whatsapp));
   assert.ok(!notices[2].text.includes(draft.children[0].name));
   assert.equal(db.prepare("SELECT telegram_sent_at FROM dm_orders").get().telegram_sent_at, time);
+
+  await t.test("staff create a complete order without a customer challenge and can safely retry", async () => {
+    const manualKey = crypto.randomUUID();
+    const post = body => call(staff, { method: "POST", body });
+    const denied = await onRequest({ env, request: new Request(staff, {
+      method: "POST", body: orderForm(manualKey, jpeg),
+    }) });
+    assert.equal(denied.status, 403);
+    const incomplete = orderForm(manualKey, jpeg);
+    incomplete.delete("family");
+    assert.equal((await post(incomplete)).status, 400);
+    assert.equal((await post(orderForm(manualKey, jpeg, { ...draft, consent: false }))).status, 400);
+    assert.equal(db.prepare("SELECT count(*) AS n FROM dm_orders").get().n, 1);
+
+    const result = await post(orderForm(manualKey, jpeg));
+    assert.equal(result.status, 201);
+    const manual = await result.json();
+    assert.notEqual(manual.order_id, receipt.order_id);
+    const replay = await post(orderForm(manualKey, jpeg));
+    assert.equal(replay.status, 200);
+    assert.deepEqual(await replay.json(), manual);
+    assert.equal((await submit(env, manualKey, jpeg, "bad")).status, 400);
+    const orders = await (await call(staff)).json();
+    assert.equal(orders.length, 2);
+    assert.equal(orders[0].order_id, manual.order_id);
+    assert.equal(orders[0].status, "new");
+    assert.equal(orders[0].parent.whatsapp, draft.whatsapp);
+    assert.deepEqual(orders[0].children.map(c => c.name), draft.children.map(c => c.name));
+    for (const name of Object.values(orders[0].photos)) {
+      const stored = await call(staff + "/" + manual.order_id + "/" + name);
+      assert.deepEqual(await stored.arrayBuffer(), await jpeg.arrayBuffer());
+    }
+  });
 });
 
 test("large photos survive D1 chunking and a partial upload can be retried", async t => {

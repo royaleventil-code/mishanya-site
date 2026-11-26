@@ -155,6 +155,10 @@
 .dm-admin-photos img { width:100%; aspect-ratio:1; object-fit:contain; background:#e5e8dd; border-radius:6px }
 .dm-admin-photos figcaption { font-size:.85rem }
 .dm-admin-actions { flex-wrap:wrap; margin:15px 0 }
+.dm-admin-create { max-width:850px; margin-top:20px }
+.dm-admin-create .dm-form-actions { flex-wrap:wrap }
+.dm-admin-create .dm-back+.dm-back { margin-right:0 }
+.dm-admin-success { display:flex; align-items:center; gap:8px; color:var(--pine); font-weight:700 }
 @media(min-width:640px) {
   .dm-family-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 15px; align-items:start }
   .dm-two>.dm-field { display:grid; grid-row:span 3; grid-template-rows:subgrid; align-items:start }
@@ -216,5 +220,6 @@
   .dm-gallery-controls { justify-content:flex-end; margin-top:10px }
   .dm-foot>.dm-wrap>span { max-width:46%; text-align:right; font-size:.8rem }
   .dm-admin-photos { grid-template-columns:repeat(2,1fr) }
+  .dm-admin-create .dm-form-actions .dm-btn { flex-basis:100%; order:-1 }
 }
 @media(prefers-reduced-motion:reduce) { .dm *, .dm *::after { scroll-behavior:auto!important; transition:none!important } }

@@ -84,21 +84,23 @@ async function readOrderPhotos(form) {
   return files;
 }
 
-async function postOrder(env, request) {
+async function postOrder(env, request, staff = false) {
   const form = await orderForm(request);
   const input = form.get("key");
   if (typeof input !== "string" || !requestKeyPattern.test(input)) {
     throw orderError("Обновите страницу и повторите отправку.");
   }
-  const key = input.toLowerCase();
+  const key = (staff ? "staff:" : "") + input.toLowerCase();
   const previous = await findOrderByRequest(env, key);
   if (previous) return json(orderReceipt(previous));
   const draft = readDraft(form.get("draft"));
-  if (!await verifyOrderToken(request, env.TURNSTILE_SECRET_KEY, form.get("turnstileToken")).catch(() => false)) {
-    throw orderError("Пройдите проверку формы и отправьте заказ снова.");
-  }
-  if (!await checkOrderLimit(env, request.headers.get("CF-Connecting-IP"))) {
-    throw orderError("Слишком много заявок с этого подключения. Попробуйте позже.", 429);
+  if (!staff) {
+    if (!await verifyOrderToken(request, env.TURNSTILE_SECRET_KEY, form.get("turnstileToken")).catch(() => false)) {
+      throw orderError("Пройдите проверку формы и отправьте заказ снова.");
+    }
+    if (!await checkOrderLimit(env, request.headers.get("CF-Connecting-IP"))) {
+      throw orderError("Слишком много заявок с этого подключения. Попробуйте позже.", 429);
+    }
   }
   const order = await saveOrder(env, draft, key, await readOrderPhotos(form));
   return json(orderReceipt(order), 201);
@@ -108,6 +110,7 @@ async function staffAction(env, request, id, resource) {
   if (!await canAccessOrders(request, env)) {
     throw orderError("Войдите в кабинет под рабочей учётной записью.", 403);
   }
+  if (!id && !resource && request.method === "POST") return postOrder(env, request, true);
   if (!id && request.method === "GET") return json(await listOrders(env));
   const row = await getOrder(env, id);
   if (request.method === "GET" && orderPhotoPattern.test(resource)) {
