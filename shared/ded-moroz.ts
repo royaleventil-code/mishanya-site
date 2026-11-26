@@ -11,9 +11,6 @@ export const newDraft = (): Draft => ({
   parentName: "", whatsapp: "", email: "", consent: false,
 });
 export const counts = [1, 2, 3, 4, 5];
-export const minimumChildAge = 1;
-export const maximumChildAge = 14;
-export const childAges = Array.from({ length: maximumChildAge }, (_, i) => String(i + 1));
 const nofHaGalil = "Ноф-ха-Галиль";
 export const cities = [
   "Нетания", "Тель-Авив", "Хайфа", "Иерусалим", "Ришон-ле-Цион", "Бат-Ям", "Ашдод", "Ашкелон",
@@ -90,7 +87,8 @@ export function validateDraft(draft: Draft, step: number): Issues {
           errors[id + "distinction"] = "Уточните, как различить детей, например «старший» или «младший».";
       }
       if (!["boy", "girl"].includes(child.gender)) errors[id + "gender"] = "Выберите пол ребёнка.";
-      if (!childAges.includes(String(child.age))) errors[id + "age"] = "Выберите возраст от 1 до 14 лет.";
+      const age = String(child.age).trim();
+      if (!/^\d+$/.test(age) || !Number.isSafeInteger(Number(age))) errors[id + "age"] = "Укажите возраст целым числом лет.";
       if (draft.children_count <= 2 && !child.fact_learned.trim()) errors[id + "fact_learned"] = "Добавьте запись о ребёнке.";
       if (draft.children_count === 1 && !child.fact_kind.trim()) errors[id + "fact_kind"] = "Расскажите о добром деле ребёнка.";
     });

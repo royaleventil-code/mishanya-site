@@ -38,7 +38,9 @@ test("the quiz uses the selected template for every family size", () => {
     assert.equal(Object.hasOwn(order,"ready_by"),false);
     assert.equal(Object.hasOwn(order,"parents_words"),false);
   }
-  assert.ok(validateDraft({...draft(),children_count:6},0).count);
+  const five = draft(5);
+  const six = { ...five, children_count: 6, children: [...five.children, newChild()] };
+  assert.equal(allDraftIssues(six).count, "Выберите от одного до пяти детей.");
 });
 test("each child needs explicit stress, valid age and a distinct spoken name", () => {
   const d = draft(); d.children[0].stress = -1;
@@ -48,7 +50,12 @@ test("each child needs explicit stress, valid age and a distinct spoken name", (
   d.children[0].distinction = "старший"; d.children[1].distinction = "младший";
   assert.deepEqual(validateDraft(d,1),{});
   assert.equal(orderFromDraft(d,"DM-2026-0001",new Date()).children[0].name_stress, "САша старший");
-  for (const age of ["0","15","1.5"]) {
+  for (const age of ["0", "15", "18", "42"]) {
+    d.children[0].age = age;
+    assert.equal(validateDraft(d,1)["child-0-age"], undefined);
+    assert.equal(orderFromDraft(d,"DM-2026-0001",new Date()).children[0].age, Number(age));
+  }
+  for (const age of ["", "-1", "1.5", "3e1", "9007199254740992"]) {
     d.children[0].age = age; assert.ok(validateDraft(d,1)["child-0-age"]);
   }
   assert.ok(validateDraft({...d,whatsapp:"050-12"},4).whatsapp);

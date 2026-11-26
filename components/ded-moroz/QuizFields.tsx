@@ -1,18 +1,18 @@
 "use client";
 
 import { type ReactNode } from "react";
-import { childAges, cities, formattedName, isNamesake, isVowel, type Child, type Draft } from "@/shared/ded-moroz";
+import { cities, formattedName, isNamesake, isVowel, type Child, type Draft } from "@/shared/ded-moroz";
 import s from "./quiz.module.css";
 
 type Issues = Record<string, string>;
 type Change = (value: string) => void;
-export function TextField({ id, label, value, onChange, error, hint, max, placeholder, type = "text", multiline, autoComplete }: {
-  id: string; label: string; value: string; onChange: Change; error?: string; hint?: string; max?: number; placeholder?: string; type?: string; multiline?: boolean; autoComplete?: string;
+export function TextField({ id, label, value, onChange, error, hint, max, placeholder, type = "text", multiline, autoComplete, inputMode }: {
+  id: string; label: string; value: string; onChange: Change; error?: string; hint?: string; max?: number; placeholder?: string; type?: string; multiline?: boolean; autoComplete?: string; inputMode?: "numeric";
 }) {
   const props = { id, value, maxLength: max, placeholder, autoComplete, "aria-invalid": !!error, "aria-describedby": error || hint ? id + "-help" : undefined };
   return <div className="dm-field" data-issue={!!error}>
     <div className="dm-label-row"><label htmlFor={id}>{label}</label>{multiline && max && <span>{value.length}/{max}</span>}</div>
-    {multiline ? <textarea rows={2} {...props} onChange={e => onChange(e.target.value)} /> : <input type={type} {...props} onChange={e => onChange(e.target.value)} />}
+    {multiline ? <textarea rows={2} {...props} onChange={e => onChange(e.target.value)} /> : <input type={type} inputMode={inputMode} {...props} onChange={e => onChange(e.target.value)} />}
     {(error || hint) && <span id={id + "-help"} className={error ? "dm-error" : "dm-hint"} role={error ? "alert" : undefined}>{error || hint}</span>}
   </div>;
 }
@@ -49,7 +49,7 @@ export function ChildrenFields({ childrenData, errors, edit }: {
       {isNamesake(childrenData, index) && <TextField id={prefix + "distinction"} label="Как различить детей с одинаковым именем?" placeholder="Например, старший" value={child.distinction} max={24} error={errors[prefix + "distinction"]} onChange={value => edit(index, { distinction: value })} />}
       <div className={s.two}>
         <SelectField id={prefix + "gender"} label="Пол ребёнка" value={child.gender} error={errors[prefix + "gender"]} onChange={gender => edit(index, { gender })}><option value="">Выберите</option><option value="boy">Мальчик</option><option value="girl">Девочка</option></SelectField>
-        <SelectField id={prefix + "age"} label="Возраст" value={child.age} error={errors[prefix + "age"]} onChange={age => edit(index, { age })}><option value="">Сколько лет?</option>{childAges.map(age => <option key={age}>{age}</option>)}</SelectField>
+        <TextField id={prefix + "age"} label="Возраст, лет" value={child.age} inputMode="numeric" placeholder="0, если меньше года" error={errors[prefix + "age"]} onChange={age => edit(index, { age })} />
       </div>
       {childrenData.length <= 2 && <TextField id={prefix + "fact_learned"} label={childrenData.length === 1 ? "Чему ребёнок научился за год?" : "Запись в волшебную книгу"} multiline value={child.fact_learned} placeholder="Например, теперь катается на велосипеде" error={errors[prefix + "fact_learned"]} onChange={fact_learned => edit(index, { fact_learned })} />}
       {childrenData.length === 1 && <TextField id={prefix + "fact_kind"} label="Какое доброе дело сделал ребёнок?" multiline value={child.fact_kind} placeholder="Помогает бабушке по дому" error={errors[prefix + "fact_kind"]} onChange={fact_kind => edit(index, { fact_kind })} />}

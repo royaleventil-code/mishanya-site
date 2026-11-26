@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Check, CircleCheck, MessageCircle } from "lucide-react";
+import { Check, CircleCheck } from "lucide-react";
 import { childLabel, counts, newChild, newDraft, photoSlots, validateDraft, type Child, type Draft } from "@/shared/ded-moroz";
-import { whatsappLink } from "@/lib/whatsapp";
 import { RsvpTurnstile } from "@/components/rsvp/RsvpTurnstile";
 import { draftKey, loadText, persistPhoto, storedPhotos, type Photo, type Photos } from "./draft";
 import { apiIssue, isLocalPreview, PhotoSlot } from "./Photos";
@@ -15,7 +14,6 @@ type FormProps = { price: number | null; staff?: undefined } | { price?: undefin
 const steps = ["Участники", "Дети", "Семья", "Фотографии", "Контакты"];
 const titles = ["Сколько планируется детей поздравить?", "Расскажите о каждом ребёнке", "Расскажите о вашей семье", "Добавьте фотографии для ролика", "Куда прислать поздравление?"];
 const anchors = ["kolichestvo", "deti", "semya", "foto", "kontakty"];
-const manyChildren = whatsappLink("Здравствуйте! Хотим заказать видеопоздравление для более чем пяти детей.");
 const receiptKey = draftKey + "-receipt";
 
 function issuesAt(draft: Draft, photos: Photos, step: number) {
@@ -191,7 +189,7 @@ export function OrderForm({ price, staff }: FormProps) {
       <div className={s.counts} role="group" aria-label="Количество детей" id="count">{counts.map(n =>
         <button type="button" disabled={!key} key={n} aria-label={n + (n === 1 ? " ребёнок" : n === 5 ? " детей" : " ребёнка")} aria-pressed={draft.children_count === n} onClick={() => changeCount(n)}><strong>{n}</strong><span>{n === 1 ? "ребёнок" : n === 5 ? "детей" : "ребёнка"}</span></button>
       )}</div>
-      <p className={s.more}><MessageCircle size={17} aria-hidden /><span>Если детей больше пяти, <a href={manyChildren} target="_blank" rel="noopener noreferrer">напишите нам в WhatsApp</a>.</span></p>
+      <p className={s.note}>До пяти детей в одном видеопоздравлении.</p>
       {staff && <button type="button" className={s.back} onClick={staff.onCancel}>Отменить</button>}
     </> : <form onSubmit={submit} noValidate>
       {step === 1 && <ChildrenFields childrenData={draft.children} errors={errors} edit={changeChild} />}
