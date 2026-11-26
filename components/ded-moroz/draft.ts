@@ -1,4 +1,4 @@
-import { counts, newChild, newDraft, type Child, type Draft } from "@/shared/ded-moroz";
+import { counts, newChild, newDraft, normalizeSelectedCity, type Child, type Draft } from "@/shared/ded-moroz";
 
 export const draftKey = "mishanya-ded-moroz-v1";
 export type Photo = { blob: Blob; width: number; height: number };
@@ -14,7 +14,7 @@ export function loadText(): Saved {
     const legacy = saved.version !== 2;
     const data: Draft = {
       ...fresh.data, children, children_count: counts.includes(old.children_count) ? old.children_count : children.length,
-      city: old.city || "", otherCity: old.otherCity || "", shared_fact: old.shared_fact || "",
+      city: normalizeSelectedCity(old.city || ""), otherCity: old.otherCity || "", shared_fact: old.shared_fact || "",
       parentName: old.parentName || "", whatsapp: old.whatsapp || "", email: old.email || "", consent: old.consent === true,
     };
     return { data, step: !legacy && [0,1,2,3,4].includes(saved.step) ? saved.step : 0, key: saved.key || fresh.key, legacy };

@@ -54,6 +54,35 @@
 .photos { margin-top: 18px; gap: 14px; }
 .photos :global(.dm-photo-slot) { min-width: 0; margin: 0; padding: 15px; border-color: #cbdfee; background: #f7fbff; }
 .photos :global(.dm-slot-heading) { display: flex; align-items: center; gap: 6px; font-size: 1rem; color: var(--dark); }
+.photos :global(.dm-photo-slot[data-kind="portrait"]) { --portrait-color: #125a9e; }
+.photos :global(.dm-photo-slot[data-kind="portrait"]:nth-child(2)) { --portrait-color: #126152; }
+.photos :global(.dm-photo-slot[data-kind="portrait"]:nth-child(3)) { --portrait-color: #694197; }
+.photos :global(.dm-photo-slot[data-kind="portrait"]:nth-child(4)) { --portrait-color: #8c4717; }
+.photos :global(.dm-photo-slot[data-kind="portrait"]:nth-child(5)) { --portrait-color: #882d58; }
+.photos :global(.dm-photo-slot[data-kind="portrait"] .dm-slot-heading) {
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 10px;
+  color: var(--portrait-color);
+  font-size: 3rem;
+  font-weight: 750;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.photos :global(.dm-photo-slot[data-kind="portrait"] .dm-slot-heading > svg) {
+  flex: none;
+  margin-top: .36em;
+}
+.photos :global(.dm-photo-slot[data-kind="family"] .dm-slot-heading) {
+  display: grid;
+  grid-template-columns: minmax(18px, 1fr) auto minmax(18px, 1fr);
+  gap: 8px;
+  font-size: 1.375rem;
+  font-weight: 750;
+  line-height: 1.25;
+  text-align: center;
+}
+.photos :global(.dm-photo-slot[data-kind="family"] .dm-slot-heading > svg:first-child) { justify-self: end; }
 .photos :global(.dm-upload) { color: var(--pine); background: #fff; border-color: #b9cfe4; }
 .photos :global(.dm-photo-slot[data-issue="true"]) { border-color: #a33f37; }
 .actions { border-top: 1px solid var(--line); display: flex; gap: 14px; align-items: center; padding-top: 18px; margin-top: 24px; }
@@ -69,6 +98,7 @@
   .header > div, .layout { width: min(680px, calc(100% - 28px)); }
   .layout { grid-template-columns: minmax(0,1fr); gap: 16px; padding-top: 18px; }
   .aside { display: flex; align-items: center; }
+  .layout:not(:has(.counts > button:enabled)) > .aside { display: none; }
   .aside img { width: 32%; height: auto; }
   .aside h2 { font-size: 1.05rem; }
   .aside > div { padding: 12px; }

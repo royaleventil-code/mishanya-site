@@ -64,7 +64,7 @@ export function PhotoSlot({ slot, value, error, onChange, onBusy }: {
     catch (e) { setIssue(e instanceof Error ? e.message : "Не удалось открыть снимок."); }
     finally { setBusy(false); onBusy(-1); if (input.current) input.current.value = ""; }
   }
-  return <div className="dm-photo-slot" data-issue={!!(issue || error)}>
+  return <div className="dm-photo-slot" data-kind={slot.kind} data-issue={!!(issue || error)}>
     <h3 className="dm-slot-heading"><Camera size={17} aria-hidden />{slot.label} {value && <Check size={18} aria-label="Добавлено" />}</h3>
     <p>{slot.hint}</p>
     {value && <div className="dm-crop-space"><div className="dm-crop" style={{ aspectRatio: value.width / value.height, maxHeight: 200 }}>

@@ -51,8 +51,8 @@ export function ChildrenFields({ childrenData, errors, edit }: {
         <SelectField id={prefix + "gender"} label="Пол ребёнка" value={child.gender} error={errors[prefix + "gender"]} onChange={gender => edit(index, { gender })}><option value="">Выберите</option><option value="boy">Мальчик</option><option value="girl">Девочка</option></SelectField>
         <SelectField id={prefix + "age"} label="Возраст" value={child.age} error={errors[prefix + "age"]} onChange={age => edit(index, { age })}><option value="">Сколько лет?</option>{childAges.map(age => <option key={age}>{age}</option>)}</SelectField>
       </div>
-      {childrenData.length <= 2 && <TextField id={prefix + "fact_learned"} label={childrenData.length === 1 ? "Чему ребёнок научился за год?" : "Запись в волшебную книгу"} multiline value={child.fact_learned} max={60} hint="Начните с глагола, от 15 до 60 знаков." placeholder="Научилась кататься на велосипеде" error={errors[prefix + "fact_learned"]} onChange={fact_learned => edit(index, { fact_learned })} />}
-      {childrenData.length === 1 && <TextField id={prefix + "fact_kind"} label="Какое доброе дело сделал ребёнок?" multiline value={child.fact_kind} max={60} placeholder="Помогает бабушке по дому" error={errors[prefix + "fact_kind"]} onChange={fact_kind => edit(index, { fact_kind })} />}
+      {childrenData.length <= 2 && <TextField id={prefix + "fact_learned"} label={childrenData.length === 1 ? "Чему ребёнок научился за год?" : "Запись в волшебную книгу"} multiline value={child.fact_learned} placeholder="Например, теперь катается на велосипеде" error={errors[prefix + "fact_learned"]} onChange={fact_learned => edit(index, { fact_learned })} />}
+      {childrenData.length === 1 && <TextField id={prefix + "fact_kind"} label="Какое доброе дело сделал ребёнок?" multiline value={child.fact_kind} placeholder="Помогает бабушке по дому" error={errors[prefix + "fact_kind"]} onChange={fact_kind => edit(index, { fact_kind })} />}
     </fieldset>;
   })}</div>;
 }

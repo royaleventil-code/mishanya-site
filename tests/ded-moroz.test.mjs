@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
-import { allDraftIssues, newChild, newDraft, orderFromDraft, orderPhotos, photoIssue, photoSlots, validateDraft, whatsappContactDigits } from "../shared/ded-moroz.ts";
+import { allDraftIssues, cities, newChild, newDraft, orderFromDraft, orderPhotos, photoIssue, photoSlots, validateDraft, whatsappContactDigits } from "../shared/ded-moroz.ts";
 import { decodePhoto, orderStore, zipFiles } from "../scripts/ded-moroz-files.mjs";
 import { createTelegramOrderNotifier, loadTelegramSettings, saveTelegramSettings, setupChats } from "../scripts/ded-moroz-telegram.mjs";
 import { formatOrderNotice } from "../shared/ded-moroz-telegram.js";
@@ -15,7 +15,7 @@ const draft = (count = 2) => ({
   ...newDraft(), children_count: count, children: ["соня", "миша", "лаша", "лиза", "инна"].slice(0,count).map((name,i) => ({
     ...newChild(), name, stress: i === 4 ? 0 : 1, gender: i % 2 ? "boy" : "girl", age: i ? "14" : "1",
     fact_learned: "научилась плавать в море", fact_kind: "помогает бабушке по дому",
-  })), city: "Назарет-Иллит (Ноф-ха-Галиль)", shared_fact: "Помогали бабушке весь год",
+  })), city: "Ноф-ха-Галиль", shared_fact: "Помогали бабушке весь год",
   parentName: "Анна", whatsapp: "050-123-4567", consent: true,
 });
 async function pictures(count) {
@@ -53,6 +53,28 @@ test("each child needs explicit stress, valid age and a distinct spoken name", (
   }
   assert.ok(validateDraft({...d,whatsapp:"050-12"},4).whatsapp);
   assert.equal(whatsappContactDigits("+1 (202) 555-0147"), "12025550147");
+});
+test("individual facts accept free text and require a nonempty answer", () => {
+  const d = draft(1);
+  const child = d.children[0];
+  child.fact_learned = "Баскетбол";
+  child.fact_kind = "С папой путешествует по разным местам.\nБольше всего понравилось в תל אביב! ❤️";
+  assert.deepEqual(allDraftIssues(d), {});
+  assert.deepEqual(orderFromDraft(d, "DM-2026-0001", new Date()).children[0].facts, [child.fact_learned, child.fact_kind]);
+
+  child.fact_learned = " \n ";
+  child.fact_kind = "";
+  assert.deepEqual(Object.keys(validateDraft(d, 1)), ["child-0-fact_learned", "child-0-fact_kind"]);
+});
+test("the city list uses the current name and older drafts still submit", () => {
+  const currentName = "Ноф-ха-Галиль";
+  const formerOption = "Назарет-Иллит (Ноф-ха-Галиль)";
+  assert.ok(cities.includes(currentName));
+  assert.ok(!cities.includes(formerOption));
+
+  const saved = { ...draft(), city: formerOption };
+  assert.deepEqual(allDraftIssues(saved), {});
+  assert.equal(orderFromDraft(saved, "DM-2026-0001", new Date()).city, currentName);
 });
 test("photos require the correct size and orientation, older archives retain their files", () => {
   assert.equal(photoIssue(799,1200,"portrait"),"Фото слишком маленькое, выберите другое");

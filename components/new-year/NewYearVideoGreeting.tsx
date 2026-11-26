@@ -1,4 +1,5 @@
 import { ArrowLeft, ArrowRight, Clock3, MessageCircle, Video } from "lucide-react";
+import { LiteYouTube } from "@/components/LiteYouTube";
 import { greetingTurnaround, newYearMessage, newYearPath, type NewYearProgram } from "@/data/new-year";
 import type { Locale } from "@/lib/i18n";
 import { whatsappLink } from "@/lib/whatsapp";
@@ -7,6 +8,7 @@ import { GreetingOrderActions } from "./GreetingOrderActions";
 import s from "./new-year.module.css";
 
 const photoSizes = "(max-width: 520px) calc(100vw - 32px), (max-width: 700px) 488px, (max-width: 1120px) calc(48vw - 28px), 510px";
+const exampleVideoId = "HKAMrUrXrC8";
 
 const orderSteps = {
   ru: [
@@ -65,8 +67,19 @@ export function NewYearVideoGreeting({ locale, program }: { locale: Locale; prog
         </ol>
       </div>
       <figure className={s.greetingPhoto}>
-        <WinterPhoto name="video-greeting-album" alt={he ? "אלבום פתוח ובו תמונת ילד בשלג" : "Открытый альбом с зимней фотографией ребёнка"} sizes={photoSizes} />
-        <figcaption>{he ? "דוגמה לשילוב תמונה בסיפור" : "Пример того, как фото становится частью истории"}</figcaption>
+        <div className={s.greetingVideo}>
+          <LiteYouTube
+            videoId={exampleVideoId}
+            title={he ? "דוגמה לברכת וידאו מדד מורוז" : "Пример видеопоздравления от Деда Мороза"}
+            sizes={photoSizes}
+            rounded={false}
+          />
+        </div>
+        <figcaption>
+          <a href={`https://www.youtube.com/watch?v=${exampleVideoId}`} target="_blank" rel="noopener noreferrer">
+            {he ? "לצפייה בדוגמה ב־YouTube" : "Смотреть пример на YouTube"}
+          </a>
+        </figcaption>
       </figure>
     </section>
     {he && <aside className={s.mobileCta} aria-label="הזמנת ברכת וידאו">

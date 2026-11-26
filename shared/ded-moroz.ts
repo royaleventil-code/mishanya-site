@@ -14,10 +14,11 @@ export const counts = [1, 2, 3, 4, 5];
 export const minimumChildAge = 1;
 export const maximumChildAge = 14;
 export const childAges = Array.from({ length: maximumChildAge }, (_, i) => String(i + 1));
+const nofHaGalil = "Ноф-ха-Галиль";
 export const cities = [
   "Нетания", "Тель-Авив", "Хайфа", "Иерусалим", "Ришон-ле-Цион", "Бат-Ям", "Ашдод", "Ашкелон",
   "Беэр-Шева", "Петах-Тиква", "Холон", "Реховот", "Герцлия", "Кфар-Саба", "Раанана", "Хадера",
-  "Нагария", "Акко", "Кармиэль", "Афула", "Назарет-Иллит (Ноф-ха-Галиль)", "Кирьят-Ям",
+  "Нагария", "Акко", "Кармиэль", "Афула", nofHaGalil, "Кирьят-Ям",
   "Кирьят-Бялик", "Кирьят-Моцкин", "Кирьят-Ата", "Эйлат", "Модиин", "Рамат-Ган", "Гиватаим",
   "Ор-Акива", "Мигдаль-ха-Эмек", "Тират-Кармель",
 ].sort(new Intl.Collator("ru").compare).concat("Другой");
@@ -28,7 +29,8 @@ export const maxPhotos = 6;
 export const orderPhotoPattern = /^(?:child[1-5]_1|child1_2|family|photo[1-4])\.jpg$/;
 export const bookText = /^[\p{Script=Cyrillic}0-9 .,!-]+$/u;
 export const formattedName = (name: string) => name.slice(0, 1).toLocaleUpperCase("ru") + name.slice(1).toLocaleLowerCase("ru");
-export const familyCity = (draft: Draft) => (draft.city === "Другой" ? draft.otherCity : draft.city).trim();
+export const normalizeSelectedCity = (city: string) => city === "Назарет-Иллит (Ноф-ха-Галиль)" ? nofHaGalil : city;
+export const familyCity = (draft: Draft) => (draft.city === "Другой" ? draft.otherCity : normalizeSelectedCity(draft.city)).trim();
 export function whatsappContactDigits(value: string) {
   const phone = parsePhoneNumberFromString(value, { defaultCountry: "IL", extract: false });
   return phone?.isValid() && !phone.ext ? phone.number.slice(1) : "";
@@ -63,20 +65,17 @@ export function photoIssue(width: number, height: number, kind: PhotoSlotInfo["k
 }
 
 type Issues = Record<string, string>;
-function storyIssue(text: string, max: number, fact = false) {
+function sharedFactIssue(text: string) {
   const trimmed = text.trim();
-  if (trimmed.length < 15 || trimmed.length > max) return "Введите от 15 до " + max + " знаков.";
+  if (trimmed.length < 15 || trimmed.length > 60) return "Введите от 15 до 60 знаков.";
   if (!bookText.test(trimmed) || /[\p{L}\d-]+\.(?:рф|рус|онлайн|сайт|дети|укр)(?=[\s.,!]|$)/iu.test(trimmed)) return "Напишите фразу по-русски, без ссылок.";
-  if (fact) {
-    const first = trimmed.toLocaleLowerCase("ru").split(/[\s,.!]+/u)[0].replace(/(?:ся|сь)$/u, "");
-    if (!/(?:л[аои]?|[еёиюяау]т|[еи]м|ишь|ешь|[иы]ть|ать|ять|[её]ть|ти|чь|с|г|рос|нёс|шёл)$/u.test(first))
-      return "Начните с действия, например «помогает маме по дому».";
-  }
+  const first = trimmed.toLocaleLowerCase("ru").split(/[\s,.!]+/u)[0].replace(/(?:ся|сь)$/u, "");
+  if (!/(?:л[аои]?|[еёиюяау]т|[еи]м|ишь|ешь|[иы]ть|ать|ять|[её]ть|ти|чь|с|г|рос|нёс|шёл)$/u.test(first))
+    return "Начните с действия, например «помогает маме по дому».";
   return "";
 }
 export function validateDraft(draft: Draft, step: number): Issues {
   const errors: Issues = {};
-  const mark = (key: string, error: string) => { if (error) errors[key] = error; };
   if (!counts.includes(draft.children_count) || !Array.isArray(draft.children) || draft.children.length !== draft.children_count)
     return { count: "Выберите от одного до пяти детей." };
   if (step === 1) {
@@ -92,13 +91,17 @@ export function validateDraft(draft: Draft, step: number): Issues {
       }
       if (!["boy", "girl"].includes(child.gender)) errors[id + "gender"] = "Выберите пол ребёнка.";
       if (!childAges.includes(String(child.age))) errors[id + "age"] = "Выберите возраст от 1 до 14 лет.";
-      if (draft.children_count <= 2) mark(id + "fact_learned", storyIssue(child.fact_learned, 60, true));
-      if (draft.children_count === 1) mark(id + "fact_kind", storyIssue(child.fact_kind, 60, true));
+      if (draft.children_count <= 2 && !child.fact_learned.trim()) errors[id + "fact_learned"] = "Добавьте запись о ребёнке.";
+      if (draft.children_count === 1 && !child.fact_kind.trim()) errors[id + "fact_kind"] = "Расскажите о добром деле ребёнка.";
     });
   }
   if (step === 2) {
-    if (!cities.includes(draft.city) || !familyCity(draft) || familyCity(draft).length > 40) errors.city = "Укажите город.";
-    if (draft.children_count === 3) mark("shared_fact", storyIssue(draft.shared_fact, 60, true));
+    const city = cities.includes(normalizeSelectedCity(draft.city)) ? familyCity(draft) : "";
+    if (!city || city.length > 40) errors.city = "Укажите город.";
+    if (draft.children_count === 3) {
+      const issue = sharedFactIssue(draft.shared_fact);
+      if (issue) errors.shared_fact = issue;
+    }
   }
   if (step === 4) {
     if (!draft.parentName.trim() || draft.parentName.length > 30) errors.parentName = "Введите имя родителя, до 30 знаков.";
