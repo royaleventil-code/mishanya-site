@@ -12,6 +12,8 @@ const origin = "https://mishanya-show.com";
 const api = origin + "/api/ded-moroz";
 const upload = api + "/orders";
 const staff = api + "/staff/orders";
+const paymentMigration = readFileSync(new URL("../migrations/0014_ded_moroz_order_payment.sql", import.meta.url), "utf8");
+const secondVideoMigration = readFileSync(new URL("../migrations/0015_ded_moroz_second_video.sql", import.meta.url), "utf8");
 const draft = {
   ...newDraft(), children_count: 2, city: "Хайфа", parentName: "Тест", whatsapp: "+972505550100",
   consent: true,
@@ -21,10 +23,14 @@ const draft = {
   ],
 };
 
-function fixture(t) {
+function fixture(t, { beforePaymentMigration = false } = {}) {
   const db = new DatabaseSync(":memory:");
   t.after(() => db.close());
   db.exec(readFileSync(new URL("../migrations/0013_ded_moroz_orders.sql", import.meta.url), "utf8"));
+  if (!beforePaymentMigration) {
+    db.exec(paymentMigration);
+    db.exec(secondVideoMigration);
+  }
   db.exec("PRAGMA foreign_keys=ON");
   const env = {
     GIFT_DATA_SECRET: "mock-encryption-key",
@@ -64,6 +70,21 @@ function fixture(t) {
   return { db, env };
 }
 
+test("the payment migration preserves recorded payments without inferring payment from delivery", t => {
+  const { db } = fixture(t, { beforePaymentMigration: true });
+  const insert = db.prepare(
+    "INSERT INTO dm_orders (request_key, season_year, created_at, ready_by, child_count, payload_ciphertext, photo_prefix, status, telegram_next_at) " +
+    "VALUES (?, '2026', '', '', 1, '', ?, ?, 0)",
+  );
+  insert.run("old-paid", "old-upload-1", "paid");
+  insert.run("old-delivered", "old-upload-2", "done");
+  db.exec(paymentMigration);
+  assert.deepEqual(db.prepare("SELECT status, payment_status FROM dm_orders ORDER BY id").all().map(row => ({ ...row })), [
+    { status: "new", payment_status: "paid" },
+    { status: "done", payment_status: "unmarked" },
+  ]);
+});
+
 const familyJpeg = new Blob([await sharp({ create: { width: 1000, height: 800, channels: 3, background: "#95b4c7" } }).jpeg().toBuffer()], { type: "image/jpeg" });
 
 function orderForm(key, jpeg, payload = draft) {
@@ -75,9 +96,10 @@ function orderForm(key, jpeg, payload = draft) {
   }
   return form;
 }
-async function submit(env, key, jpeg, turnstile = "pass") {
-  const form = orderForm(key, jpeg);
+async function submit(env, key, jpeg, turnstile = "pass", repeatKey, payload = draft) {
+  const form = orderForm(key, jpeg, payload);
   form.set("turnstileToken", turnstile);
+  if (repeatKey) form.set("repeatKey", repeatKey);
   return onRequest({ env, request: new Request(upload, {
     method: "POST", headers: { Origin: origin, "CF-Connecting-IP": "192.0.2.1" }, body: form,
   }) });
@@ -123,7 +145,7 @@ test("the Pages API saves a single complete order, protects access and preserves
   assert.equal(retry.ok, true);
   const receipt = await first.json();
   assert.deepEqual(await retry.json(), receipt);
-  assert.deepEqual(Object.keys(receipt), ["order_id"]);
+  assert.deepEqual(receipt, { order_id: receipt.order_id, amount_ils: 250 });
   assert.equal(db.prepare("SELECT COUNT(*) AS n FROM dm_order_photo_parts").get().n, 3);
   assert.equal(db.prepare("SELECT COUNT(*) AS n FROM dm_photo_uploads").get().n, 1);
   const raw = db.prepare("SELECT * FROM dm_orders").all();
@@ -146,6 +168,7 @@ test("the Pages API saves a single complete order, protects access and preserves
   keysResponse = Response.json({ keys: [jwk] });
   const [item] = await (await call(staff)).json();
   assert.equal(item.parent.whatsapp, draft.whatsapp);
+  assert.equal(item.payment_status, "unpaid");
   assert.equal(Object.hasOwn(item, "ready_by"), false);
   assert.equal(Object.hasOwn(item, "parents_words"), false);
   assert.deepEqual(item.children.map(child => child.age), [1, 7]);
@@ -153,12 +176,31 @@ test("the Pages API saves a single complete order, protects access and preserves
     status: "review", video_url: "https://drive.google.com/file/d/demo/view",
   }) });
   assert.equal(update.status, 200);
-  assert.equal((await update.json()).status, "review");
+  const withVideo = await update.json();
+  assert.equal(withVideo.status, "review");
+  const inline = await call(order, { method: "PATCH", body: JSON.stringify({ status: "in_work" }) });
+  assert.equal(inline.status, 200);
+  assert.deepEqual(await inline.json(), { ...withVideo, status: "in_work" });
+  const patch = values => call(order, { method: "PATCH", body: JSON.stringify(values) });
+  const delivery = await patch({ status: "done" });
+  assert.equal(delivery.status, 200);
+  const delivered = await delivery.json();
+  assert.deepEqual(delivered, { ...withVideo, status: "done", payment_status: "unpaid" });
+  assert.equal((await patch({ payment_status: "unknown" })).status, 400);
+  const payment = await patch({ payment_status: "paid" });
+  assert.equal(payment.status, 200);
+  assert.deepEqual(await payment.json(), { ...delivered, payment_status: "paid" });
+  const clearPayment = await patch({ payment_status: "unpaid" });
+  assert.deepEqual(await clearPayment.json(), delivered);
+  const legacyPayment = await patch({ status: "paid" });
+  assert.deepEqual(await legacyPayment.json(), { ...delivered, payment_status: "paid" });
   const cancel = await call(order, { method: "PATCH", body: JSON.stringify({
     status: "cancelled", video_url: "",
   }) });
   assert.equal(cancel.status, 200);
-  assert.equal((await (await call(staff)).json())[0].status, "cancelled");
+  const [cancelled] = await (await call(staff)).json();
+  assert.equal(cancelled.status, "cancelled");
+  assert.equal(cancelled.payment_status, "paid");
   const photo = await call(order + "/child1_1.jpg");
   assert.equal(photo.headers.get("Content-Type"), "image/jpeg");
   assert.deepEqual(await photo.arrayBuffer(), await jpeg.arrayBuffer());
@@ -179,6 +221,7 @@ test("the Pages API saves a single complete order, protects access and preserves
     const updated = await service(order, { method: "PATCH", body: JSON.stringify(change) });
     assert.equal(updated.status, 200);
     assert.equal((await updated.json()).video_url, change.video_url);
+    assert.equal((await service(order, { method: "PATCH", body: JSON.stringify({ payment_status: "unpaid" }) })).status, 403);
     assert.equal((await service(staff, { method: "POST" })).status, 403);
     assert.equal((await service(order + "/child1_1.jpg")).status, 403);
     assert.equal((await service(order, { method: "DELETE" })).status, 403);
@@ -244,12 +287,58 @@ test("the Pages API saves a single complete order, protects access and preserves
     assert.equal(orders.length, 2);
     assert.equal(orders[0].order_id, manual.order_id);
     assert.equal(orders[0].status, "new");
+    assert.equal(orders[0].payment_status, "unpaid");
     assert.equal(orders[0].parent.whatsapp, draft.whatsapp);
     assert.deepEqual(orders[0].children.map(c => c.name), draft.children.map(c => c.name));
     for (const { file: name, kind } of orderPhotos(orders[0])) {
       const stored = await call(staff + "/" + manual.order_id + "/" + name);
       assert.deepEqual(await stored.arrayBuffer(), await (kind === "family" ? familyJpeg : jpeg).arrayBuffer());
     }
+  });
+
+  await t.test("only staff can delete an order and its stored photos", async () => {
+    assert.equal((await onRequest({ env, request: new Request(order, { method: "DELETE" }) })).status, 403);
+    const crossSite = new Request(order, { method: "DELETE", headers: { ...headers, Origin: "https://example.test" } });
+    assert.equal((await onRequest({ env, request: crossSite })).status, 403);
+
+    const deleted = await call(order, { method: "DELETE" });
+    assert.equal(deleted.status, 204);
+    const remaining = await (await call(staff)).json();
+    assert.equal(remaining.length, 1);
+    assert.notEqual(remaining[0].order_id, receipt.order_id);
+    const uploadId = raw[0].photo_prefix;
+    assert.equal(db.prepare("SELECT count(*) AS n FROM dm_photo_uploads WHERE upload_id = ?").get(uploadId).n, 0);
+    assert.equal(db.prepare("SELECT count(*) AS n FROM dm_order_photo_parts WHERE upload_id = ?").get(uploadId).n, 0);
+    assert.equal(db.prepare("SELECT count(*) AS n FROM dm_order_photo_parts").get().n, 3);
+    assert.equal((await call(order + "/child1_1.jpg")).status, 404);
+    assert.equal((await call(order + "/zip")).status, 404);
+  });
+
+  await t.test("a first order grants one discounted video and keeps its price on retry", async () => {
+    const firstKey = crypto.randomUUID();
+    const firstResponse = await submit(env, firstKey, jpeg);
+    assert.equal(firstResponse.status, 201);
+    const first = await firstResponse.json();
+    const mismatch = await submit(env, crypto.randomUUID(), jpeg, "pass", first.order_id, { ...draft, whatsapp: "+972505550101" });
+    assert.equal(mismatch.status, 400);
+    assert.match((await mismatch.json()).error, /WhatsApp из первого заказа/);
+    const keys = [crypto.randomUUID(), crypto.randomUUID()];
+    const orders = await Promise.all(keys.map(next => submit(env, next, jpeg, "pass", first.order_id)));
+    assert.deepEqual(orders.map(response => response.status).sort(), [201, 409]);
+    const winner = orders.findIndex(response => response.ok);
+    const second = await orders[winner].json();
+    assert.deepEqual(second, { order_id: second.order_id, amount_ils: 125, repeat_of: first.order_id });
+    assert.notEqual(second.order_id, first.order_id);
+
+    const repeated = await submit(env, keys[winner], jpeg, "bad", firstKey);
+    assert.equal(repeated.status, 200);
+    assert.deepEqual(await repeated.json(), second);
+    assert.equal((await submit(env, crypto.randomUUID(), jpeg, "pass", keys[winner])).status, 409);
+    assert.equal((await submit(env, crypto.randomUUID(), jpeg, "pass", crypto.randomUUID())).status, 409);
+    const linked = (await (await call(staff)).json()).filter(item => item.repeat_of === first.order_id);
+    assert.equal(linked.length, 1);
+    assert.equal(linked[0].amount_ils, 125);
+    assert.equal(db.prepare("SELECT count(*) AS n FROM dm_photo_uploads").get().n, 3);
   });
 });
 

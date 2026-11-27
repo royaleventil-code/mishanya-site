@@ -1,14 +1,13 @@
 import { orderAccessRole, accessIssuer } from "../../../shared/ded-moroz-access.js";
-import { allDraftIssues, maxPhotos, orderPhotoPattern, photoIssue, photoSlots, preparedPhotoLimit, statuses } from "../../../shared/ded-moroz.ts";
+import { allDraftIssues, maxPhotos, orderPhotoPattern, orderRequestKeyPattern, photoIssue, photoSlots, preparedPhotoLimit, readOrderPatch, readSecondVideoReference, secondVideoUnavailable } from "../../../shared/ded-moroz.ts";
 import { orderZip } from "../../../shared/ded-moroz-zip.js";
 import {
-  checkOrderLimit, findOrderByRequest, getOrder, getOrderPhoto, listOrders, orderArchiveEntries,
+  checkOrderLimit, deleteOrder, findOrderByRequest, getOrder, getOrderPhoto, listOrders, orderArchiveEntries,
   orderError, orderReceipt, saveOrder, updateOrder,
 } from "../../../shared/ded-moroz-cloud.js";
 
 const headers = { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" };
 const json = (data, status = 200) => Response.json(data, { status, headers });
-const requestKeyPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const orderLimit = maxPhotos * preparedPhotoLimit + 128 * 1024;
 
 function limitedBody(request, limit) {
@@ -102,12 +101,17 @@ async function readOrderPhotos(form, draft) {
 async function postOrder(env, request, staff = false) {
   const form = await orderForm(request);
   const input = form.get("key");
-  if (typeof input !== "string" || !requestKeyPattern.test(input)) {
+  if (typeof input !== "string" || !orderRequestKeyPattern.test(input)) {
     throw orderError("Обновите страницу и повторите отправку.");
   }
   const key = (staff ? "staff:" : "") + input.toLowerCase();
   const previous = await findOrderByRequest(env, key);
   if (previous) return json(orderReceipt(previous));
+  const repeat = form.get("repeatKey");
+  const repeatKey = readSecondVideoReference(repeat);
+  if (repeat !== null && (staff || !repeatKey)) {
+    throw orderError(secondVideoUnavailable, 409);
+  }
   const draft = readDraft(form.get("draft"));
   if (!staff) {
     if (!await verifyOrderToken(request, env.TURNSTILE_SECRET_KEY, form.get("turnstileToken")).catch(() => false)) {
@@ -117,7 +121,7 @@ async function postOrder(env, request, staff = false) {
       throw orderError("Слишком много заявок с этого подключения. Попробуйте позже.", 429);
     }
   }
-  const order = await saveOrder(env, draft, key, await readOrderPhotos(form, draft));
+  const order = await saveOrder(env, draft, key, await readOrderPhotos(form, draft), undefined, repeatKey);
   return json(orderReceipt(order), 201);
 }
 
@@ -136,21 +140,29 @@ async function staffAction(env, request, id, resource) {
     } });
   }
   if (id && request.method === "PATCH" && !resource) {
-    const payload = await limitedBody(request, 8192).json().catch(error => {
+    const input = await limitedBody(request, 8192).json().catch(error => {
       if (error.status) throw error;
-      throw orderError("Проверьте статус и ссылку.");
+      throw orderError("Проверьте статус, оплату и ссылку.");
     });
-    if (!Object.hasOwn(statuses, payload?.status) || typeof payload?.video_url !== "string") {
-      throw orderError("Проверьте статус и ссылку.");
+    const patch = readOrderPatch(input);
+    if (!patch) throw orderError("Проверьте статус, оплату и ссылку.");
+    if (role === "service" && patch.payment_status !== undefined) {
+      throw orderError("Отметка об оплате доступна сотрудникам кабинета.", 403);
     }
-    const link = payload.video_url.trim();
-    const url = URL.parse(link);
-    if (link && (!url || url.protocol !== "https:" || url.username || url.password)) {
-      throw orderError("Введите полную ссылку на видео, начинающуюся с https://.");
+    const link = patch.video_url;
+    if (link) {
+      const url = URL.parse(link);
+      if (!url || url.protocol !== "https:" || url.username || url.password) {
+        throw orderError("Введите полную ссылку на видео, начинающуюся с https://.");
+      }
     }
-    return json(await updateOrder(env, await getOrder(env, id), { status: payload.status, video_url: link }));
+    return json(await updateOrder(env, await getOrder(env, id), patch));
   }
   if (role === "service") throw orderError("Эта операция недоступна скрипту.", 403);
+  if (id && !resource && request.method === "DELETE") {
+    await deleteOrder(env, await getOrder(env, id));
+    return new Response(null, { status: 204, headers });
+  }
   if (!id && !resource && request.method === "POST") return postOrder(env, request, true);
   if (id && request.method === "GET" && orderPhotoPattern.test(resource)) {
     const photo = await getOrderPhoto(env, await getOrder(env, id), resource);
@@ -179,7 +191,7 @@ export async function onRequest({ request, env }) {
       if (request.method === "HEAD") {
         // Check the deployed schema without reading or creating a customer's order.
         await env.GIFT_DB.prepare(
-          "SELECT o.payload_ciphertext, o.telegram_sent_at, l.attempts, u.expires_at, p.content " +
+          "SELECT o.payload_ciphertext, o.telegram_sent_at, o.payment_status, o.amount_ils, o.repeat_of, l.attempts, u.expires_at, p.content " +
           "FROM dm_orders o, dm_order_limits l, dm_photo_uploads u, dm_order_photo_parts p LIMIT 0",
         ).all();
         return new Response(null, { status: 204, headers });
@@ -189,6 +201,6 @@ export async function onRequest({ request, env }) {
     throw orderError("Маршрут не найден.", 404);
   } catch (error) {
     if (!error.status) console.error("Ded Moroz order request failed", error.name);
-    return json({ error: error.status ? error.message : "Не удалось сохранить или открыть заказ. Попробуйте ещё раз." }, error.status || 500);
+    return json({ error: error.status ? error.message : "Не удалось выполнить действие с заказом. Попробуйте ещё раз." }, error.status || 500);
   }
 }

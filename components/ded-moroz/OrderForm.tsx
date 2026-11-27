@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Check, CircleCheck } from "lucide-react";
-import { childLabel, counts, newChild, newDraft, photoSlots, validateDraft, type Child, type Draft } from "@/shared/ded-moroz";
+import { Check, ChevronRight, CircleCheck } from "lucide-react";
+import { childLabel, counts, newChild, newDraft, orderCodePattern, orderRequestKeyPattern, photoSlots, readSecondVideoReference, validateDraft, type Child, type Draft } from "@/shared/ded-moroz";
+import { secondVideoPrice, videoGreetingPrice } from "@/shared/ded-moroz-pricing.js";
 import { RsvpTurnstile } from "@/components/rsvp/RsvpTurnstile";
 import { draftKey, loadText, persistPhoto, storedPhotos, type Photo, type Photos } from "./draft";
 import { apiIssue, isLocalPreview, PhotoSlot } from "./Photos";
 import { ChildrenFields, FamilyFields, TextField } from "./QuizFields";
 import s from "./quiz.module.css";
 
-type Receipt = { order_id: string; reported?: string };
-type FormProps = { price: number | null; staff?: undefined } | { price?: undefined; staff: { onCreated: (id: string) => void; onCancel: () => void } };
+type Receipt = { order_id: string; repeat_of?: string; requestKey?: string };
+type FormProps = { staff?: { onCreated: (id: string) => void; onCancel: () => void } };
 const steps = ["Участники", "Дети", "Семья", "Фотографии", "Контакты"];
 const titles = ["Сколько планируется детей поздравить?", "Расскажите о каждом ребёнке", "Расскажите о вашей семье", "Добавьте фотографии для ролика", "Куда прислать поздравление?"];
 const anchors = ["kolichestvo", "deti", "semya", "foto", "kontakty"];
@@ -26,14 +27,16 @@ function reachable(draft: Draft, photos: Photos, step: number) {
   for (let i = 0; i < step; i++) if (Object.keys(issuesAt(draft, photos, i)).length) return i;
   return step;
 }
-export function OrderForm({ price, staff }: FormProps) {
+export function OrderForm({ staff }: FormProps) {
   const isStaff = !!staff;
   const [draft, setDraft] = useState<Draft>(newDraft), [photos, setPhotos] = useState<Photos>({});
   const [step, setStep] = useState(0), [key, setKey] = useState("");
   const [errors, setErrors] = useState<Record<string,string>>({}), [issue, setIssue] = useState(""), [storageNote, setStorageNote] = useState("");
   const [busyPhotos, setBusyPhotos] = useState(0), [submitting, setSubmitting] = useState(false);
   const [preview, setPreview] = useState(false), [receipt, setReceipt] = useState<Receipt | null>(null);
-  const [method, setMethod] = useState("Bit"), [token, setToken] = useState(""), [verification, setVerification] = useState(0);
+  const [repeatKey, setRepeatKey] = useState<string>();
+  const [repeatUnavailable, setRepeatUnavailable] = useState(false);
+  const [token, setToken] = useState(""), [verification, setVerification] = useState(0);
   const title = useRef<HTMLHeadingElement>(null), sending = useRef(false);
   const Heading = isStaff ? "h2" : "h1";
   const slots = photoSlots(draft.children.map((_, i) => ({ name: childLabel(draft.children, i) })));
@@ -53,10 +56,16 @@ export function OrderForm({ price, staff }: FormProps) {
       }
       if (!active) return;
       const next = reachable(saved.data, restored, saved.step);
-      setDraft(saved.data); setPhotos(restored); setStep(next); setKey(saved.key);
+      setDraft(saved.data); setPhotos(restored); setStep(next); setKey(saved.key); setRepeatKey(saved.repeatKey);
       try {
         const last = JSON.parse(sessionStorage.getItem(receiptKey) || "null");
-        if (last?.order_id) setReceipt(last);
+        if (last?.order_id) {
+          // Receipts saved by the previous form kept the submission key in the final step's history entry.
+          const state = window.history.state;
+          const previous = state?.greetingStep === 4 && orderRequestKeyPattern.test(state.greetingKey) ? state.greetingKey : undefined;
+          setReceipt({ ...last, requestKey: last.requestKey ?? previous });
+          return;
+        }
         window.history.replaceState({ ...window.history.state, greetingKey: saved.key, greetingStep: next }, "", "#" + anchors[next]);
       } catch { /* The form also works without browser storage. */ }
     }
@@ -64,10 +73,10 @@ export function OrderForm({ price, staff }: FormProps) {
   }, [isStaff]);
   useEffect(() => {
     if (!isStaff && key && !receipt) {
-      try { localStorage.setItem(draftKey, JSON.stringify({ version: 2, data: draft, step, key, savedAt: Date.now() })); }
+      try { localStorage.setItem(draftKey, JSON.stringify({ version: 2, data: draft, step, key, repeatKey, savedAt: Date.now() })); }
       catch { /* Keep the draft in memory. */ }
     }
-  }, [isStaff, key, draft, step, receipt]);
+  }, [isStaff, key, draft, step, repeatKey, receipt]);
   useEffect(() => {
     if (isStaff || !key || receipt) return;
     const back = (event: PopStateEvent) => {
@@ -118,7 +127,7 @@ export function OrderForm({ price, staff }: FormProps) {
   }
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (sending.current || busyPhotos || !key || !step) return;
+    if (sending.current || busyPhotos || !key || !step || (step === 4 && repeatUnavailable)) return;
     setIssue("");
     for (let i = 0; i <= step; i++) {
       const found = issuesAt(draft, photos, i), first = Object.keys(found)[0];
@@ -135,13 +144,17 @@ export function OrderForm({ price, staff }: FormProps) {
     try {
       const body = new FormData();
       body.set("key", key); body.set("draft", JSON.stringify(draft));
+      if (repeatKey) body.set("repeatKey", repeatKey);
       if (needsVerification) body.set("turnstileToken", token);
       for (const slot of slots) body.set(slot.file, photos[slot.file].blob, slot.file);
       const res = await fetch(isStaff ? "/api/ded-moroz/staff/orders" : "/api/ded-moroz/orders", { method: "POST", body });
-      if (!res.ok) throw new Error(await apiIssue(res));
+      if (!res.ok) {
+        if (res.status === 409 && repeatKey) setRepeatUnavailable(true);
+        throw new Error(await apiIssue(res));
+      }
       const result: Receipt = await res.json();
       if (staff) { staff.onCreated(result.order_id); return; }
-      keepReceipt(result);
+      keepReceipt({ ...result, requestKey: key });
       try { localStorage.removeItem(draftKey); } catch { /* In-memory mode. */ }
       await persistPhoto(key).catch(() => {});
       window.scrollTo({ top: 0 }); requestAnimationFrame(() => title.current?.focus());
@@ -150,40 +163,30 @@ export function OrderForm({ price, staff }: FormProps) {
       if (needsVerification) { setToken(""); setVerification(v => v + 1); }
     } finally { sending.current = false; setSubmitting(false); }
   }
-  async function reportPayment() {
-    if (!receipt || sending.current) return;
-    sending.current = true; setSubmitting(true); setIssue("");
-    try {
-      const res = await fetch("/api/ded-moroz/orders/" + receipt.order_id + "/payment", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ method }),
-      });
-      if (!res.ok) throw new Error(await apiIssue(res));
-      keepReceipt({ ...receipt, reported: method });
-    } catch (e) { setIssue(e instanceof Error ? e.message : "Попробуйте ещё раз."); }
-    finally { sending.current = false; setSubmitting(false); }
-  }
-  function restart() {
+  function restart(offerKey: string) {
     try { sessionStorage.removeItem(receiptKey); } catch { /* In-memory mode. */ }
     const fresh = crypto.randomUUID();
     setKey(fresh); setDraft(newDraft()); setPhotos({}); setStep(0); setReceipt(null); setIssue(""); setErrors({}); setStorageNote(""); setToken(""); setVerification(v => v + 1);
+    setRepeatKey(offerKey); setRepeatUnavailable(false);
     if (!isStaff) window.history.replaceState({ ...window.history.state, greetingKey: fresh, greetingStep: 0 }, "", "#" + anchors[0]);
+    window.scrollTo({ top: 0 });
+    requestAnimationFrame(() => title.current?.focus({ preventScroll: true }));
   }
   if (receipt) return <section className={s.card + " " + s.receipt}>
     <CircleCheck size={36} aria-hidden /><Heading ref={title} tabIndex={-1}>Спасибо, заказ принят!</Heading>
-    <p>Номер заказа <strong>{receipt.order_id}</strong></p><p>Срок изготовления — <strong>1–5 рабочих дней</strong>.</p>
-    <h3>Оплата {price ? "· " + price + " ₪" : ""}</h3>
-    {!preview ? <p>Свяжемся с вами в WhatsApp и согласуем оплату.</p> : receipt.reported ? <p role="status">Отметка об оплате через {receipt.reported} сохранена.</p> : <>
-      <p>Демонстрация оплаты. Переводить деньги не нужно.</p>
-      <div className="dm-choice">{["Bit", "PayBox"].map(name => <button key={name} aria-pressed={name === method} onClick={() => setMethod(name)}>{name}</button>)}</div>
-      <button className={s.primary} disabled={submitting} onClick={() => void reportPayment()}>Я оплатил · демо</button>
-    </>}
-    {issue && <p role="alert" className="dm-error">{issue}</p>}
-    <button className={s.back} onClick={restart}>Оформить ещё один заказ</button>
+    <p>Номер заказа <strong>{receipt.order_id}</strong></p>
+    <p>Срок изготовления — <strong>1–5 рабочих дней после оплаты</strong>.</p>
+    <p>Реквизиты для оплаты отправим в WhatsApp на номер, который вы указали.</p>
+    {!receipt.repeat_of && <button type="button" className={s.secondVideo}
+      onClick={() => restart(readSecondVideoReference(receipt.requestKey) ?? receipt.order_id)}>
+      <span>Скидка 50% на второй видеоролик</span><ChevronRight size={20} aria-hidden />
+    </button>}
   </section>;
-  return <section className={s.card} aria-labelledby="quiz-question">
+  return <section className={s.card} aria-labelledby="quiz-question" data-second-video={!!repeatKey}>
     <div className={s.progress}><span>Шаг {step + 1} из {steps.length}</span><b>{steps[step]}</b></div>
     <div className={s.progressBars} aria-hidden>{steps.map((part, i) => <span key={part} data-complete={i <= step} />)}</div>
     <Heading id="quiz-question" tabIndex={-1} ref={title}>{titles[step]}</Heading>
+    {repeatKey && <p className={s.repeatPrice}>Второй ролик со скидкой 50% · <strong>{secondVideoPrice} ₪</strong></p>}
     {storageNote && <p className={s.note} role="status">{storageNote}</p>}
     {step === 0 ? <>
       <div className={s.counts} role="group" aria-label="Количество детей" id="count">{counts.map(n =>
@@ -202,7 +205,9 @@ export function OrderForm({ price, staff }: FormProps) {
         <p className={s.note}>Видеопоздравление получит родитель в WhatsApp.</p>
         <div className={s.two}>
           <TextField id="parentName" label={isStaff ? "Имя родителя" : "Ваше имя"} value={draft.parentName} max={30} autoComplete="given-name" error={errors.parentName} onChange={parentName => change({ parentName })} />
-          <TextField id="whatsapp" type="tel" label="WhatsApp родителя" value={draft.whatsapp} autoComplete="tel" placeholder="050-123-4567" error={errors.whatsapp} onChange={whatsapp => change({ whatsapp })} />
+          <TextField id="whatsapp" type="tel" label="WhatsApp родителя" value={draft.whatsapp} autoComplete="tel" placeholder="050-123-4567"
+            hint={repeatKey && orderCodePattern.test(repeatKey) ? "Укажите тот же номер, что и в первом заказе." : undefined}
+            error={errors.whatsapp} onChange={whatsapp => change({ whatsapp })} />
         </div>
         <TextField id="email" type="email" label="Электронная почта · по желанию" value={draft.email} autoComplete="email" error={errors.email} onChange={email => change({ email })} />
         <label className="dm-consent"><input id="consent" type="checkbox" checked={draft.consent} onChange={e => change({ consent: e.target.checked })} />{isStaff ? "Родитель дал согласие на обработку данных и фотографий для создания видео." : "Соглашаюсь на обработку данных и фотографий детей для создания видео."}</label>
@@ -210,10 +215,13 @@ export function OrderForm({ price, staff }: FormProps) {
         {needsVerification && <RsvpTurnstile locale="ru" action="ded_moroz_order" resetKey={verification} onTokenChange={setToken} />}
       </>}
       {issue && <p role="alert" className="dm-error">{issue}</p>}
+      {repeatUnavailable && <button className={s.back} type="button" onClick={() => {
+        setRepeatKey(undefined); setRepeatUnavailable(false); setIssue("");
+      }}>Продолжить за {videoGreetingPrice} ₪</button>}
       <div className={s.actions}>
         <button type="button" className={s.back} disabled={!!busyPhotos || submitting} onClick={() => go(step - 1)}>Назад</button>
         {staff && <button type="button" className={s.cancel} disabled={!!busyPhotos || submitting} onClick={staff.onCancel}>Отменить</button>}
-        <button className={s.primary} type="submit" disabled={!key || !!busyPhotos || submitting || (step === 4 && needsVerification && !token)}>{submitting ? "Сохраняем…" : step === 4 ? <><Check size={17} aria-hidden />Оформить заказ</> : "Дальше"}</button>
+        <button className={s.primary} type="submit" disabled={!key || !!busyPhotos || submitting || (step === 4 && (repeatUnavailable || needsVerification && !token))}>{submitting ? "Сохраняем…" : step === 4 ? <><Check size={17} aria-hidden />Оформить заказ</> : "Дальше"}</button>
       </div>
     </form>}
   </section>;

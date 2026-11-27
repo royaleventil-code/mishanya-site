@@ -147,16 +147,50 @@
 }
 .status::before { content: ""; width: 6px; height: 6px; flex: none; background: currentColor; border-radius: 50%; }
 .status[data-status="paid"] { color: #266448; background: #e6f4ec; }
+.status[data-status="unpaid"] { color: #8b451b; background: #fff0e4; }
+.status[data-status="unmarked"] { color: #4b5d70; background: #eff3f7; }
 .status[data-status="in_work"] { color: #89530e; background: #fff2d9; }
 .status[data-status="review"] { color: #684497; background: #f3ecfa; }
 .status[data-status="done"] { color: #176153; background: #dff3ef; }
 .status[data-status="cancelled"] { color: #923b40; background: #fbecee; }
+.statusControl { position: relative; padding: 0; max-width: 100%; }
+.statusControl::before { position: absolute; left: 11px; pointer-events: none; }
+.statusControl select {
+  appearance: none;
+  min-height: 38px;
+  max-width: 100%;
+  padding: 5px 30px 5px 23px;
+  border: 0;
+  border-radius: inherit;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+.statusControl select option { color: var(--ink); background: var(--paper); }
+.statusControl select:disabled { cursor: default; opacity: .65; }
+.statusControl svg { position: absolute; right: 10px; pointer-events: none; }
+.amount { display: block; margin-top: 3px; color: var(--muted); font-size: .875rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.table .actionsCell { width: 1%; text-align: center; }
+.deleteOrder {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: #923b40;
+  background: transparent;
+  vertical-align: middle;
+}
+.deleteOrder:hover:enabled { border-color: #f1c9ce; background: #fbecee; }
 .mobileLabel { display: none; }
 .empty { display: grid; justify-items: center; gap: 8px; padding: 32px 20px; border-top: 1px solid var(--line); color: var(--muted); text-align: center; }
 .empty h3 { color: var(--dark); }
 .empty svg { color: var(--pine); }
 .shell .success, .shell .error { display: flex; align-items: center; gap: 9px; padding: 12px 16px; border-radius: 12px; font-weight: 600; }
 .shell .success { margin-block: 16px; color: #24624c; background: #e8f5ee; }
+.orders .success { margin: 0 20px 18px; }
 .shell .error { margin: 0 20px 18px; color: #973c36; background: #fff0ec; }
 .success svg, .error svg { flex: none; }
 
@@ -180,6 +214,8 @@
 .photos img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: 10px; background: var(--ice); }
 .photos figcaption { margin-top: 5px; color: var(--muted); font-size: .875rem; }
 .delivery { position: sticky; top: 16px; }
+.shell .orderAmount { margin-top: 12px; }
+.shell .repeatOrder { margin-top: 4px; color: var(--muted); font-size: .9rem; }
 .deliveryActions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
 .shell .feedback { margin-top: 12px; font-size: .95rem; }
 .create { max-width: 880px; margin: 20px auto 0; }
@@ -205,7 +241,7 @@
   .table tbody tr {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-areas: "id status" "children city" "phone created";
+    grid-template-areas: "id actions" "children city" "phone created" "status status" "payment payment";
     gap: 12px 8px;
     align-content: start;
     background: #fff;
@@ -219,7 +255,13 @@
   .table td:nth-child(4) { grid-area: phone; }
   .table td:nth-child(5) { grid-area: city; }
   .table .idCell { grid-area: id; align-self: center; }
-  .table .statusCell { grid-area: status; justify-self: end; align-self: center; }
+  .table .statusCell { grid-area: status; }
+  .table .paymentCell { grid-area: payment; display: flex; flex-wrap: wrap; align-items: center; gap: 5px 8px; }
+  .paymentCell .amount { margin-top: 0; }
+  .paymentCell .mobileLabel { margin: 0; }
+  .table .actionsCell { grid-area: actions; width: auto; justify-self: end; }
+  .statusControl select, .deleteOrder { min-height: 44px; }
+  .deleteOrder { width: 44px; }
   .orderLink { padding: 6px 0; }
   .mobileLabel { display: block; margin-bottom: 2px; font-size: .8rem; font-weight: 600; color: var(--muted); }
   .detailGrid { grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); gap: 14px; }

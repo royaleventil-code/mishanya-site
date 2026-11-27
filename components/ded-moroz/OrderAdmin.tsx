@@ -1,19 +1,23 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronLeft, CircleAlert, CircleCheck, Clapperboard, Download, ExternalLink, Inbox, MessageCircle, Plus, RefreshCw, Save } from "lucide-react";
+import { ChevronDown, ChevronLeft, CircleAlert, CircleCheck, Clapperboard, Download, ExternalLink, Inbox, MessageCircle, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
 import { greetingQuizPath } from "@/data/new-year";
 import { WinterPhoto } from "@/components/new-year/NewYearMedia";
-import { orderPhotos, statuses, whatsappContactDigits, type Order } from "@/shared/ded-moroz";
+import { orderPhotos, paymentStatuses, statuses, whatsappContactDigits, type Order, type OrderPatch } from "@/shared/ded-moroz";
 import { OrderForm } from "./OrderForm";
 import { apiIssue } from "./Photos";
 import s from "./order-admin.module.css";
 
 const endpoint = "/api/ded-moroz/staff/orders";
-const columns = ["Номер заказа", "Оформлен", "Дети", "Телефон", "Город", "Статус"];
+const columns = ["Номер заказа", "Оформлен", "Дети", "Телефон", "Город", "Статус", "Оплата", "Действия"];
 const createdDate = new Intl.DateTimeFormat("ru-RU", { timeZone: "Asia/Jerusalem" });
+const statusOptions = Object.entries(statuses).map(([value, label]) => <option key={value} value={value}>{label}</option>);
+const paymentOptions = Object.entries(paymentStatuses).map(([value, label]) => <option key={value} value={value}>{label}</option>);
+
+type OrderChange = OrderPatch | "delete";
 
 async function fetchOrders(signal: AbortSignal): Promise<Order[]> {
   const res = await fetch(endpoint, { cache: "no-store", signal });
@@ -21,8 +25,27 @@ async function fetchOrders(signal: AbortSignal): Promise<Order[]> {
   return res.json();
 }
 
+async function patchOrder(id: string, patch: OrderPatch): Promise<Order> {
+  const res = await fetch(endpoint + "/" + id, {
+    method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch),
+  });
+  if (!res.ok) throw new Error(await apiIssue(res));
+  return res.json();
+}
+
 function Status({ value }: { value: Order["status"] }) {
   return <span className={s.status} data-status={value}>{statuses[value]}</span>;
+}
+
+function StatusSelect({ value, label, options, busy, onChange }: {
+  value: string; label: string; options: ReactNode; busy: boolean; onChange: (value: string) => void;
+}) {
+  return <span className={s.status + " " + s.statusControl} data-status={value}>
+    <select value={value} disabled={busy} aria-label={label} onChange={event => onChange(event.target.value)}>
+      {options}
+    </select>
+    <ChevronDown size={14} aria-hidden />
+  </span>;
 }
 
 function Phone({ value }: { value: string }) {
@@ -32,32 +55,57 @@ function Phone({ value }: { value: string }) {
     : <bdi>{value}</bdi>;
 }
 
-function OrdersTable({ orders, onSelect }: { orders: Order[]; onSelect: (id: string) => void }) {
+function OrdersTable({ orders, pendingId, onSelect, onChange }: {
+  orders: Order[]; pendingId: string;
+  onSelect: (id: string) => void;
+  onChange: (id: string, change: OrderChange) => void;
+}) {
+  const busy = !!pendingId;
   return <table className={s.table} role="table" aria-label="Все заказы">
     <thead role="rowgroup"><tr role="row">
       {columns.map(label => <th scope="col" role="columnheader" key={label}>{label}</th>)}
     </tr></thead>
-    <tbody role="rowgroup">{orders.map(order => <tr role="row" key={order.order_id}>
+    <tbody role="rowgroup">{orders.map(order => <tr role="row" key={order.order_id} aria-busy={pendingId === order.order_id}>
       <td role="cell" className={s.idCell}>
-        <button id={"open-" + order.order_id} className={s.orderLink} onClick={() => onSelect(order.order_id)}>{order.order_id}</button>
+        <button id={"open-" + order.order_id} className={s.orderLink} disabled={busy} onClick={() => onSelect(order.order_id)}>{order.order_id}</button>
       </td>
       <td role="cell"><span className={s.mobileLabel} aria-hidden>Оформлен</span><time dateTime={order.created_at}>{createdDate.format(new Date(order.created_at))}</time></td>
       <td role="cell"><span className={s.mobileLabel} aria-hidden>Дети</span>{order.children.map(child => child.name).join(", ")}</td>
       <td role="cell"><span className={s.mobileLabel} aria-hidden>Телефон</span><Phone value={order.parent.whatsapp} /></td>
       <td role="cell"><span className={s.mobileLabel} aria-hidden>Город</span>{order.city}</td>
-      <td role="cell" className={s.statusCell}><Status value={order.status} /></td>
+      <td role="cell" className={s.statusCell}>
+        <StatusSelect value={order.status} busy={busy} label={`Статус заказа ${order.order_id}`} options={statusOptions}
+          onChange={value => onChange(order.order_id, { status: value as Order["status"] })} />
+      </td>
+      <td role="cell" className={s.paymentCell}>
+        <span className={s.mobileLabel} aria-hidden>Оплата</span>
+        <StatusSelect value={order.payment_status} busy={busy} label={`Оплата заказа ${order.order_id}`} options={paymentOptions}
+          onChange={value => onChange(order.order_id, { payment_status: value as Order["payment_status"] })} />
+        <bdi className={s.amount}>{order.amount_ils} ₪</bdi>
+      </td>
+      <td role="cell" className={s.actionsCell}>
+        <button type="button" className={s.deleteOrder} disabled={busy} aria-label={`Удалить заказ ${order.order_id}`} title="Удалить заказ"
+          onClick={() => onChange(order.order_id, "delete")}><Trash2 size={17} aria-hidden /></button>
+      </td>
     </tr>)}</tbody>
   </table>;
 }
 
 function Editor({ item, onSaved }: { item: Order; onSaved: (order: Order) => void }) {
   const [status, setStatus] = useState(item.status);
+  const [payment, setPayment] = useState(item.payment_status);
   const [url, setUrl] = useState(item.video_url || "");
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const target = endpoint + "/" + item.order_id;
   const whatsappRecipient = whatsappContactDigits(item.parent.whatsapp);
+  const changes: OrderPatch = {
+    status: status === item.status ? undefined : status,
+    payment_status: payment === item.payment_status ? undefined : payment,
+    video_url: url === (item.video_url || "") ? undefined : url,
+  };
+  const dirty = Object.values(changes).some(value => value !== undefined);
 
   async function download() {
     setDownloading(true);
@@ -81,12 +129,9 @@ function Editor({ item, onSaved }: { item: Order; onSaved: (order: Order) => voi
     setBusy(true);
     setInfo("");
     try {
-      const res = await fetch(target, {
-        method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, video_url: url }),
-      });
-      if (!res.ok) throw new Error(await apiIssue(res));
-      const next: Order = await res.json();
+      const next = await patchOrder(item.order_id, changes);
+      setStatus(next.status);
+      setPayment(next.payment_status);
       setUrl(next.video_url || "");
       onSaved(next);
       setInfo("Изменения сохранены.");
@@ -140,17 +185,24 @@ function Editor({ item, onSaved }: { item: Order; onSaved: (order: Order) => voi
       </section>
     </div>
     <section className={s.panel + " " + s.delivery}>
-      <h2>Статус и видео</h2>
+      <h2>Статус, оплата и видео</h2>
+      <p className={s.orderAmount}>Сумма заказа <strong>{item.amount_ils} ₪</strong></p>
+      {item.repeat_of && <p className={s.repeatOrder}>Второй ролик к заказу <strong>{item.repeat_of}</strong> · скидка 50%</p>}
       <div className="dm-field"><label htmlFor="dm-status">Статус заказа</label>
-        <select id="dm-status" value={status} onChange={event => setStatus(event.target.value as Order["status"])}>
-          {Object.entries(statuses).map(([key, name]) => <option key={key} value={key}>{name}</option>)}
+        <select id="dm-status" value={status} disabled={busy} onChange={event => setStatus(event.target.value as Order["status"])}>
+          {statusOptions}
+        </select>
+      </div>
+      <div className="dm-field"><label htmlFor="dm-payment">Оплата</label>
+        <select id="dm-payment" value={payment} disabled={busy} onChange={event => setPayment(event.target.value as Order["payment_status"])}>
+          {paymentOptions}
         </select>
       </div>
       <div className="dm-field"><label htmlFor="dm-video">Ссылка на готовое видео</label>
-        <input id="dm-video" type="url" value={url} placeholder="https://" onChange={event => setUrl(event.target.value)} />
+        <input id="dm-video" type="url" value={url} disabled={busy} placeholder="https://" onChange={event => setUrl(event.target.value)} />
       </div>
       <div className={s.deliveryActions}>
-        <button type="button" className={s.primary} disabled={busy} onClick={save}><Save size={17} aria-hidden />Сохранить</button>
+        <button type="button" className={s.primary} disabled={busy || !dirty} onClick={save}><Save size={17} aria-hidden />Сохранить</button>
         {item.video_url && whatsappRecipient && <a className={s.secondary} target="_blank" rel="noopener noreferrer"
           href={"https://wa.me/" + whatsappRecipient + "?text=" + encodeURIComponent("Здравствуйте! Ваше именное видеопоздравление готово. " + item.video_url)}>
           <MessageCircle size={17} aria-hidden />Открыть в WhatsApp
@@ -169,7 +221,10 @@ export function OrderAdmin() {
   const [creating, setCreating] = useState(false);
   const [createdId, setCreatedId] = useState("");
   const [revision, setRevision] = useState(0);
+  const [pendingId, setPendingId] = useState("");
+  const [notice, setNotice] = useState<{ message: string; failed?: boolean }>();
   const title = useRef<HTMLHeadingElement>(null);
+  const listTitle = useRef<HTMLHeadingElement>(null);
   const item = orders.find(order => order.order_id === selected);
 
   useEffect(() => {
@@ -189,7 +244,34 @@ export function OrderAdmin() {
 
   function refresh() {
     setLoading(true);
+    setNotice(undefined);
     setRevision(value => value + 1);
+  }
+  function orderSaved(next: Order) {
+    setOrders(list => list.map(order => order.order_id === next.order_id ? next : order));
+  }
+  async function changeOrder(id: string, change: OrderChange) {
+    if (change === "delete" && !window.confirm(`Удалить заказ ${id} и все его фотографии навсегда?`)) return;
+    setPendingId(id);
+    setNotice(undefined);
+    try {
+      if (change === "delete") {
+        const res = await fetch(endpoint + "/" + id, { method: "DELETE" });
+        if (!res.ok) throw new Error(await apiIssue(res));
+        setOrders(list => list.filter(order => order.order_id !== id));
+        setNotice({ message: `Заказ ${id} удалён.` });
+        requestAnimationFrame(() => listTitle.current?.focus());
+      } else {
+        const next = await patchOrder(id, change);
+        orderSaved(next);
+        setNotice({ message: change.payment_status !== undefined
+          ? `Отметка об оплате заказа ${id} сохранена.`
+          : `Статус заказа ${id} сохранён.` });
+      }
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : "Попробуйте ещё раз.";
+      setNotice({ failed: true, message: `Заказ ${id}. ${detail}` });
+    } finally { setPendingId(""); }
   }
   function returnToList() {
     const triggerId = creating ? "new-order" : "open-" + selected;
@@ -226,7 +308,7 @@ export function OrderAdmin() {
       </> : <div className={s.hero}>
         <div className={s.heroContent}>
           <h1>Заказы <span>видеопоздравлений</span></h1>
-          <button id="new-order" type="button" className={s.primary} disabled={loading || !!issue} onClick={() => { setCreatedId(""); setSelected(""); setCreating(true); }}>
+          <button id="new-order" type="button" className={s.primary} disabled={loading || !!issue || !!pendingId} onClick={() => { setCreatedId(""); setSelected(""); setCreating(true); }}>
             <Plus size={18} aria-hidden />Создать заказ
           </button>
         </div>
@@ -237,17 +319,20 @@ export function OrderAdmin() {
 
       {createdId && <p className={s.success} role="status"><CircleCheck size={18} aria-hidden />Заказ {createdId} создан.</p>}
       {creating ? <div className={s.create}><OrderForm staff={{ onCreated: orderCreated, onCancel: returnToList }} /></div>
-        : item ? <Editor key={item.order_id} item={item} onSaved={next => setOrders(list => list.map(order => order.order_id === next.order_id ? next : order))} />
+        : item ? <Editor key={item.order_id} item={item} onSaved={orderSaved} />
         : <section className={s.orders} aria-labelledby="orders-title">
           <div className={s.listHead}>
-            <h2 id="orders-title"><Clapperboard size={21} aria-hidden />Все заказы
+            <h2 id="orders-title" ref={listTitle} tabIndex={-1}><Clapperboard size={21} aria-hidden />Все заказы
               {!loading && (!issue || orders.length > 0) && <span className={s.count}>{orders.length}</span>}
             </h2>
-            <button className={s.refresh} type="button" disabled={loading} onClick={refresh}><RefreshCw size={16} aria-hidden />Обновить</button>
+            <button className={s.refresh} type="button" disabled={loading || !!pendingId} onClick={refresh}><RefreshCw size={16} aria-hidden />Обновить</button>
           </div>
           {issue && <p className={s.error} role="alert"><CircleAlert size={18} aria-hidden />{issue}</p>}
+          {notice && <p className={notice.failed ? s.error : s.success} role={notice.failed ? "alert" : "status"}>
+            {notice.failed ? <CircleAlert size={18} aria-hidden /> : <CircleCheck size={18} aria-hidden />}{notice.message}
+          </p>}
           {loading ? <p className={s.empty} role="status">Загружаем заказы…</p> : orders.length > 0
-            ? <OrdersTable orders={orders} onSelect={id => { setCreatedId(""); setSelected(id); }} />
+            ? <OrdersTable orders={orders} pendingId={pendingId} onChange={changeOrder} onSelect={id => { setCreatedId(""); setSelected(id); }} />
             : !issue && <div className={s.empty}><Inbox size={27} aria-hidden /><h3>Пока нет заказов</h3><p>После оформления здесь появятся анкета и фотографии.</p></div>}
         </section>}
     </main>

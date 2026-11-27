@@ -114,6 +114,58 @@ test("two- and four-child orders reach matching folders and survive a retry", as
   }
 });
 
+test("a discounted order retains its own price and the first order number", async t => {
+  const root = await mkdtemp(path.join(tmpdir(), "greeting-second-video-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const store = orderStore(root);
+  const photos = await pictures(2);
+  const firstKey = randomUUID();
+  const first = await store.create(draft(), firstKey, photos);
+  const secondKey = randomUUID();
+  await assert.rejects(store.create({ ...draft(), whatsapp: "050-123-4568" }, randomUUID(), photos, { repeatKey: first.order_id }), /WhatsApp из первого заказа/);
+  const second = await store.create(draft(), secondKey, photos, { repeatKey: firstKey });
+  assert.equal(first.amount_ils, 250);
+  assert.equal(second.amount_ils, 125);
+  assert.equal(second.repeat_of, first.order_id);
+  assert.deepEqual(await store.create(draft(), secondKey, photos, { repeatKey: firstKey }), second);
+  await assert.rejects(store.create(draft(), randomUUID(), photos, { repeatKey: firstKey }), { status: 409 });
+  await assert.rejects(store.create(draft(), randomUUID(), photos, { repeatKey: secondKey }), { status: 409 });
+  assert.ok(formatOrderNotice(second).includes("К оплате — 125 ₪. Второй ролик к заказу " + first.order_id));
+});
+
+test("the local store reads legacy payment marks and updates payment separately", async t => {
+  const root = await mkdtemp(path.join(tmpdir(), "greeting-payment-test-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const store = orderStore(root);
+  const { order_id: id } = await store.create(draft(), randomUUID(), await pictures(2));
+  assert.equal((await store.read(id)).payment_status, "unpaid");
+  await store.update(id, { status: "paid", payment_status: undefined });
+  const legacyPaid = await store.read(id);
+  assert.equal(legacyPaid.status, "new");
+  assert.equal(legacyPaid.payment_status, "paid");
+  await store.update(id, { status: "done", payment_status: undefined });
+  assert.equal((await store.read(id)).payment_status, "unmarked");
+  const delivered = await store.update(id, { payment_status: "unpaid" });
+  assert.equal(delivered.status, "done");
+  assert.equal(delivered.payment_status, "unpaid");
+});
+
+test("local deletion removes the order folder and state without reusing its number", async t => {
+  const root = await mkdtemp(path.join(tmpdir(), "greeting-delete-test-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const store = orderStore(root, { telegramNotifications: true });
+  const photos = await pictures(2);
+  const first = await store.create(draft(), randomUUID(), photos);
+  await assert.rejects(store.remove("../orders"), { status: 404 });
+  await store.remove(first.order_id);
+  await store.remove(first.order_id);
+  assert.deepEqual(await store.list(), []);
+  assert.deepEqual(await readdir(path.join(root, "orders")), []);
+  assert.deepEqual(await readdir(path.join(root, "order-state")), []);
+  const next = await store.create(draft(), randomUUID(), photos);
+  assert.notEqual(next.order_id, first.order_id);
+});
+
 test("a free-form phone stays on one line in the group message", () => {
   const order = orderFromDraft(draft(), "DM-2026-0002", new Date());
   order.parent.whatsapp = "  +972\n  50-123-4567  ";

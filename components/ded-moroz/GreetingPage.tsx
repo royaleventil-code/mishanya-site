@@ -13,11 +13,11 @@ export function GreetingPage({ price }: { price: number | null }) {
       <Link className={s.returnLink} href={greetingOrderPath} prefetch={false}><ChevronLeft size={16} aria-hidden />О видеопоздравлении</Link>
     </div></header>
     <main className={s.layout}>
-      <div className={s.quiz}><OrderForm price={price} /></div>
+      <div className={s.quiz}><OrderForm /></div>
       <aside className={s.aside} aria-label="Ваше видеопоздравление">
         <WinterPhoto name="video-greeting-book" alt="Дед Мороз, Снегурочка и Мишаня с волшебной книгой" sizes="(min-width: 820px) 345px, 90vw" />
         <div><h2>Видеопоздравление от Деда Мороза</h2>
-          {price && <p><bdi>{price} ₪</bdi> за готовый ролик</p>}
+          {price && <p className={s.asidePrice}><bdi>{price} ₪</bdi> за готовый ролик</p>}
           <p className={s.time}><Clock3 size={17} aria-hidden />1–5 рабочих дней</p>
         </div>
       </aside>

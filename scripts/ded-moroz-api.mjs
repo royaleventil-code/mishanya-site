@@ -1,5 +1,5 @@
 import { decodePhoto, orderPattern, problem, zipFiles } from "./ded-moroz-files.mjs";
-import { allDraftIssues, maxPhotos, orderPhotoPattern, orderPhotos, photoLimit, photoSlots, statuses } from "../shared/ded-moroz.ts";
+import { allDraftIssues, maxPhotos, orderPhotoPattern, orderPhotos, photoLimit, photoSlots, readOrderPatch, readSecondVideoReference, secondVideoUnavailable } from "../shared/ded-moroz.ts";
 
 async function body(req, limit) {
   const parts = []; let size = 0;
@@ -11,6 +11,7 @@ async function body(req, limit) {
   return Buffer.concat(parts);
 }
 const sendJson = (res, status, value) => { res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" }); res.end(JSON.stringify(value)); };
+const staffOrders = "/api/ded-moroz/staff/orders";
 function parseJSON(value) {
   try { return JSON.parse(value); } catch { throw problem("Проверьте данные формы."); }
 }
@@ -41,7 +42,7 @@ export function greetingRequestHandler(store, servePage, notifyPendingOrders) {
         await store.clean();
         cleanedAt = Date.now();
       }
-      const route = url.pathname.replace("/api/ded-moroz/staff/orders", "/api/ded-moroz/orders");
+      const route = url.pathname.replace(staffOrders, "/api/ded-moroz/orders");
       const [, , , action, id, sub] = route.split("/");
       if (req.method === "GET" && action === "ping") return sendJson(res, 200, { service: "mishanya-ded-moroz" });
       if (req.method === "POST" && action === "decode") {
@@ -57,6 +58,10 @@ export function greetingRequestHandler(store, servePage, notifyPendingOrders) {
         const draft = parseJSON(form.get("draft"));
         const token = form.get("key");
         if (typeof token !== "string" || !/^[a-f\d-]{36}$/i.test(token)) throw problem("Обновите страницу и повторите отправку.");
+        const staff = url.pathname === staffOrders;
+        const repeat = form.get("repeatKey");
+        const repeatKey = readSecondVideoReference(repeat);
+        if (repeat !== null && (staff || !repeatKey)) throw problem(secondVideoUnavailable, 409);
         let issues;
         try { issues = allDraftIssues(draft); } catch { throw problem("Проверьте поля анкеты."); }
         if (Object.keys(issues).length) throw problem(Object.values(issues)[0]);
@@ -66,10 +71,10 @@ export function greetingRequestHandler(store, servePage, notifyPendingOrders) {
           if (!file || typeof file === "string" || !file.size || file.size > photoLimit) throw problem("Загрузите фото «" + slot.label + "» до 15 МБ.");
           photos.push(Buffer.from(await file.arrayBuffer()));
         }
-        const staff = url.pathname === "/api/ded-moroz/staff/orders";
-        const order = await store.create(draft, token, photos, { staff });
+        const order = await store.create(draft, token, photos, { staff, repeatKey });
         void notifyPendingOrders?.();
-        return sendJson(res, 201, { order_id: order.order_id });
+        const { order_id, amount_ils, repeat_of } = order;
+        return sendJson(res, 201, { order_id, amount_ils, repeat_of });
       }
       if (!id && req.method === "GET") return sendJson(res, 200, (await store.list()).map(publicOrder));
       if (!id || !orderPattern.test(id)) throw problem("Заказ не найден.", 404);
@@ -88,13 +93,21 @@ export function greetingRequestHandler(store, servePage, notifyPendingOrders) {
         await store.update(id, { payment_reported: input.method }); return sendJson(res, 200, { ok: true });
       }
       if (req.method === "PATCH" && !sub) {
-        const input = parseJSON(await body(req, 8192));
-        if (!Object.hasOwn(statuses, input?.status) || typeof input?.video_url !== "string") throw problem("Проверьте статус и ссылку.");
-        const video = input.video_url.trim();
+        const patch = readOrderPatch(parseJSON(await body(req, 8192)));
+        if (!patch) throw problem("Проверьте статус, оплату и ссылку.");
+        if (patch.payment_status !== undefined && url.pathname !== staffOrders + "/" + id) {
+          throw problem("Отметка об оплате доступна в кабинете.", 403);
+        }
+        const video = patch.video_url;
         if (video && !URL.canParse(video)) throw problem("Введите полную ссылку на видео.");
         if (video && !["https:", "http:"].includes(new URL(video).protocol)) throw problem("Подойдёт ссылка http или https.");
-        const order = await store.update(id, { status: input.status, video_url: video });
+        const order = await store.update(id, patch);
         return sendJson(res, 200, publicOrder(order));
+      }
+      if (req.method === "DELETE" && url.pathname === staffOrders + "/" + id) {
+        await store.remove(id);
+        res.writeHead(204);
+        return res.end();
       }
       throw problem("Маршрут не найден.", 404);
     } catch (error) {

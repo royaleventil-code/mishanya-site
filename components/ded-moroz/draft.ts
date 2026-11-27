@@ -1,9 +1,9 @@
-import { counts, newChild, newDraft, normalizeSelectedCity, type Child, type Draft } from "@/shared/ded-moroz";
+import { counts, newChild, newDraft, normalizeSelectedCity, readSecondVideoReference, type Child, type Draft } from "@/shared/ded-moroz";
 
 export const draftKey = "mishanya-ded-moroz-v1";
 export type Photo = { blob: Blob; width: number; height: number };
 export type Photos = Record<string, Photo>;
-export type Saved = { data: Draft; step: number; key: string; legacy: boolean };
+export type Saved = { data: Draft; step: number; key: string; legacy: boolean; repeatKey?: string };
 export function loadText(): Saved {
   const fresh = { data: newDraft(), step: 0, key: crypto.randomUUID(), legacy: false };
   try {
@@ -17,7 +17,8 @@ export function loadText(): Saved {
       city: normalizeSelectedCity(old.city || ""), otherCity: old.otherCity || "", shared_fact: old.shared_fact || "",
       parentName: old.parentName || "", whatsapp: old.whatsapp || "", email: old.email || "", consent: old.consent === true,
     };
-    return { data, step: !legacy && [0,1,2,3,4].includes(saved.step) ? saved.step : 0, key: saved.key || fresh.key, legacy };
+    const repeatKey = legacy ? undefined : readSecondVideoReference(saved.repeatKey);
+    return { data, step: !legacy && [0,1,2,3,4].includes(saved.step) ? saved.step : 0, key: saved.key || fresh.key, legacy, repeatKey };
   } catch { return fresh; }
 }
 function db(): Promise<IDBDatabase> {

@@ -1,4 +1,5 @@
 import type { Locale } from "@/lib/i18n";
+import { videoGreetingPrice } from "../shared/ded-moroz-pricing.js";
 
 type Copy = Record<Locale, string>;
 export type NewYearOption = { minutes?: number; price: number; from?: boolean; capacity?: Copy };
@@ -46,7 +47,7 @@ export const NEW_YEAR_PROGRAMS: NewYearProgram[] = [
       "דד מורוז יפנה לילד או לילדה בשם הפרטי, והתמונות ישתלבו בסיפור חגיגי לשנה החדשה. את הסרטון המוכן תוכלו להקרין ליד עץ החג ולשמור למזכרת.",
     ),
     photo: "video-greeting-book",
-    options: [{ price: 250 }],
+    options: [{ price: videoGreetingPrice }],
     includes: [],
   },
   {

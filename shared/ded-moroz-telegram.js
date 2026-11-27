@@ -8,6 +8,7 @@ export function formatOrderNotice(order) {
     "Заказ " + order.order_id,
     "Телефон: " + (phone || "не указан"),
     "Детей в заказе — " + order.children.length,
+    ...(order.repeat_of ? ["К оплате — " + order.amount_ils + " ₪. Второй ролик к заказу " + order.repeat_of] : []),
     "Открыть кабинет: https://mishanya-show.com/admin/ded-moroz",
   ].join("\n");
 }

@@ -1,4 +1,5 @@
 import { parsePhoneNumberFromString } from "libphonenumber-js/min";
+import { secondVideoPrice, videoGreetingPrice } from "./ded-moroz-pricing.js";
 
 export type Child = { name: string; stress: number; distinction: string; gender: string; age: string; fact_learned: string; fact_kind: string };
 export type Draft = {
@@ -11,6 +12,15 @@ export const newDraft = (): Draft => ({
   parentName: "", whatsapp: "", email: "", consent: false,
 });
 export const counts = [1, 2, 3, 4, 5];
+export const orderRequestKeyPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+export const orderCodePattern = /^DM-(\d{4})-(\d{4,12})$/;
+export const secondVideoUnavailable = "Скидка на второй ролик по этому заказу уже использована или недоступна.";
+export const secondVideoPhoneIssue = "Укажите номер WhatsApp из первого заказа, чтобы получить скидку.";
+export function readSecondVideoReference(value: unknown) {
+  if (typeof value !== "string") return undefined;
+  if (orderCodePattern.test(value)) return value;
+  return orderRequestKeyPattern.test(value) ? value.toLowerCase() : undefined;
+}
 const nofHaGalil = "Ноф-ха-Галиль";
 export const cities = [
   "Нетания", "Тель-Авив", "Хайфа", "Иерусалим", "Ришон-ле-Цион", "Бат-Ям", "Ашдод", "Ашкелон",
@@ -19,7 +29,40 @@ export const cities = [
   "Кирьят-Бялик", "Кирьят-Моцкин", "Кирьят-Ата", "Эйлат", "Модиин", "Рамат-Ган", "Гиватаим",
   "Ор-Акива", "Мигдаль-ха-Эмек", "Тират-Кармель",
 ].sort(new Intl.Collator("ru").compare).concat("Другой");
-export const statuses = { new: "Оформлен", paid: "Оплачен", in_work: "В работе", review: "На проверке", done: "Отправлен клиенту", cancelled: "Отменён" };
+export const statuses = { new: "Оформлен", in_work: "В работе", review: "На проверке", done: "Отправлен клиенту", cancelled: "Отменён" };
+export const paymentStatuses = { unmarked: "Не отмечено", unpaid: "Не оплачен", paid: "Оплачен" };
+export type OrderStatus = keyof typeof statuses;
+export type PaymentStatus = keyof typeof paymentStatuses;
+export type OrderPatch = { status?: OrderStatus; payment_status?: PaymentStatus; video_url?: string };
+
+export function orderProgress(status: OrderStatus | "paid", payment?: PaymentStatus): { status: OrderStatus; payment_status: PaymentStatus } {
+  if (status === "paid") return { status: "new", payment_status: "paid" };
+  return { status, payment_status: payment ?? "unmarked" };
+}
+
+export function readOrderPatch(value: unknown): OrderPatch | null {
+  if (!value || typeof value !== "object") return null;
+  const input = value as Record<string, unknown>;
+  // An older open copy of the cabinet can still submit payment as an order status.
+  const legacyPaid = input.status === "paid" && input.payment_status === undefined;
+  const status = legacyPaid ? undefined : input.status;
+  const payment = legacyPaid ? "paid" : input.payment_status;
+  const patch: OrderPatch = {};
+  if (status !== undefined) {
+    if (typeof status !== "string" || !Object.hasOwn(statuses, status)) return null;
+    patch.status = status as OrderStatus;
+  }
+  if (payment !== undefined) {
+    if (typeof payment !== "string" || !Object.hasOwn(paymentStatuses, payment)) return null;
+    patch.payment_status = payment as PaymentStatus;
+  }
+  if (input.video_url !== undefined) {
+    if (typeof input.video_url !== "string") return null;
+    patch.video_url = input.video_url.trim();
+  }
+  return Object.keys(patch).length ? patch : null;
+}
+
 export const photoLimit = 15 * 1024 * 1024;
 export const preparedPhotoLimit = 3 * 1024 * 1024;
 export const maxPhotos = 6;
@@ -112,7 +155,7 @@ export function validateDraft(draft: Draft, step: number): Issues {
 export function allDraftIssues(draft: Draft): Issues {
   return Object.assign({}, ...[0, 1, 2, 4].map(step => validateDraft(draft, step)));
 }
-export function orderFromDraft(draft: Draft, id: string, now: Date) {
+export function orderFromDraft(draft: Draft, id: string, now: Date, repeatOf?: string) {
   const count = draft.children.length;
   const children = draft.children.map((c, i) => {
     const name = formattedName(c.name.trim());
@@ -125,7 +168,9 @@ export function orderFromDraft(draft: Draft, id: string, now: Date) {
     };
   });
   return {
-    order_id: id, created_at: now.toISOString(), status: "new" as keyof typeof statuses, children_count: count, children,
+    order_id: id, created_at: now.toISOString(), status: "new" as OrderStatus, payment_status: "unpaid" as PaymentStatus,
+    amount_ils: repeatOf ? secondVideoPrice : videoGreetingPrice, ...(repeatOf ? { repeat_of: repeatOf } : {}),
+    children_count: count, children,
     shared_fact: count === 3 ? draft.shared_fact.trim() : "", city: familyCity(draft),
     family_photo: "family.jpg", parent: { name: draft.parentName.trim(), whatsapp: "+" + whatsappContactDigits(draft.whatsapp), email: draft.email.trim() },
     consent: true,

@@ -6,7 +6,8 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { orderZip } from "../shared/ded-moroz-zip.js";
 import sharp from "sharp";
-import { orderFromDraft, orderPhotoPattern, photoIssue, photoLimit, photoSlots } from "../shared/ded-moroz.ts";
+import { orderCodePattern, orderFromDraft, orderPhotoPattern, orderProgress, photoIssue, photoLimit, photoSlots, secondVideoPhoneIssue, secondVideoUnavailable, whatsappContactDigits } from "../shared/ded-moroz.ts";
+import { videoGreetingPrice } from "../shared/ded-moroz-pricing.js";
 
 const run = promisify(execFile);
 const imageOptions = { limitInputPixels: 65_000_000, failOn: "error" };
@@ -49,7 +50,7 @@ export async function decodePhoto(bytes) {
 }
 
 export function orderStore(root, { telegramNotifications = false } = {}) {
-  const orders = path.join(root, "orders");
+  const orders = path.resolve(root, "orders");
   const stateDir = path.join(root, "order-state");
   const statePath = id => path.join(stateDir, id + ".json");
   let writes = Promise.resolve();
@@ -62,7 +63,8 @@ export function orderStore(root, { telegramNotifications = false } = {}) {
         if (error.code === "ENOENT") return "{}";
         throw error;
       });
-      return { ...data, ...JSON.parse(state) };
+      const order = { ...data, ...JSON.parse(state) };
+      return { ...order, amount_ils: order.amount_ils ?? videoGreetingPrice, ...orderProgress(order.status, order.payment_status) };
     }
     catch (error) { if (error.code === "ENOENT") throw problem("Заказ не найден.", 404); throw error; }
   };
@@ -71,11 +73,20 @@ export function orderStore(root, { telegramNotifications = false } = {}) {
     const names = (await readdir(orders)).filter(name => orderPattern.test(name));
     return (await Promise.all(names.map(read))).sort((a,b) => b.created_at.localeCompare(a.created_at));
   }
-  const create = (draft, token, photos, { staff = false } = {}) => exclusive(async () => {
+  const create = (draft, token, photos, { staff = false, repeatKey } = {}) => exclusive(async () => {
     const records = await list();
     const requestId = (staff ? "staff:" : "") + token;
     const previous = records.find(item => item.request_id === requestId);
     if (previous) return previous;
+    const firstByCode = !!repeatKey && orderCodePattern.test(repeatKey);
+    const first = repeatKey && !staff
+      ? records.find(item => firstByCode ? item.order_id === repeatKey : item.request_id === repeatKey)
+      : undefined;
+    if (repeatKey && (!first || first.repeat_of || first.request_id?.startsWith("staff:") ||
+      records.some(item => item.repeat_of === first.order_id))) throw problem(secondVideoUnavailable, 409);
+    if (firstByCode && first && whatsappContactDigits(first.parent.whatsapp) !== whatsappContactDigits(draft.whatsapp)) {
+      throw problem(secondVideoPhoneIssue);
+    }
     const now = new Date();
     if (!staff && records.filter(item => !item.request_id?.startsWith("staff:") && now.getTime() - Date.parse(item.created_at) < 3600000).length >= 5) throw problem("За час можно оформить до пяти заказов. Попробуйте позже.", 429);
     const year = new Intl.DateTimeFormat("en", { year: "numeric", timeZone: "Asia/Jerusalem" }).format(now);
@@ -95,7 +106,7 @@ export function orderStore(root, { telegramNotifications = false } = {}) {
         if (issue) throw problem(slot.label + ". " + issue);
         await writeFile(path.join(stage, slot.file), jpeg);
       }
-      const order = orderFromDraft(draft, id, now);
+      const order = orderFromDraft(draft, id, now, first?.order_id);
       const state = { request_id: requestId };
       if (telegramNotifications) state.telegram_notification = { attempts: 0, nextAttemptAt: now.getTime() };
       await writeFile(path.join(stage, "order.json"), JSON.stringify(order, null, 2));
@@ -126,12 +137,18 @@ export function orderStore(root, { telegramNotifications = false } = {}) {
     } finally { await rm(temp, { force: true }); }
     return order;
   });
+  async function removeFiles(id) {
+    const dir = path.resolve(orders, id);
+    if (!orderPattern.test(id) || path.dirname(dir) !== orders) throw problem("Заказ не найден.", 404);
+    await rm(dir, { recursive: true, force: true });
+    await rm(statePath(id), { force: true });
+  }
+  const remove = id => exclusive(() => removeFiles(id));
   const clean = () => exclusive(async () => {
     const oldest = Date.now() - 60 * 86400000;
     for (const order of await list()) {
       if (Date.parse(order.created_at) < oldest && orderPattern.test(order.order_id)) {
-        await rm(path.join(orders, order.order_id), { recursive: true });
-        await rm(statePath(order.order_id), { force: true });
+        await removeFiles(order.order_id);
       }
     }
   });
@@ -140,7 +157,7 @@ export function orderStore(root, { telegramNotifications = false } = {}) {
     try { return await readFile(path.join(orders, id, file)); }
     catch (error) { if (error.code === "ENOENT") throw problem("Фото не найдено.", 404); throw error; }
   };
-  return { list, create, update, clean, read, photo };
+  return { list: () => exclusive(list), create, update, remove, clean, read, photo };
 }
 
 export function zipFiles(entries) { return Buffer.from(orderZip(entries)); }

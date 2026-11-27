@@ -1,13 +1,17 @@
-import { orderFromDraft, orderPhotoPattern, orderPhotos } from "./ded-moroz.ts";
+import { orderCodePattern, orderFromDraft, orderPhotoPattern, orderPhotos, orderProgress, secondVideoPhoneIssue, secondVideoUnavailable, whatsappContactDigits } from "./ded-moroz.ts";
+import { videoGreetingPrice } from "./ded-moroz-pricing.js";
 import { decryptPayload, encryptPayload, phoneHash } from "./gift-core.js";
 
 const hour = 3_600_000;
 const photoPartBytes = 192 * 1024;
 const encoder = new TextEncoder();
-const orderCodePattern = /^DM-(\d{4})-(\d{4,12})$/;
 const storageKey = env => "ded-moroz:" + env.GIFT_DATA_SECRET;
 const code = row => "DM-" + row.season_year + "-" + String(row.id).padStart(4, "0");
-export const orderReceipt = row => ({ order_id: code(row), ...(row.ready_by ? { ready_by: row.ready_by } : {}) });
+export const orderReceipt = row => ({
+  order_id: code(row), amount_ils: row.amount_ils ?? videoGreetingPrice,
+  ...(row.ready_by ? { ready_by: row.ready_by } : {}),
+  ...(row.repeat_of ? { repeat_of: row.repeat_of } : {}),
+});
 export function orderError(message, status = 400) {
   return Object.assign(new Error(message), { status });
 }
@@ -24,7 +28,7 @@ export async function checkOrderLimit(env, ip, now = Date.now()) {
 }
 
 export function findOrderByRequest(env, key) {
-  return env.GIFT_DB.prepare("SELECT id, season_year, ready_by, photo_prefix FROM dm_orders WHERE request_key = ?")
+  return env.GIFT_DB.prepare("SELECT id, season_year, ready_by, photo_prefix, amount_ils, repeat_of FROM dm_orders WHERE request_key = ?")
     .bind(key).first();
 }
 
@@ -45,12 +49,31 @@ async function writePhoto(db, key, upload, name, file) {
   }
 }
 
-export async function saveOrder(env, draft, key, files, now = new Date()) {
+export async function saveOrder(env, draft, key, files, now = new Date(), repeatKey) {
   const existing = await findOrderByRequest(env, key);
   if (existing) return existing;
 
+  const firstByCode = !!repeatKey && orderCodePattern.test(repeatKey);
+  let first = null;
+  if (firstByCode) {
+    // Older confirmations have an order number but may no longer have their submission key.
+    first = await getOrder(env, repeatKey).catch(error => {
+      if (error.status === 404) return null;
+      throw error;
+    });
+    if (first?.request_key.startsWith("staff:")) first = null;
+    if (first && !first.repeat_of) {
+      const order = await toOrder(env, first);
+      if (whatsappContactDigits(order.parent.whatsapp) !== whatsappContactDigits(draft.whatsapp)) {
+        throw orderError(secondVideoPhoneIssue);
+      }
+    }
+  } else if (repeatKey) {
+    first = await findOrderByRequest(env, repeatKey);
+  }
+  if (repeatKey && (!first || first.repeat_of)) throw orderError(secondVideoUnavailable, 409);
   const season = new Intl.DateTimeFormat("en", { year: "numeric", timeZone: "Asia/Jerusalem" }).format(now);
-  const order = orderFromDraft(draft, "", now);
+  const order = orderFromDraft(draft, "", now, first ? code(first) : undefined);
   const payload = await encryptPayload(order, storageKey(env));
   const db = env.GIFT_DB;
   const upload = crypto.randomUUID();
@@ -63,12 +86,16 @@ export async function saveOrder(env, draft, key, files, now = new Date()) {
     if (files.length !== slots.length) throw orderError("Проверьте комплект фотографий.");
     const saved = await Promise.allSettled(files.map((file, i) => writePhoto(db, cipher, upload, slots[i].file, file)));
     if (saved.some(result => result.status === "rejected")) throw orderError("Не удалось сохранить фотографии. Попробуйте ещё раз.", 503);
-    // Only the winner for a request key publishes an order and keeps its photo upload.
+    // The unique request key and first-order reference also protect concurrent submissions.
     await db.batch([
       db.prepare(
-        "INSERT INTO dm_orders (request_key, season_year, created_at, ready_by, child_count, payload_ciphertext, photo_prefix, telegram_next_at) " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(request_key) DO NOTHING",
-      ).bind(key, season, now.toISOString(), "", order.children.length, payload, upload, +now),
+        "INSERT INTO dm_orders (request_key, season_year, created_at, ready_by, child_count, payload_ciphertext, photo_prefix, telegram_next_at, payment_status, amount_ils, repeat_of) " +
+        "SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE ? IS NULL OR EXISTS (SELECT 1 FROM dm_orders WHERE id = ?) " +
+        "ON CONFLICT DO NOTHING",
+      ).bind(
+        key, season, now.toISOString(), "", order.children.length, payload, upload, +now,
+        order.payment_status, order.amount_ils, order.repeat_of ?? null, first?.id ?? null, first?.id ?? null,
+      ),
       db.prepare(
         "UPDATE dm_photo_uploads SET expires_at = NULL WHERE upload_id = ? AND EXISTS (SELECT 1 FROM dm_orders WHERE photo_prefix = ?)",
       ).bind(upload, upload),
@@ -83,12 +110,13 @@ export async function saveOrder(env, draft, key, files, now = new Date()) {
   }
   const row = await findOrderByRequest(env, key);
   if (row) return row;
+  if (first) throw orderError(secondVideoUnavailable, 409);
   throw orderError("Не удалось сохранить заказ. Попробуйте ещё раз.", 503);
 }
 
 export async function toOrder(env, row) {
   const stored = await decryptPayload(row.payload_ciphertext, storageKey(env));
-  return { ...stored, order_id: code(row), status: row.status, video_url: row.video_url || undefined };
+  return { ...stored, ...orderReceipt(row), ...orderProgress(row.status, row.payment_status), video_url: row.video_url || undefined };
 }
 
 export async function listOrders(env) {
@@ -105,10 +133,21 @@ export async function getOrder(env, codeValue) {
 }
 
 export async function updateOrder(env, row, payload) {
-  const updated = await env.GIFT_DB.prepare("UPDATE dm_orders SET status = ?, video_url = ? WHERE id = ? RETURNING *")
-    .bind(payload.status, payload.video_url, row.id).first();
+  const updated = await env.GIFT_DB.prepare(
+    "UPDATE dm_orders SET status = COALESCE(?, CASE WHEN status = 'paid' THEN 'new' ELSE status END), " +
+    "payment_status = COALESCE(?, CASE WHEN status = 'paid' THEN 'paid' ELSE payment_status END), " +
+    "video_url = COALESCE(?, video_url) WHERE id = ? RETURNING *",
+  ).bind(payload.status ?? null, payload.payment_status ?? null, payload.video_url ?? null, row.id).first();
   if (!updated) throw orderError("Заказ не найден.", 404);
   return toOrder(env, updated);
+}
+
+export async function deleteOrder(env, row) {
+  const db = env.GIFT_DB;
+  await db.batch([
+    db.prepare("DELETE FROM dm_orders WHERE id = ?").bind(row.id),
+    db.prepare("DELETE FROM dm_photo_uploads WHERE upload_id = ?").bind(row.photo_prefix),
+  ]);
 }
 
 export async function getOrderPhoto(env, row, name) {
