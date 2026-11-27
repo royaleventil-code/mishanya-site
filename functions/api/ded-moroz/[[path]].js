@@ -1,9 +1,13 @@
 import { orderAccessRole, accessIssuer } from "../../../shared/ded-moroz-access.js";
-import { allDraftIssues, maxPhotos, orderPhotoPattern, orderRequestKeyPattern, photoIssue, photoSlots, preparedPhotoLimit, readOrderPatch, readSecondVideoReference, secondVideoUnavailable } from "../../../shared/ded-moroz.ts";
+import {
+  allDraftIssues, maxPhotos, orderEditConflict, orderEditIssues, orderEditPhotos, orderEditSlots, orderPhotoPattern,
+  orderRequestKeyPattern, orderWithEdits, photoIssue, photoSlots, preparedPhotoLimit, readOrderEditDraft,
+  readOrderPatch, readSecondVideoReference, secondVideoUnavailable,
+} from "../../../shared/ded-moroz.ts";
 import { orderZip } from "../../../shared/ded-moroz-zip.js";
 import {
   checkOrderLimit, deleteOrder, findOrderByRequest, getOrder, getOrderPhoto, listOrders, orderArchiveEntries,
-  orderError, orderReceipt, saveOrder, updateOrder,
+  orderEditSnapshot, orderError, orderReceipt, saveOrder, saveOrderDetails, updateOrder,
 } from "../../../shared/ded-moroz-cloud.js";
 
 const headers = { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" };
@@ -24,9 +28,9 @@ function limitedBody(request, limit) {
   return new Response(request.body.pipeThrough(guard), { headers: request.headers });
 }
 
-async function orderForm(request) {
+async function orderForm(request, limit = orderLimit) {
   try {
-    return await limitedBody(request, orderLimit).formData();
+    return await limitedBody(request, limit).formData();
   } catch (error) {
     if (error.status) throw error;
     throw orderError("Не удалось прочитать форму заказа.");
@@ -81,21 +85,44 @@ function jpegDimensions(bytes) {
   return null;
 }
 
+async function readPhoto(form, slot) {
+  const file = form.get(slot.file);
+  if (!file || typeof file === "string" || file.type !== "image/jpeg" ||
+    file.size < 8 || file.size > preparedPhotoLimit) {
+    throw orderError("Загрузите фотографию «" + slot.label + "».");
+  }
+  const size = jpegDimensions(new Uint8Array(await file.arrayBuffer()));
+  if (!size) throw orderError("Не удалось прочитать фотографию. Выберите другой снимок.");
+  const issue = photoIssue(size.width, size.height, slot.kind);
+  if (issue) throw orderError(slot.label + ". " + issue);
+  return file;
+}
+
 async function readOrderPhotos(form, draft) {
   const files = [];
-  for (const slot of photoSlots(draft.children)) {
-    const file = form.get(slot.file);
-    if (!file || typeof file === "string" || file.type !== "image/jpeg" ||
-      file.size < 8 || file.size > preparedPhotoLimit) {
-      throw orderError("Загрузите фотографию «" + slot.label + "».");
-    }
-    const size = jpegDimensions(new Uint8Array(await file.arrayBuffer()));
-    if (!size) throw orderError("Не удалось прочитать фотографию. Выберите другой снимок.");
-    const issue = photoIssue(size.width, size.height, slot.kind);
-    if (issue) throw orderError(slot.label + ". " + issue);
-    files.push(file);
-  }
+  for (const slot of photoSlots(draft.children)) files.push(await readPhoto(form, slot));
   return files;
+}
+
+async function patchOrderDetails(env, request, row) {
+  const form = await orderForm(request, orderLimit + preparedPhotoLimit);
+  const raw = form.get("draft");
+  let draft;
+  if (typeof raw === "string" && raw.length <= 32_768) {
+    try { draft = readOrderEditDraft(JSON.parse(raw)); } catch { /* Invalid form data. */ }
+  }
+  if (!draft) throw orderError("Проверьте поля анкеты.");
+  const { order, revision } = await orderEditSnapshot(env, row);
+  if (form.get("revision") !== revision) throw orderError(orderEditConflict, 409);
+  const [issue] = Object.values(orderEditIssues(order, draft));
+  if (issue) throw orderError(issue);
+  const replacements = new Map();
+  for (const slot of orderEditSlots(order, draft)) {
+    if (form.has(slot.file)) replacements.set(slot.file, await readPhoto(form, slot));
+  }
+  const { kept, missing } = orderEditPhotos(order, draft, new Set(replacements.keys()));
+  if (missing.length) throw orderError("Загрузите фотографию «" + missing[0].label + "».");
+  return json(await saveOrderDetails(env, row, orderWithEdits(order, draft, kept), replacements));
 }
 
 async function postOrder(env, request, staff = false) {
@@ -159,6 +186,10 @@ async function staffAction(env, request, id, resource) {
     return json(await updateOrder(env, await getOrder(env, id), patch));
   }
   if (role === "service") throw orderError("Эта операция недоступна скрипту.", 403);
+  if (id && resource === "edit") {
+    if (request.method === "GET") return json(await orderEditSnapshot(env, await getOrder(env, id)));
+    if (request.method === "PATCH") return patchOrderDetails(env, request, await getOrder(env, id));
+  }
   if (id && !resource && request.method === "DELETE") {
     await deleteOrder(env, await getOrder(env, id));
     return new Response(null, { status: 204, headers });

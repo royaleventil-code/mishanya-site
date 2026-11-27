@@ -1,5 +1,5 @@
 import { decodePhoto, orderPattern, problem, zipFiles } from "./ded-moroz-files.mjs";
-import { allDraftIssues, maxPhotos, orderPhotoPattern, orderPhotos, photoLimit, photoSlots, readOrderPatch, readSecondVideoReference, secondVideoUnavailable } from "../shared/ded-moroz.ts";
+import { allDraftIssues, maxPhotos, orderPhotoPattern, photoLimit, photoSlots, readOrderEditDraft, readOrderPatch, readSecondVideoReference, secondVideoUnavailable } from "../shared/ded-moroz.ts";
 
 async function body(req, limit) {
   const parts = []; let size = 0;
@@ -15,10 +15,17 @@ const staffOrders = "/api/ded-moroz/staff/orders";
 function parseJSON(value) {
   try { return JSON.parse(value); } catch { throw problem("Проверьте данные формы."); }
 }
+async function readForm(req, limit) {
+  const bytes = await body(req, limit);
+  try { return await new Response(bytes, { headers: { "Content-Type": req.headers["content-type"] || "" } }).formData(); }
+  catch { throw problem("Не удалось прочитать форму заказа."); }
+}
 const publicOrder = order => {
   const copy = { ...order };
   delete copy.request_id;
   delete copy.telegram_notification;
+  delete copy.edit_revision;
+  delete copy.photo_revision;
   return copy;
 };
 
@@ -51,10 +58,7 @@ export function greetingRequestHandler(store, servePage, notifyPendingOrders) {
       }
       if (action !== "orders") throw problem("Маршрут не найден.", 404);
       if (!id && req.method === "POST") {
-        const bytes = await body(req, maxPhotos * photoLimit + 256 * 1024);
-        let form;
-        try { form = await new Response(bytes, { headers: { "Content-Type": req.headers["content-type"] || "" } }).formData(); }
-        catch { throw problem("Не удалось прочитать форму заказа."); }
+        const form = await readForm(req, maxPhotos * photoLimit + 256 * 1024);
         const draft = parseJSON(form.get("draft"));
         const token = form.get("key");
         if (typeof token !== "string" || !/^[a-f\d-]{36}$/i.test(token)) throw problem("Обновите страницу и повторите отправку.");
@@ -82,10 +86,30 @@ export function greetingRequestHandler(store, servePage, notifyPendingOrders) {
         const photo = await store.photo(id, sub); res.writeHead(200, { "Content-Type": "image/jpeg" }); return res.end(photo);
       }
       if (req.method === "GET" && sub === "zip") {
-        const item = publicOrder(await store.read(id));
-        const files = [["order.json", Buffer.from(JSON.stringify(item, null, 2))]];
-        for (const slot of orderPhotos(item)) files.push([slot.file, await store.photo(id, slot.file)]);
-        res.writeHead(200, { "Content-Type": "application/zip", "Content-Disposition": `attachment; filename="${id}.zip"` }); return res.end(zipFiles(files));
+        const { order, files } = await store.archive(id);
+        const metadata = Buffer.from(JSON.stringify(publicOrder(order), null, 2));
+        res.writeHead(200, { "Content-Type": "application/zip", "Content-Disposition": `attachment; filename="${id}.zip"` });
+        return res.end(zipFiles([["order.json", metadata], ...files]));
+      }
+      if (url.pathname === staffOrders + "/" + id + "/edit") {
+        if (req.method === "GET") {
+          const order = await store.read(id);
+          return sendJson(res, 200, { order: publicOrder(order), revision: order.edit_revision ?? "initial" });
+        }
+        if (req.method === "PATCH") {
+          const form = await readForm(req, (maxPhotos + 1) * photoLimit + 256 * 1024);
+          const raw = form.get("draft");
+          const draft = typeof raw === "string" && raw.length <= 32_768 && readOrderEditDraft(parseJSON(raw));
+          if (!draft) throw problem("Проверьте поля анкеты.");
+          const photos = new Map();
+          for (const [name, file] of form) {
+            if (!orderPhotoPattern.test(name)) continue;
+            if (typeof file === "string" || !file.size || file.size > photoLimit) throw problem("Выберите фото размером до 15 МБ.");
+            photos.set(name, Buffer.from(await file.arrayBuffer()));
+          }
+          const order = await store.edit(id, form.get("revision"), draft, photos);
+          return sendJson(res, 200, publicOrder(order));
+        }
       }
       if (req.method === "POST" && sub === "payment") {
         const input = parseJSON(await body(req, 2048));

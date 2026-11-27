@@ -4,7 +4,7 @@ import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 import sharp from "sharp";
 import { onRequest } from "../functions/api/ded-moroz/[[path]].js";
-import { newChild, newDraft, orderPhotos, photoSlots } from "../shared/ded-moroz.ts";
+import { newChild, newDraft, orderEditDraft, orderPhotos, photoSlots } from "../shared/ded-moroz.ts";
 import { deliverOrderNotices } from "../shared/ded-moroz-notices.js";
 import { getOrderPhoto, saveOrder } from "../shared/ded-moroz-cloud.js";
 
@@ -224,6 +224,8 @@ test("the Pages API saves a single complete order, protects access and preserves
     assert.equal((await service(order, { method: "PATCH", body: JSON.stringify({ payment_status: "unpaid" }) })).status, 403);
     assert.equal((await service(staff, { method: "POST" })).status, 403);
     assert.equal((await service(order + "/child1_1.jpg")).status, 403);
+    assert.equal((await service(order + "/edit")).status, 403);
+    assert.equal((await service(order + "/edit", { method: "PATCH" })).status, 403);
     assert.equal((await service(order, { method: "DELETE" })).status, 403);
     assert.equal((await service(staff, {}, jwt, { ...env, DM_ACCESS_SERVICE_CLIENT_ID: "" })).status, 403);
     const otherToken = await sign(env.DM_ACCESS_AUD, 600, { ...identity, common_name: "another-service.access" });
@@ -363,6 +365,66 @@ test("the Pages API saves a single complete order, protects access and preserves
     const zip = await call(staff + "/" + id + "/zip");
     assert.equal(zip.status, 200);
     assert.ok(Buffer.from(await zip.arrayBuffer()).includes("child1_3.jpg"));
+  });
+
+  await t.test("staff can edit a delivered order and replace photos without changing its progress", async () => {
+    const created = await call(staff, { method: "POST", body: orderForm(crypto.randomUUID(), jpeg) });
+    assert.equal(created.status, 201);
+    const { order_id: id } = await created.json();
+    const target = staff + "/" + id;
+    const oldRow = db.prepare("SELECT * FROM dm_orders WHERE id = ?").get(Number(id.split("-").at(-1)));
+    const snapshot = await (await call(target + "/edit")).json();
+    const edits = orderEditDraft(snapshot.order);
+    edits.amount = "180,50";
+    edits.city = "Акко";
+    edits.parentName = "Демо";
+    edits.whatsapp = "050-555-0101";
+    edits.email = "parent@example.test";
+    Object.assign(edits.children[0], {
+      name: "Милана", stress: 3, age: "16", fact_learned: "Научилась кататься", fact_kind: "Помогла соседке",
+    });
+    const portrait = new Blob([await sharp({
+      create: { width: 820, height: 1000, channels: 3, background: "#497da2" },
+    }).jpeg().toBuffer()], { type: "image/jpeg" });
+    const edit = () => {
+      const form = new FormData();
+      form.set("draft", JSON.stringify(edits));
+      form.set("revision", snapshot.revision);
+      form.set("child1_1.jpg", portrait, "portrait.jpg");
+      return call(target + "/edit", { method: "PATCH", body: form });
+    };
+
+    const progress = { status: "done", payment_status: "paid", video_url: "https://example.test/ready-video" };
+    assert.equal((await call(target, { method: "PATCH", body: JSON.stringify(progress) })).status, 200);
+    const requests = await Promise.all([edit(), edit()]);
+    assert.deepEqual(requests.map(result => result.status).sort(), [200, 409]);
+    const saved = await requests.find(result => result.ok).json();
+    assert.equal(saved.order_id, id);
+    assert.equal(saved.amount_ils, 180.5);
+    assert.equal(saved.status, progress.status);
+    assert.equal(saved.payment_status, progress.payment_status);
+    assert.equal(saved.video_url, progress.video_url);
+    assert.equal(saved.consent, snapshot.order.consent);
+    assert.equal(saved.city, "Акко");
+    assert.deepEqual(saved.parent, { name: "Демо", whatsapp: "+972505550101", email: "parent@example.test" });
+    assert.deepEqual(saved.children[0], {
+      name: "Милана", name_stress: "МилАна", gender: "girl", age: 16, photos: ["child1_1.jpg"],
+      facts: ["Научилась кататься", "Помогла соседке"],
+    });
+    assert.deepEqual(saved.children[1], snapshot.order.children[1]);
+    assert.equal(db.prepare("SELECT COUNT(*) AS n FROM dm_photo_uploads WHERE upload_id = ? OR upload_id LIKE ?")
+      .get(oldRow.photo_prefix, oldRow.photo_prefix + ":%").n, 1);
+    assert.deepEqual(await getOrderPhoto(env, oldRow, "child1_1.jpg"), await portrait.arrayBuffer());
+    const original = await call(target + "/family.jpg");
+    assert.deepEqual(await original.arrayBuffer(), await familyJpeg.arrayBuffer());
+
+    const archive = Buffer.from(await (await call(target + "/zip")).arrayBuffer());
+    assert.ok(archive.includes(Buffer.from(await portrait.arrayBuffer())));
+    assert.ok(archive.includes(Buffer.from('"amount_ils": 180.5')));
+    assert.ok(archive.includes(Buffer.from("Помогла соседке")));
+    assert.equal((await call(target, { method: "DELETE" })).status, 204);
+    assert.equal(db.prepare("SELECT COUNT(*) AS n FROM dm_photo_uploads WHERE upload_id LIKE ?")
+      .get(oldRow.photo_prefix + ":%").n, 0);
   });
 });
 

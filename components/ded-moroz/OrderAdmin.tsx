@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, ChevronLeft, CircleAlert, CircleCheck, Clapperboard, Download, ExternalLink, Inbox, MessageCircle, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronLeft, CircleAlert, CircleCheck, Clapperboard, Download, ExternalLink, Inbox, MessageCircle, Pencil, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
 import { greetingQuizPath } from "@/data/new-year";
 import { WinterPhoto } from "@/components/new-year/NewYearMedia";
 import { orderPhotos, paymentStatuses, statuses, whatsappContactDigits, type Order, type OrderPatch } from "@/shared/ded-moroz";
 import { OrderForm } from "./OrderForm";
+import { OrderDetailsEditor } from "./OrderDetailsEditor";
 import { apiIssue } from "./Photos";
 import s from "./order-admin.module.css";
 
@@ -91,13 +92,15 @@ function OrdersTable({ orders, pendingId, onSelect, onChange }: {
   </table>;
 }
 
-function Editor({ item, onSaved }: { item: Order; onSaved: (order: Order) => void }) {
+function Editor({ item, photoVersion, onSaved }: { item: Order; photoVersion: number; onSaved: (order: Order) => void }) {
   const [status, setStatus] = useState(item.status);
   const [payment, setPayment] = useState(item.payment_status);
   const [url, setUrl] = useState(item.video_url || "");
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const editButton = useRef<HTMLButtonElement>(null);
   const target = endpoint + "/" + item.order_id;
   const whatsappRecipient = whatsappContactDigits(item.parent.whatsapp);
   const changes: OrderPatch = {
@@ -139,10 +142,29 @@ function Editor({ item, onSaved }: { item: Order; onSaved: (order: Order) => voi
     finally { setBusy(false); }
   }
 
+  function closeEditor() {
+    setEditing(false);
+    requestAnimationFrame(() => editButton.current?.focus());
+  }
+
+  if (editing) return <OrderDetailsEditor target={target} onCancel={closeEditor} onSaved={next => {
+    if (changes.status === undefined) setStatus(next.status);
+    if (changes.payment_status === undefined) setPayment(next.payment_status);
+    if (changes.video_url === undefined) setUrl(next.video_url || "");
+    onSaved(next);
+    setInfo("Заказ обновлён.");
+    closeEditor();
+  }} />;
+
   return <div className={s.detailGrid}>
     <div className={s.details}>
       <section className={s.panel}>
-        <h2>Анкета семьи</h2>
+        <div className={s.panelHeading}>
+          <h2>Анкета семьи</h2>
+          <button type="button" ref={editButton} className={s.secondary} disabled={busy} onClick={() => setEditing(true)}>
+            <Pencil size={17} aria-hidden />Редактировать заказ
+          </button>
+        </div>
         <dl className={s.facts}>
           <div><dt>Родитель</dt><dd>{item.parent.name}</dd></div>
           <div><dt>Телефон</dt><dd><Phone value={item.parent.whatsapp} /></dd></div>
@@ -161,10 +183,10 @@ function Editor({ item, onSaved }: { item: Order; onSaved: (order: Order) => voi
           <dl className={s.childFacts}>
             {"name_stress" in child ? <>
               <div><dt>Имя с ударением</dt><dd>{child.name_stress}</dd></div>
-              {child.facts.map((fact, i) => <div key={i}><dt>{i === 1 ? "Доброе дело" : "Запись в книгу"}</dt><dd>{fact}</dd></div>)}
+              {child.facts.map((fact, i) => fact && <div key={i}><dt>{i === 1 ? "Доброе дело" : "Запись в книгу"}</dt><dd>{fact}</dd></div>)}
             </> : <>
               {child.name_pronounce && <div><dt>Произношение</dt><dd>{child.name_pronounce}</dd></div>}
-              <div><dt>Достижение</dt><dd>{child.fact_learned}</dd></div>
+              {child.fact_learned && <div><dt>Запись в книгу</dt><dd>{child.fact_learned}</dd></div>}
               {child.fact_kind && <div><dt>Доброе дело</dt><dd>{child.fact_kind}</dd></div>}
             </>}
           </dl>
@@ -176,7 +198,7 @@ function Editor({ item, onSaved }: { item: Order; onSaved: (order: Order) => voi
         <div className={s.photos}>{orderPhotos(item).map(slot => <figure key={slot.file}>
           {/* Authenticated order files must load directly from the staff API. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={target + "/" + slot.file} alt={slot.label} loading="lazy" />
+          <img src={target + "/" + slot.file + "?v=" + photoVersion} alt={slot.label} loading="lazy" />
           <figcaption>{slot.label}</figcaption>
         </figure>)}</div>
         <button className={s.secondary} type="button" disabled={downloading} onClick={download}>
@@ -221,6 +243,7 @@ export function OrderAdmin() {
   const [creating, setCreating] = useState(false);
   const [createdId, setCreatedId] = useState("");
   const [revision, setRevision] = useState(0);
+  const [photoVersion, setPhotoVersion] = useState(0);
   const [pendingId, setPendingId] = useState("");
   const [notice, setNotice] = useState<{ message: string; failed?: boolean }>();
   const title = useRef<HTMLHeadingElement>(null);
@@ -249,6 +272,12 @@ export function OrderAdmin() {
   }
   function orderSaved(next: Order) {
     setOrders(list => list.map(order => order.order_id === next.order_id ? next : order));
+    setPhotoVersion(value => value + 1);
+  }
+  function openOrder(id: string) {
+    setCreatedId("");
+    setSelected(id);
+    setPhotoVersion(value => value + 1);
   }
   async function changeOrder(id: string, change: OrderChange) {
     if (change === "delete" && !window.confirm(`Удалить заказ ${id} и все его фотографии навсегда?`)) return;
@@ -319,7 +348,7 @@ export function OrderAdmin() {
 
       {createdId && <p className={s.success} role="status"><CircleCheck size={18} aria-hidden />Заказ {createdId} создан.</p>}
       {creating ? <div className={s.create}><OrderForm staff={{ onCreated: orderCreated, onCancel: returnToList }} /></div>
-        : item ? <Editor key={item.order_id} item={item} onSaved={orderSaved} />
+        : item ? <Editor key={item.order_id} item={item} photoVersion={photoVersion} onSaved={orderSaved} />
         : <section className={s.orders} aria-labelledby="orders-title">
           <div className={s.listHead}>
             <h2 id="orders-title" ref={listTitle} tabIndex={-1}><Clapperboard size={21} aria-hidden />Все заказы
@@ -332,7 +361,7 @@ export function OrderAdmin() {
             {notice.failed ? <CircleAlert size={18} aria-hidden /> : <CircleCheck size={18} aria-hidden />}{notice.message}
           </p>}
           {loading ? <p className={s.empty} role="status">Загружаем заказы…</p> : orders.length > 0
-            ? <OrdersTable orders={orders} pendingId={pendingId} onChange={changeOrder} onSelect={id => { setCreatedId(""); setSelected(id); }} />
+            ? <OrdersTable orders={orders} pendingId={pendingId} onChange={changeOrder} onSelect={openOrder} />
             : !issue && <div className={s.empty}><Inbox size={27} aria-hidden /><h3>Пока нет заказов</h3><p>После оформления здесь появятся анкета и фотографии.</p></div>}
         </section>}
     </main>

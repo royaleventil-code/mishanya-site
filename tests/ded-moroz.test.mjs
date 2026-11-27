@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
-import { allDraftIssues, cities, maxPhotos, newChild, newDraft, orderFromDraft, orderPhotoPattern, orderPhotos, photoIssue, photoSlots, validateDraft, whatsappContactDigits } from "../shared/ded-moroz.ts";
+import { allDraftIssues, cities, maxPhotos, newChild, newDraft, orderEditDraft, orderEditIssues, orderEditPhotos, orderFromDraft, orderPhotoPattern, orderPhotos, orderWithEdits, photoIssue, photoSlots, validateDraft, whatsappContactDigits } from "../shared/ded-moroz.ts";
 import { decodePhoto, orderStore, zipFiles } from "../scripts/ded-moroz-files.mjs";
 import { createTelegramOrderNotifier, loadTelegramSettings, saveTelegramSettings, setupChats } from "../scripts/ded-moroz-telegram.mjs";
 import { formatOrderNotice } from "../shared/ded-moroz-telegram.js";
@@ -126,6 +126,57 @@ test("orders for one to four children reach matching folders and survive a retry
     assert.equal(archive.readUInt32LE(0),0x04034b50); assert.equal(archive.readUInt32LE(archive.length-22),0x06054b50);
     await assert.rejects(store.photo(first.order_id,"../order.json"), /не найдено/);
   }
+});
+
+test("editing legacy orders retains their pronunciation, good deeds and saved photo layout", () => {
+  const order = orderFromDraft(draft(1), "DM-2026-0001", new Date());
+  const legacy = {
+    ...order, children: [{ name: "Инна", name_pronounce: "Инна", age: 5, gender: "girl", fact_learned: "Научилась рисовать", fact_kind: "Помогла дедушке" }],
+    parents_words: "Мы тобой гордимся", photos: { portrait: "photo1.jpg", activity: "photo2.jpg", drawing: "photo3.jpg", family: "photo4.jpg" },
+  };
+  delete legacy.family_photo;
+  const edits = orderEditDraft(legacy);
+  edits.amount = "210";
+  assert.equal(edits.children[0].stress, 0);
+  assert.deepEqual(orderEditIssues(legacy, edits), {});
+  const { kept } = orderEditPhotos(legacy, edits, new Set());
+  const edited = orderWithEdits(legacy, edits, kept);
+  assert.equal(edited.amount_ils, 210);
+  assert.deepEqual(edited.children, legacy.children);
+  assert.deepEqual(edited.photos, legacy.photos);
+  const olderFive = orderFromDraft(draft(5), "DM-2026-0002", new Date());
+  assert.deepEqual(orderEditIssues(olderFive, orderEditDraft(olderFive)), {});
+});
+
+test("changing family size requires new photos and keeps the current order if one upload fails", async t => {
+  const root = await mkdtemp(path.join(tmpdir(), "greeting-edit-test-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const store = orderStore(root);
+  const { order_id: id } = await store.create(draft(), randomUUID(), await pictures(2));
+  const before = await store.archive(id);
+  const edits = orderEditDraft(before.order);
+  edits.children_count = 3;
+  edits.children.push(draft(3).children[2]);
+  edits.shared_fact = "Вместе построили домик";
+  edits.amount = "160";
+
+  await assert.rejects(store.edit(id, "initial", edits, new Map()), /Портрет · Лаша/);
+  const replacement = await sharp({ create: { width: 800, height: 950, channels: 3, background: "#25648e" } }).jpeg().toBuffer();
+  const files = new Map([["child1_1.jpg", replacement], ["child3_1.jpg", Buffer.from("invalid image")]]);
+  await assert.rejects(store.edit(id, "initial", edits, files), /JPG/);
+  assert.deepEqual(await store.archive(id), before);
+  assert.ok(!(await readdir(path.join(root, "orders", id))).some(name => name.startsWith("photos-")));
+
+  files.set("child3_1.jpg", replacement);
+  const saved = await store.edit(id, "initial", edits, files);
+  assert.equal(saved.order_id, id);
+  assert.equal(saved.amount_ils, 160);
+  assert.equal(saved.shared_fact, "Вместе построили домик");
+  const after = await store.archive(id);
+  assert.deepEqual(after.files.map(([name]) => name), ["child1_1.jpg", "child2_1.jpg", "child3_1.jpg", "family.jpg"]);
+  assert.notDeepEqual(after.files[0][1], before.files[0][1]);
+  assert.deepEqual(after.files[3][1], before.files[2][1]);
+  await assert.rejects(store.edit(id, "initial", edits, new Map()), { status: 409 });
 });
 
 test("a discounted order retains its own price and the first order number", async t => {

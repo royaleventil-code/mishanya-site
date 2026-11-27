@@ -46,11 +46,12 @@ async function preparePhoto(file: File, slot: PhotoSlotInfo): Promise<Photo> {
     throw new Error("Не удалось подготовить фото. Попробуйте другой снимок.");
   } finally { URL.revokeObjectURL(url); }
 }
-export function PhotoSlot({ slot, value, error, onChange, onBusy }: {
-  slot: PhotoSlotInfo; value?: Photo; error?: string; onChange: (p: Photo) => void; onBusy: (delta: number) => void;
+export function PhotoSlot({ slot, value, existingUrl, error, onChange, onBusy }: {
+  slot: PhotoSlotInfo; value?: Photo; existingUrl?: string; error?: string; onChange: (p: Photo) => void; onBusy: (delta: number) => void;
 }) {
   const input = useRef<HTMLInputElement>(null), preview = useRef<HTMLImageElement>(null);
   const [issue, setIssue] = useState(""), [busy, setBusy] = useState(false);
+  const hasPhoto = !!(value || existingUrl);
   useEffect(() => {
     if (!value) return;
     const image = URL.createObjectURL(value.blob);
@@ -65,16 +66,16 @@ export function PhotoSlot({ slot, value, error, onChange, onBusy }: {
     finally { setBusy(false); onBusy(-1); if (input.current) input.current.value = ""; }
   }
   return <div className="dm-photo-slot" data-kind={slot.kind} data-issue={!!(issue || error)}>
-    <h3 className="dm-slot-heading"><Camera size={17} aria-hidden />{slot.label} {value && <Check size={18} aria-label="Добавлено" />}</h3>
+    <h3 className="dm-slot-heading"><Camera size={17} aria-hidden />{slot.label} {hasPhoto && <Check size={18} aria-label="Добавлено" />}</h3>
     <p>{slot.hint}</p>
-    {value && <div className="dm-crop-space"><div className="dm-crop" style={{ aspectRatio: value.width / value.height, maxHeight: 200 }}>
-      {/* The preview is a browser-local object URL. */}
+    {hasPhoto && <div className="dm-crop-space"><div className="dm-crop" style={{ aspectRatio: value ? value.width / value.height : undefined, maxHeight: 200 }}>
+      {/* Existing photographs use the authenticated staff URL. New previews are local blobs. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img ref={preview} alt={slot.label} style={{ objectFit: "contain" }} />
+      <img ref={preview} alt={slot.label} src={value ? undefined : existingUrl} style={{ objectFit: "contain" }} />
     </div></div>}
     <input type="file" ref={input} aria-label={slot.label} accept=".jpg,.jpeg,.png,.heic,.heif,image/jpeg,image/png,image/heic,image/heif" hidden onChange={e => void select(e.target.files?.[0])} />
-    <button type="button" id={"photo-" + slot.file} className="dm-upload" disabled={busy} aria-label={(value ? "Заменить фото · " : "Выбрать фото · ") + slot.label} onClick={() => input.current?.click()}>
-      {value ? <Replace size={16} aria-hidden /> : <ImagePlus size={16} aria-hidden />}{busy ? "Готовим фото…" : value ? "Заменить фото" : "Выбрать фото"}
+    <button type="button" id={"photo-" + slot.file} className="dm-upload" disabled={busy} aria-label={(hasPhoto ? "Заменить фото · " : "Выбрать фото · ") + slot.label} onClick={() => input.current?.click()}>
+      {hasPhoto ? <Replace size={16} aria-hidden /> : <ImagePlus size={16} aria-hidden />}{busy ? "Готовим фото…" : hasPhoto ? "Заменить фото" : "Выбрать фото"}
     </button>
     {(issue || error) && <span role="alert" className="dm-error">{issue || error}</span>}
   </div>;

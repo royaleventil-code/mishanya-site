@@ -202,6 +202,19 @@
 .detailGrid { margin-top: 22px; display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(270px, .85fr); gap: 20px; align-items: start; }
 .details { min-width: 0; display: grid; gap: 16px; }
 .panel { padding: clamp(18px, 2.2vw, 30px); }
+.panelHeading { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 10px; }
+.editForm { max-width: 880px; margin: 20px auto 0; }
+.editFields { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 16px; }
+.editColumns, .editPhotos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
+.editPhotos { margin-top: 17px; gap: 14px; }
+.editPhotos :global(.dm-photo-slot) { background: #f7fbff; border-color: var(--line); }
+.editPhotos :global(.dm-photo-slot[data-issue="true"]) { border-color: #a54236; }
+.editPhotos :global(.dm-slot-heading) { display: flex; align-items: center; gap: 8px; color: var(--dark); font-size: 1.125rem; }
+.editPhotos :global(.dm-slot-heading svg) { flex: none; }
+.editPhotos :global(.dm-upload) { background: #fff; border-color: #b6cadc; }
+.editActions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+.editActions .error { flex-basis: 100%; }
+.editForm > .secondary { margin-top: 12px; }
 .facts, .childFacts { margin: 16px 0 0; display: grid; gap: 13px 20px; overflow-wrap: anywhere; }
 .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .facts dt, .childFacts dt, .child > p { color: var(--muted); font-size: .88rem; }
@@ -286,6 +299,7 @@
   .table tbody { grid-template-columns: minmax(0, 1fr); padding: 0 12px 12px; gap: 10px; }
   .detailGrid { grid-template-columns: minmax(0, 1fr); }
   .delivery { position: static; }
+  .editColumns, .editPhotos { grid-template-columns: minmax(0, 1fr); }
   .shell .create { margin-top: 14px; }
   .create :global(.dm-form-actions .dm-btn) { flex-basis: 100%; order: -1; }
 }

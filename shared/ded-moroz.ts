@@ -1,7 +1,7 @@
 import { parsePhoneNumberFromString } from "libphonenumber-js/min";
 import { secondVideoPrice, videoGreetingPrice } from "./ded-moroz-pricing.js";
 
-export type Child = { name: string; stress: number; distinction: string; gender: string; age: string; fact_learned: string };
+export type Child = { name: string; stress: number; distinction: string; gender: string; age: string; fact_learned: string; fact_kind?: string };
 export type Draft = {
   children_count: number; children: Child[]; shared_fact: string; city: string; otherCity: string;
   parentName: string; whatsapp: string; email: string; consent: boolean;
@@ -116,9 +116,11 @@ export function photoIssue(width: number, height: number, kind: PhotoSlotInfo["k
 }
 
 type Issues = Record<string, string>;
-export function validateDraft(draft: Draft, step: number): Issues {
+export function validateDraft(draft: Draft, step: number, storedCount?: number): Issues {
   const errors: Issues = {};
-  if (!counts.includes(draft.children_count) || !Array.isArray(draft.children) || draft.children.length !== draft.children_count)
+  const editing = storedCount !== undefined;
+  if ((!counts.includes(draft.children_count) && draft.children_count !== storedCount) ||
+    !Array.isArray(draft.children) || draft.children.length !== draft.children_count)
     return { count: "Выберите от одного до четырёх детей." };
   if (step === 1) {
     draft.children.forEach((child, i) => {
@@ -134,7 +136,7 @@ export function validateDraft(draft: Draft, step: number): Issues {
       if (!["boy", "girl"].includes(child.gender)) errors[id + "gender"] = "Выберите пол ребёнка.";
       const age = String(child.age).trim();
       if (!/^\d+$/.test(age) || !Number.isSafeInteger(Number(age))) errors[id + "age"] = "Укажите возраст целым числом лет.";
-      if (draft.children_count <= 2 && !child.fact_learned.trim()) errors[id + "fact_learned"] = "Добавьте запись о ребёнке.";
+      if (!editing && draft.children_count <= 2 && !child.fact_learned.trim()) errors[id + "fact_learned"] = "Добавьте запись о ребёнке.";
     });
   }
   if (step === 2) {
@@ -142,32 +144,33 @@ export function validateDraft(draft: Draft, step: number): Issues {
     if (!city || city.length > 40) errors.city = "Укажите город.";
     if (draft.children_count === 3) {
       const line = draft.shared_fact.trim();
-      if (!line || line.length > 60 || /[\r\n]/.test(line)) errors.shared_fact = "Добавьте одну строку до 60 знаков.";
+      if ((!editing && !line) || line.length > 60 || /[\r\n]/.test(line)) errors.shared_fact = "Добавьте одну строку до 60 знаков.";
     }
   }
   if (step === 4) {
     if (!draft.parentName.trim() || draft.parentName.length > 30) errors.parentName = "Введите имя родителя, до 30 знаков.";
     if (!whatsappContactDigits(draft.whatsapp).startsWith("972")) errors.whatsapp = "Введите израильский номер, например 050-123-4567.";
     if (draft.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.email.trim())) errors.email = "Проверьте адрес электронной почты.";
-    if (draft.consent !== true) errors.consent = "Для создания видео нужно согласие родителя.";
+    if (!editing && draft.consent !== true) errors.consent = "Для создания видео нужно согласие родителя.";
   }
   return errors;
 }
 export function allDraftIssues(draft: Draft): Issues {
   return Object.assign({}, ...[0, 1, 2, 4].map(step => validateDraft(draft, step)));
 }
+function stressedName(children: Child[], index: number) {
+  const child = children[index];
+  const letters = Array.from(formattedName(child.name.trim()));
+  if (letters[child.stress]) letters[child.stress] = letters[child.stress].toLocaleUpperCase("ru");
+  return [letters.join(""), qualifier(children, index)].filter(Boolean).join(" ");
+}
 export function orderFromDraft(draft: Draft, id: string, now: Date, repeatOf?: string) {
   const count = draft.children.length;
-  const children = draft.children.map((c, i) => {
-    const name = formattedName(c.name.trim());
-    const letters = Array.from(name);
-    letters[c.stress] = letters[c.stress].toLocaleUpperCase("ru");
-    return {
-      name: childLabel(draft.children, i), name_stress: [letters.join(""), qualifier(draft.children, i)].filter(Boolean).join(" "),
-      gender: c.gender, age: Number(c.age), photos: childPhotoSlots(c, i, count).map(slot => slot.file),
-      facts: count <= 2 ? [c.fact_learned.trim()] : [],
-    };
-  });
+  const children = draft.children.map((c, i) => ({
+    name: childLabel(draft.children, i), name_stress: stressedName(draft.children, i),
+    gender: c.gender, age: Number(c.age), photos: childPhotoSlots(c, i, count).map(slot => slot.file),
+    facts: count <= 2 ? [c.fact_learned.trim()] : [],
+  }));
   return {
     order_id: id, created_at: now.toISOString(), status: "new" as OrderStatus, payment_status: "unpaid" as PaymentStatus,
     amount_ils: repeatOf ? secondVideoPrice : videoGreetingPrice, ...(repeatOf ? { repeat_of: repeatOf } : {}),
@@ -194,4 +197,141 @@ export function orderPhotos(order: Order): PhotoSlotInfo[] {
   return ["portrait","activity","drawing","family"].map((role, i) => ({
     file: order.photos[role], label: labels[i], kind: "legacy", hint: "",
   }));
+}
+
+export type OrderEditDraft = Draft & { amount: string; parents_words: string };
+export const orderEditConflict = "Заказ уже изменился. Откройте редактор заново, чтобы загрузить последнюю версию.";
+
+function savedStress(name: string, pronunciation: string) {
+  const marked = pronunciation.trim().split(/\s+/u)[0] ?? "";
+  if (marked.toLocaleLowerCase("ru") !== name.toLocaleLowerCase("ru")) return -1;
+  const letters = Array.from(marked);
+  const markedIndex = letters.findIndex((letter, i) => i > 0 && isVowel(letter) && letter === letter.toLocaleUpperCase("ru"));
+  if (markedIndex !== -1) return markedIndex;
+  const first = letters[0];
+  return isVowel(first) && first === first.toLocaleUpperCase("ru") ? 0 : -1;
+}
+
+export function orderEditDraft(order: Order): OrderEditDraft {
+  const children = order.children.map(child => {
+    const modern = "name_stress" in child;
+    const [name, ...distinction] = modern ? child.name.split(" ") : [child.name];
+    const marked = modern ? child.name_stress : child.name_pronounce ?? "";
+    return {
+      name, distinction: distinction.join(" "), stress: savedStress(name, marked), gender: child.gender,
+      age: String(child.age), fact_learned: modern ? child.facts[0] ?? "" : child.fact_learned ?? "",
+      fact_kind: modern ? child.facts[1] ?? "" : child.fact_kind ?? "",
+    };
+  });
+  const city = normalizeSelectedCity(order.city);
+  return {
+    children_count: children.length, children, city: cities.includes(city) && city !== "Другой" ? city : "Другой",
+    otherCity: cities.includes(city) && city !== "Другой" ? "" : order.city,
+    shared_fact: "shared_fact" in order ? order.shared_fact : "",
+    parentName: order.parent.name, whatsapp: order.parent.whatsapp, email: order.parent.email ?? "",
+    consent: order.consent, parents_words: order.parents_words ?? "", amount: String(order.amount_ils),
+  };
+}
+
+export function readOrderEditDraft(value: unknown): OrderEditDraft | null {
+  if (!value || typeof value !== "object") return null;
+  const draft = value as OrderEditDraft;
+  const strings = [draft.city, draft.otherCity, draft.shared_fact, draft.parentName, draft.whatsapp, draft.email, draft.amount, draft.parents_words];
+  if (strings.some(field => typeof field !== "string") || !Number.isInteger(draft.children_count) ||
+    !Array.isArray(draft.children) || draft.children.length !== draft.children_count || draft.children.length > 5) return null;
+  if (!draft.children.every(child => child && Number.isInteger(child.stress) &&
+    [child.name, child.distinction, child.gender, child.age, child.fact_learned, child.fact_kind ?? ""].every(field => typeof field === "string"))) return null;
+  return draft;
+}
+
+function editAmount(value: string) {
+  const amount = value.trim().replace(",", ".");
+  const number = Number(amount);
+  return /^\d+(?:\.\d{1,2})?$/.test(amount) && number > 0 && Number.isSafeInteger(Math.round(number * 100)) ? number : null;
+}
+
+function draftFieldValues(draft: OrderEditDraft): Record<string, string> {
+  const identities = JSON.stringify(draft.children.map(child => [child.name, child.distinction]));
+  const fields: Record<string, string> = {
+    city: JSON.stringify([draft.city, draft.otherCity]), shared_fact: draft.shared_fact,
+    parentName: draft.parentName, whatsapp: draft.whatsapp, email: draft.email,
+  };
+  draft.children.forEach((child, index) => {
+    const prefix = "child-" + index + "-";
+    fields[prefix + "name"] = child.name;
+    fields[prefix + "stress"] = JSON.stringify([child.name, child.stress]);
+    fields[prefix + "distinction"] = identities;
+    fields[prefix + "gender"] = child.gender;
+    fields[prefix + "age"] = child.age;
+  });
+  return fields;
+}
+
+export function orderEditIssues(order: Order, draft: OrderEditDraft): Issues {
+  const storedCount = order.children.length;
+  const issues = Object.assign({}, ...[0, 1, 2, 4].map(step => validateDraft(draft, step, storedCount)));
+  const before = draftFieldValues(orderEditDraft(order));
+  const after = draftFieldValues(draft);
+  for (const key of Object.keys(issues)) {
+    if (key !== "count" && before[key] === after[key]) delete issues[key];
+  }
+  if (editAmount(draft.amount) === null) issues.amount = "Укажите сумму больше нуля, до двух знаков после запятой.";
+  return issues;
+}
+
+export function orderEditSlots(order: Order, draft: OrderEditDraft) {
+  if ("photos" in order && draft.children.length === order.children.length) return orderPhotos(order);
+  return photoSlots(draft.children.map((_, index) => ({ name: childLabel(draft.children, index) })));
+}
+
+export function orderEditPhotos(order: Order, draft: OrderEditDraft, replacements: ReadonlySet<string>) {
+  const existing = new Set(orderPhotos(order).map(slot => slot.file));
+  const slots = orderEditSlots(order, draft);
+  const kept = new Set(slots.filter(slot => existing.has(slot.file) || replacements.has(slot.file)).map(slot => slot.file));
+  const missing = draft.children.length !== order.children.length ? slots.filter(slot => !kept.has(slot.file)) : [];
+  return { kept, missing };
+}
+
+export function orderWithEdits(order: Order, draft: OrderEditDraft, photos: ReadonlySet<string>): Order {
+  const original = orderEditDraft(order);
+  const edited = {
+    ...order, amount_ils: editAmount(draft.amount) ?? order.amount_ils,
+    city: draft.city === original.city && draft.otherCity === original.otherCity ? order.city : familyCity(draft),
+    parent: {
+      name: draft.parentName === original.parentName ? order.parent.name : draft.parentName.trim(),
+      whatsapp: draft.whatsapp === original.whatsapp ? order.parent.whatsapp : "+" + whatsappContactDigits(draft.whatsapp),
+      email: draft.email === original.email ? order.parent.email : draft.email.trim(),
+    },
+    ...(draft.parents_words || order.parents_words !== undefined ? { parents_words: draft.parents_words.trim() } : {}),
+  };
+  const count = draft.children.length;
+  const children = draft.children.map((child, index) => {
+    const previous = original.children[index];
+    const stored = order.children[index];
+    const sameIdentity = previous && child.name === previous.name && child.distinction === previous.distinction;
+    const name = sameIdentity ? stored.name : childLabel(draft.children, index);
+    const sameStress = sameIdentity && child.stress === previous.stress;
+    const pronunciation = sameStress ? ("name_stress" in stored ? stored.name_stress : stored.name_pronounce) : stressedName(draft.children, index);
+    const entry = child.fact_learned.trim();
+    const goodDeed = child.fact_kind?.trim() ?? "";
+    const age = previous && child.age === previous.age ? stored.age : Number(child.age);
+    return { name, pronunciation, age, gender: child.gender, entry, goodDeed };
+  });
+  if ("photos" in edited && count === order.children.length) {
+    return {
+      ...edited, children: children.map(child => ({
+        name: child.name, name_pronounce: child.pronunciation, age: child.age, gender: child.gender,
+        fact_learned: child.entry, fact_kind: child.goodDeed,
+      })),
+    };
+  }
+  if ("photos" in edited) delete (edited as Partial<LegacyOrder>).photos;
+  return {
+    ...edited, children_count: count, family_photo: familyPhoto.file, shared_fact: count === 3 ? draft.shared_fact.trim() : "",
+    children: children.map((child, index) => ({
+      name: child.name, name_stress: child.pronunciation ?? child.name, age: child.age, gender: child.gender,
+      photos: childPhotoSlots(child, index, count).filter(slot => photos.has(slot.file)).map(slot => slot.file),
+      facts: child.goodDeed ? [child.entry, child.goodDeed] : child.entry ? [child.entry] : [],
+    })),
+  };
 }

@@ -7,7 +7,7 @@ import s from "./quiz.module.css";
 type Issues = Record<string, string>;
 type Change = (value: string) => void;
 export function TextField({ id, label, value, onChange, error, hint, max, placeholder, type = "text", multiline, autoComplete, inputMode }: {
-  id: string; label: string; value: string; onChange: Change; error?: string; hint?: string; max?: number; placeholder?: string; type?: string; multiline?: boolean; autoComplete?: string; inputMode?: "numeric";
+  id: string; label: string; value: string; onChange: Change; error?: string; hint?: string; max?: number; placeholder?: string; type?: string; multiline?: boolean; autoComplete?: string; inputMode?: "numeric" | "decimal";
 }) {
   const props = { id, value, maxLength: max, placeholder, autoComplete, "aria-invalid": !!error, "aria-describedby": error || hint ? id + "-help" : undefined };
   return <div className="dm-field" data-issue={!!error}>
@@ -25,8 +25,8 @@ function SelectField({ id, label, value, error, onChange, children }: {
     {error && <span id={id + "-help"} className="dm-error" role="alert">{error}</span>}
   </div>;
 }
-export function ChildrenFields({ childrenData, errors, edit }: {
-  childrenData: Child[]; errors: Issues; edit: (index: number, change: Partial<Child>) => void;
+export function ChildrenFields({ childrenData, errors, edit, editing = false }: {
+  childrenData: Child[]; errors: Issues; edit: (index: number, change: Partial<Child>) => void; editing?: boolean;
 }) {
   return <div className={s.childList}>{childrenData.map((child, index) => {
     const prefix = "child-" + index + "-";
@@ -51,10 +51,12 @@ export function ChildrenFields({ childrenData, errors, edit }: {
         <SelectField id={prefix + "gender"} label="Пол ребёнка" value={child.gender} error={errors[prefix + "gender"]} onChange={gender => edit(index, { gender })}><option value="">Выберите</option><option value="boy">Мальчик</option><option value="girl">Девочка</option></SelectField>
         <TextField id={prefix + "age"} label="Возраст, лет" value={child.age} inputMode="numeric" placeholder="0, если меньше года" error={errors[prefix + "age"]} onChange={age => edit(index, { age })} />
       </div>
-      {childrenData.length <= 2 && <TextField id={prefix + "fact_learned"}
-        label={childrenData.length === 1 ? "Чем ребёнок занимается или чему научился за год?" : "Запись в волшебную книгу"}
+      {(editing || childrenData.length <= 2) && <TextField id={prefix + "fact_learned"}
+        label={editing ? "Запись в книгу" : childrenData.length === 1 ? "Чем ребёнок занимается или чему научился за год?" : "Запись в волшебную книгу"}
         multiline value={child.fact_learned} placeholder="Например, теперь катается на велосипеде"
         error={errors[prefix + "fact_learned"]} onChange={fact_learned => edit(index, { fact_learned })} />}
+      {editing && <TextField id={prefix + "fact_kind"} label="Доброе дело" multiline value={child.fact_kind ?? ""}
+        onChange={fact_kind => edit(index, { fact_kind })} />}
     </fieldset>;
   })}</div>;
 }

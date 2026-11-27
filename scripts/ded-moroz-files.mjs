@@ -1,12 +1,16 @@
 import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import { orderZip } from "../shared/ded-moroz-zip.js";
 import sharp from "sharp";
-import { orderCodePattern, orderFromDraft, orderPhotoPattern, orderProgress, photoIssue, photoLimit, photoSlots, secondVideoPhoneIssue, secondVideoUnavailable, whatsappContactDigits } from "../shared/ded-moroz.ts";
+import {
+  orderCodePattern, orderEditConflict, orderEditIssues, orderEditPhotos, orderEditSlots, orderFromDraft, orderPhotoPattern,
+  orderPhotos, orderProgress, orderRequestKeyPattern, orderWithEdits, photoIssue, photoLimit, photoSlots,
+  secondVideoPhoneIssue, secondVideoUnavailable, whatsappContactDigits,
+} from "../shared/ded-moroz.ts";
 import { videoGreetingPrice } from "../shared/ded-moroz-pricing.js";
 
 const run = promisify(execFile);
@@ -47,6 +51,14 @@ export async function decodePhoto(bytes) {
     return await toJpeg(path.join(dir, files[0]));
   } catch { throw problem("Не удалось прочитать HEIC. Выберите другой снимок или версию в JPG."); }
   finally { await rm(dir, { recursive: true, force: true }); }
+}
+
+async function photoForSlot(input, slot) {
+  const jpeg = await decodePhoto(input);
+  const { width, height } = await sharp(jpeg).metadata();
+  const issue = photoIssue(width, height, slot.kind);
+  if (issue) throw problem(slot.label + ". " + issue);
+  return jpeg;
 }
 
 export function orderStore(root, { telegramNotifications = false } = {}) {
@@ -99,13 +111,7 @@ export function orderStore(root, { telegramNotifications = false } = {}) {
     try {
       const slots = photoSlots(draft.children);
       if (photos.length !== slots.length) throw problem("Проверьте комплект фотографий.");
-      for (const [i, slot] of slots.entries()) {
-        const jpeg = await decodePhoto(photos[i]);
-        const { width, height } = await sharp(jpeg).metadata();
-        const issue = photoIssue(width, height, slot.kind);
-        if (issue) throw problem(slot.label + ". " + issue);
-        await writeFile(path.join(stage, slot.file), jpeg);
-      }
+      for (const [i, slot] of slots.entries()) await writeFile(path.join(stage, slot.file), await photoForSlot(photos[i], slot));
       const order = orderFromDraft(draft, id, now, first?.order_id);
       const state = { request_id: requestId };
       if (telegramNotifications) state.telegram_notification = { attempts: 0, nextAttemptAt: now.getTime() };
@@ -120,10 +126,8 @@ export function orderStore(root, { telegramNotifications = false } = {}) {
       return { ...order, ...state };
     } finally { await rm(stage, { recursive: true, force: true }); }
   });
-  const update = (id, patch) => exclusive(async () => {
-    const order = { ...await read(id), ...patch };
+  async function writeOrder(id, order, internal = false) {
     const { request_id, telegram_notification, ...publicData } = order;
-    const internal = Object.hasOwn(patch, "telegram_notification");
     const file = internal ? statePath(id) : path.join(orders, id, "order.json");
     // A legacy order stores both in one file until it first changes.
     await mkdir(stateDir, { recursive: true });
@@ -134,8 +138,57 @@ export function orderStore(root, { telegramNotifications = false } = {}) {
     try {
       await writeFile(temp, JSON.stringify(internal ? { request_id, telegram_notification } : publicData, null, 2));
       await rename(temp, file);
-    } finally { await rm(temp, { force: true }); }
+    } finally { await rm(temp, { force: true }).catch(() => {}); }
     return order;
+  }
+  const update = (id, patch) => exclusive(async () =>
+    writeOrder(id, { ...await read(id), ...patch }, Object.hasOwn(patch, "telegram_notification")),
+  );
+  function photoDir(id, revision) {
+    const dir = path.resolve(orders, id);
+    if (!orderPattern.test(id) || path.dirname(dir) !== orders) throw problem("Заказ не найден.", 404);
+    if (!revision) return dir;
+    const media = path.resolve(dir, "photos-" + revision);
+    if (!orderRequestKeyPattern.test(revision) || path.dirname(media) !== dir) throw problem("Фото не найдено.", 404);
+    return media;
+  }
+  const edit = (id, revision, draft, uploads) => exclusive(async () => {
+    const order = await read(id);
+    if (revision !== (order.edit_revision ?? "initial")) throw problem(orderEditConflict, 409);
+    const [issue] = Object.values(orderEditIssues(order, draft));
+    if (issue) throw problem(issue);
+    const slots = orderEditSlots(order, draft);
+    const replacements = new Map(slots.filter(slot => uploads.has(slot.file)).map(slot => [slot.file, uploads.get(slot.file)]));
+    const { kept, missing } = orderEditPhotos(order, draft, new Set(replacements.keys()));
+    if (missing.length) throw problem("Загрузите фотографию «" + missing[0].label + "».");
+    const next = { ...orderWithEdits(order, draft, kept), edit_revision: randomUUID() };
+    if (!replacements.size && draft.children.length === order.children.length) return writeOrder(id, next);
+
+    const currentDir = photoDir(id, order.photo_revision);
+    const stagedDir = photoDir(id, next.edit_revision);
+    await mkdir(stagedDir);
+    try {
+      for (const slot of slots) {
+        if (!kept.has(slot.file)) continue;
+        const target = path.join(stagedDir, slot.file);
+        if (replacements.has(slot.file)) await writeFile(target, await photoForSlot(replacements.get(slot.file), slot));
+        else await copyFile(path.join(currentDir, slot.file), target);
+      }
+      // A single metadata rename publishes the whole set of photographs.
+      next.photo_revision = next.edit_revision;
+      await writeOrder(id, next);
+    } catch (error) {
+      await rm(stagedDir, { recursive: true, force: true }).catch(() => {});
+      throw error;
+    }
+    if (order.photo_revision) {
+      await rm(currentDir, { recursive: true, force: true }).catch(() => {});
+    } else {
+      for (const { file } of orderPhotos(order)) {
+        if (orderPhotoPattern.test(file)) await rm(path.join(currentDir, file), { force: true }).catch(() => {});
+      }
+    }
+    return next;
   });
   async function removeFiles(id) {
     const dir = path.resolve(orders, id);
@@ -152,12 +205,19 @@ export function orderStore(root, { telegramNotifications = false } = {}) {
       }
     }
   });
-  const photo = async (id, file) => {
-    if (!orderPattern.test(id) || !orderPhotoPattern.test(file)) throw problem("Фото не найдено.", 404);
-    try { return await readFile(path.join(orders, id, file)); }
+  async function readPhoto(order, file) {
+    if (!orderPhotoPattern.test(file)) throw problem("Фото не найдено.", 404);
+    try { return await readFile(path.join(photoDir(order.order_id, order.photo_revision), file)); }
     catch (error) { if (error.code === "ENOENT") throw problem("Фото не найдено.", 404); throw error; }
-  };
-  return { list: () => exclusive(list), create, update, remove, clean, read, photo };
+  }
+  const photo = (id, file) => exclusive(async () => readPhoto(await read(id), file));
+  const archive = id => exclusive(async () => {
+    const order = await read(id);
+    const files = [];
+    for (const slot of orderPhotos(order)) files.push([slot.file, await readPhoto(order, slot.file)]);
+    return { order, files };
+  });
+  return { list: () => exclusive(list), create, update, edit, remove, clean, read, photo, archive };
 }
 
 export function zipFiles(entries) { return Buffer.from(orderZip(entries)); }
