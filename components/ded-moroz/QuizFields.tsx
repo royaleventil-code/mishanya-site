@@ -51,8 +51,10 @@ export function ChildrenFields({ childrenData, errors, edit }: {
         <SelectField id={prefix + "gender"} label="Пол ребёнка" value={child.gender} error={errors[prefix + "gender"]} onChange={gender => edit(index, { gender })}><option value="">Выберите</option><option value="boy">Мальчик</option><option value="girl">Девочка</option></SelectField>
         <TextField id={prefix + "age"} label="Возраст, лет" value={child.age} inputMode="numeric" placeholder="0, если меньше года" error={errors[prefix + "age"]} onChange={age => edit(index, { age })} />
       </div>
-      {childrenData.length <= 2 && <TextField id={prefix + "fact_learned"} label={childrenData.length === 1 ? "Чему ребёнок научился за год?" : "Запись в волшебную книгу"} multiline value={child.fact_learned} placeholder="Например, теперь катается на велосипеде" error={errors[prefix + "fact_learned"]} onChange={fact_learned => edit(index, { fact_learned })} />}
-      {childrenData.length === 1 && <TextField id={prefix + "fact_kind"} label="Какое доброе дело сделал ребёнок?" multiline value={child.fact_kind} placeholder="Помогает бабушке по дому" error={errors[prefix + "fact_kind"]} onChange={fact_kind => edit(index, { fact_kind })} />}
+      {childrenData.length <= 2 && <TextField id={prefix + "fact_learned"}
+        label={childrenData.length === 1 ? "Чем ребёнок занимается или чему научился за год?" : "Запись в волшебную книгу"}
+        multiline value={child.fact_learned} placeholder="Например, теперь катается на велосипеде"
+        error={errors[prefix + "fact_learned"]} onChange={fact_learned => edit(index, { fact_learned })} />}
     </fieldset>;
   })}</div>;
 }
@@ -60,6 +62,9 @@ export function FamilyFields({ draft, errors, change }: {draft: Draft; errors: I
   return <>
     <SelectField id="city" label="В каком городе живёт семья?" value={draft.city} error={errors.city} onChange={city => change({ city })}><option value="">Выберите город</option>{cities.map(city => <option key={city}>{city}</option>)}</SelectField>
     {draft.city === "Другой" && <TextField id="otherCity" label="Название города" value={draft.otherCity} max={40} error={errors.city} onChange={otherCity => change({ otherCity })} />}
-    {draft.children_count === 3 && <TextField id="shared_fact" label="Что ребята сделали вместе в этом году?" hint="Одна запись в книгу для всех троих, от 15 до 60 знаков." multiline max={60} value={draft.shared_fact} placeholder="Помогали бабушке весь год" error={errors.shared_fact} onChange={shared_fact => change({ shared_fact })} />}
+    {draft.children_count === 3 && <TextField id="shared_fact" label="Одна запись в книгу для всех троих"
+      hint="Напишите строку о детях вместе или короткое послание от родителей." max={60}
+      value={draft.shared_fact} placeholder="Например, мы очень вами гордимся!"
+      error={errors.shared_fact} onChange={shared_fact => change({ shared_fact })} />}
   </>;
 }

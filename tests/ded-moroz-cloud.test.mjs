@@ -18,8 +18,8 @@ const draft = {
   ...newDraft(), children_count: 2, city: "Хайфа", parentName: "Тест", whatsapp: "+972505550100",
   consent: true,
   children: [
-    { ...newChild(), name: "Соня", stress: 1, gender: "girl", age: "1", fact_learned: "научилась бегать сама", fact_kind: "" },
-    { ...newChild(), name: "Саша", stress: 1, gender: "boy", age: "7", fact_learned: "научился плавать в море", fact_kind: "" },
+    { ...newChild(), name: "Соня", stress: 1, gender: "girl", age: "1", fact_learned: "научилась бегать сама" },
+    { ...newChild(), name: "Саша", stress: 1, gender: "boy", age: "7", fact_learned: "научился плавать в море" },
   ],
 };
 
@@ -339,6 +339,30 @@ test("the Pages API saves a single complete order, protects access and preserves
     assert.equal(linked.length, 1);
     assert.equal(linked[0].amount_ils, 125);
     assert.equal(db.prepare("SELECT count(*) AS n FROM dm_photo_uploads").get().n, 3);
+  });
+
+  await t.test("a single-child order needs its extra photo and includes it in the archive", async () => {
+    const payload = { ...draft, children_count: 1, children: [draft.children[0]] };
+    const key = crypto.randomUUID();
+    const incomplete = orderForm(key, jpeg, payload);
+    incomplete.delete("child1_3.jpg");
+    const missing = await call(staff, { method: "POST", body: incomplete });
+    assert.equal(missing.status, 400);
+    assert.match((await missing.json()).error, /Ещё одно фото ребёнка/);
+
+    const form = orderForm(key, jpeg, payload);
+    form.set("child1_3.jpg", familyJpeg, "child1_3.jpg");
+    const created = await call(staff, { method: "POST", body: form });
+    assert.equal(created.status, 201);
+    const { order_id: id } = await created.json();
+    const item = (await (await call(staff)).json()).find(order => order.order_id === id);
+    assert.deepEqual(item.children[0].photos, ["child1_1.jpg", "child1_2.jpg", "child1_3.jpg"]);
+    assert.deepEqual(item.children[0].facts, [payload.children[0].fact_learned]);
+    const extra = await call(staff + "/" + id + "/child1_3.jpg");
+    assert.deepEqual(await extra.arrayBuffer(), await familyJpeg.arrayBuffer());
+    const zip = await call(staff + "/" + id + "/zip");
+    assert.equal(zip.status, 200);
+    assert.ok(Buffer.from(await zip.arrayBuffer()).includes("child1_3.jpg"));
   });
 });
 

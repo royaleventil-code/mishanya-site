@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
-import { allDraftIssues, cities, newChild, newDraft, orderFromDraft, orderPhotos, photoIssue, photoSlots, validateDraft, whatsappContactDigits } from "../shared/ded-moroz.ts";
+import { allDraftIssues, cities, maxPhotos, newChild, newDraft, orderFromDraft, orderPhotoPattern, orderPhotos, photoIssue, photoSlots, validateDraft, whatsappContactDigits } from "../shared/ded-moroz.ts";
 import { decodePhoto, orderStore, zipFiles } from "../scripts/ded-moroz-files.mjs";
 import { createTelegramOrderNotifier, loadTelegramSettings, saveTelegramSettings, setupChats } from "../scripts/ded-moroz-telegram.mjs";
 import { formatOrderNotice } from "../shared/ded-moroz-telegram.js";
@@ -14,33 +14,35 @@ const testBotSettings = { token: "123456789:" + "x".repeat(35), chatId: "-100123
 const draft = (count = 2) => ({
   ...newDraft(), children_count: count, children: ["соня", "миша", "лаша", "лиза", "инна"].slice(0,count).map((name,i) => ({
     ...newChild(), name, stress: i === 4 ? 0 : 1, gender: i % 2 ? "boy" : "girl", age: i ? "14" : "1",
-    fact_learned: "научилась плавать в море", fact_kind: "помогает бабушке по дому",
+    fact_learned: "научилась плавать в море",
   })), city: "Ноф-ха-Галиль", shared_fact: "Помогали бабушке весь год",
   parentName: "Анна", whatsapp: "050-123-4567", consent: true,
 });
 async function pictures(count) {
   const make = (width, height) => sharp({ create: { width, height, channels: 3, background: "#775544" } }).png().toBuffer();
   const [portrait, family] = await Promise.all([make(800,920), make(1024,800)]);
-  return photoSlots(draft(count).children).map(s => s.kind === "family" ? family : portrait);
+  return photoSlots(draft(count).children).map(slot => ["family", "extra"].includes(slot.kind) ? family : portrait);
 }
 test("the quiz uses the selected template for every family size", () => {
   assert.ok(validateDraft(newDraft(),0).count);
-  for (const count of [1,2,3,4,5]) {
+  const photoCounts = [4, 3, 4, 5];
+  for (const count of [1, 2, 3, 4]) {
     const d = draft(count);
     assert.deepEqual(allDraftIssues(d), {});
     const order = orderFromDraft(d, "DM-2026-0001", new Date());
     assert.equal(order.children_count, count);
     assert.equal(order.children[0].name_stress, "СОня");
     assert.equal(order.shared_fact, count === 3 ? d.shared_fact : "");
-    assert.deepEqual(order.children.map(c => c.facts.length), Array(count).fill(count === 1 ? 2 : count === 2 ? 1 : 0));
-    assert.equal(orderPhotos(order).length, count === 1 ? 3 : count + 1);
+    assert.deepEqual(order.children.map(c => c.facts.length), Array(count).fill(count <= 2 ? 1 : 0));
+    const files = orderPhotos(order).map(slot => slot.file);
+    assert.equal(files.length, photoCounts[count - 1]);
+    assert.deepEqual(files, photoSlots(d.children).map(slot => slot.file));
     assert.equal(order.parent.whatsapp, "+972501234567");
     assert.equal(Object.hasOwn(order,"ready_by"),false);
     assert.equal(Object.hasOwn(order,"parents_words"),false);
   }
-  const five = draft(5);
-  const six = { ...five, children_count: 6, children: [...five.children, newChild()] };
-  assert.equal(allDraftIssues(six).count, "Выберите от одного до пяти детей.");
+  assert.equal(maxPhotos, Math.max(...photoCounts));
+  assert.equal(allDraftIssues(draft(5)).count, "Выберите от одного до четырёх детей.");
 });
 test("each child needs explicit stress, valid age and a distinct spoken name", () => {
   const d = draft(); d.children[0].stress = -1;
@@ -64,14 +66,19 @@ test("each child needs explicit stress, valid age and a distinct spoken name", (
 test("individual facts accept free text and require a nonempty answer", () => {
   const d = draft(1);
   const child = d.children[0];
-  child.fact_learned = "Баскетбол";
-  child.fact_kind = "С папой путешествует по разным местам.\nБольше всего понравилось в תל אביב! ❤️";
+  child.fact_learned = "С папой путешествует по разным местам.\nБольше всего понравилось в תל אביב! ❤️";
   assert.deepEqual(allDraftIssues(d), {});
-  assert.deepEqual(orderFromDraft(d, "DM-2026-0001", new Date()).children[0].facts, [child.fact_learned, child.fact_kind]);
+  assert.deepEqual(orderFromDraft(d, "DM-2026-0001", new Date()).children[0].facts, [child.fact_learned]);
 
   child.fact_learned = " \n ";
-  child.fact_kind = "";
-  assert.deepEqual(Object.keys(validateDraft(d, 1)), ["child-0-fact_learned", "child-0-fact_kind"]);
+  assert.deepEqual(Object.keys(validateDraft(d, 1)), ["child-0-fact_learned"]);
+  const family = draft(3);
+  family.shared_fact = "Любим вас!";
+  assert.deepEqual(allDraftIssues(family), {});
+  assert.equal(orderFromDraft(family, "DM-2026-0002", new Date()).shared_fact, "Любим вас!");
+  for (const shared_fact of ["", "Любим вас!\nМама и папа", "а".repeat(61)]) {
+    assert.ok(validateDraft({ ...family, shared_fact }, 2).shared_fact);
+  }
 });
 test("the city list uses the current name and older drafts still submit", () => {
   const currentName = "Ноф-ха-Галиль";
@@ -87,14 +94,21 @@ test("photos require the correct size and orientation, older archives retain the
   assert.equal(photoIssue(799,1200,"portrait"),"Фото слишком маленькое, выберите другое");
   assert.ok(photoIssue(1000,800,"portrait")); assert.ok(photoIssue(800,800,"family"));
   assert.equal(photoIssue(800,800,"portrait"),""); assert.equal(photoIssue(1000,800,"family"),"");
+  assert.equal(photoIssue(1000, 800, "extra"), "");
+  const oldSingle = orderFromDraft(draft(1), "DM-2026-0001", new Date());
+  oldSingle.children[0].photos.pop();
+  assert.deepEqual(orderPhotos(oldSingle).map(slot => slot.file), ["child1_1.jpg", "child1_2.jpg", "family.jpg"]);
+  const oldFive = orderFromDraft(draft(5), "DM-2026-0002", new Date());
+  assert.equal(orderPhotos(oldFive).length, 6);
+  assert.ok(orderPhotos(oldFive).every(slot => orderPhotoPattern.test(slot.file)));
   const legacy = { photos:{portrait:"photo1.jpg",activity:"photo2.jpg",drawing:"photo3.jpg",family:"photo4.jpg"} };
   assert.deepEqual(orderPhotos(legacy).map(s => s.file), Object.values(legacy.photos));
 });
-test("two- and four-child orders reach matching folders and survive a retry", async t => {
+test("orders for one to four children reach matching folders and survive a retry", async t => {
   const root = await mkdtemp(path.join(tmpdir(), "greeting-test-")); t.after(() => rm(root,{recursive:true,force:true}));
   const store = orderStore(root);
   await assert.rejects(decodePhoto(Buffer.from("text file in disguise")), /JPG/);
-  for (const count of [2,4]) {
+  for (const count of [1, 2, 3, 4]) {
     const d = draft(count), key = randomUUID(), photos = await pictures(count);
     await assert.rejects(store.create(d,key,[...photos.slice(0,-1), Buffer.from("bad")]));
     const [first, retry] = await Promise.all([store.create(d,key,photos), store.create(d,key,photos)]);
@@ -105,7 +119,7 @@ test("two- and four-child orders reach matching folders and survive a retry", as
     assert.equal(data.children_count,count);
     assert.equal("request_id" in data,false);
     assert.deepEqual((await readdir(folder)).sort(), ["order.json",...files].sort());
-    assert.equal(data.children[0].facts.length, count === 2 ? 1 : 0);
+    assert.equal(data.children[0].facts.length, count <= 2 ? 1 : 0);
     await store.update(first.order_id,{payment_reported:"Bit"}); await store.update(first.order_id,{status:"cancelled"});
     assert.equal((await store.read(first.order_id)).status,"cancelled");
     const archive=zipFiles([["order.json",await readFile(path.join(folder,"order.json"))]]);

@@ -13,7 +13,7 @@ export function loadText(): Saved {
     const children: Child[] = old.children.slice(0, 5).map((c: Partial<Child>) => ({ ...newChild(), ...c }));
     const legacy = saved.version !== 2;
     const data: Draft = {
-      ...fresh.data, children, children_count: counts.includes(old.children_count) ? old.children_count : children.length,
+      ...fresh.data, children, children_count: counts.includes(children.length) ? children.length : 0,
       city: normalizeSelectedCity(old.city || ""), otherCity: old.otherCity || "", shared_fact: old.shared_fact || "",
       parentName: old.parentName || "", whatsapp: old.whatsapp || "", email: old.email || "", consent: old.consent === true,
     };

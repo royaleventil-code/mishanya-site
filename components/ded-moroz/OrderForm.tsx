@@ -50,7 +50,7 @@ export function OrderForm({ staff }: FormProps) {
       const saved = loadText();
       let restored: Photos = {};
       if (saved.legacy) setStorageNote("Сохранили текст вашей анкеты. Выберите число детей, проверьте ударения и добавьте фотографии.");
-      else if (saved.data.children_count) {
+      else if (saved.data.children.length) {
         try { restored = await storedPhotos(saved.key); }
         catch { if (active) setStorageNote("Фотографии не удалось восстановить. Добавьте их ещё раз."); }
       }
@@ -190,15 +190,17 @@ export function OrderForm({ staff }: FormProps) {
     {storageNote && <p className={s.note} role="status">{storageNote}</p>}
     {step === 0 ? <>
       <div className={s.counts} role="group" aria-label="Количество детей" id="count">{counts.map(n =>
-        <button type="button" disabled={!key} key={n} aria-label={n + (n === 1 ? " ребёнок" : n === 5 ? " детей" : " ребёнка")} aria-pressed={draft.children_count === n} onClick={() => changeCount(n)}><strong>{n}</strong><span>{n === 1 ? "ребёнок" : n === 5 ? "детей" : "ребёнка"}</span></button>
+        <button type="button" disabled={!key} key={n} aria-label={n + (n === 1 ? " ребёнок" : " ребёнка")} aria-pressed={draft.children_count === n} onClick={() => changeCount(n)}><strong>{n}</strong><span>{n === 1 ? "ребёнок" : "ребёнка"}</span></button>
       )}</div>
-      <p className={s.note}>До пяти детей в одном видеопоздравлении.</p>
+      <p className={s.note}>{draft.children.length > counts.length
+        ? "Выберите количество заново. В одном ролике можно поздравить до четырёх детей."
+        : "До четырёх детей в одном видеопоздравлении."}</p>
       {staff && <button type="button" className={s.back} onClick={staff.onCancel}>Отменить</button>}
     </> : <form onSubmit={submit} noValidate>
       {step === 1 && <ChildrenFields childrenData={draft.children} errors={errors} edit={changeChild} />}
       {step === 2 && <FamilyFields draft={draft} errors={errors} change={change} />}
       {step === 3 && <>
-        <p className={s.note}>По короткой стороне — от 800 пикселей. JPG, PNG или HEIC, до 15 МБ за снимок.</p>
+        <p className={s.note}>Загрузите {slots.length} фото. По короткой стороне — от 800 пикселей. JPG, PNG или HEIC, до 15 МБ за снимок.</p>
         <div className={s.photos}>{slots.map(slot => <PhotoSlot key={slot.file} slot={slot} value={photos[slot.file]} error={errors["photo-" + slot.file]} onChange={p => addPhoto(slot.file, p)} onBusy={delta => setBusyPhotos(n => n + delta)} />)}</div>
       </>}
       {step === 4 && <>

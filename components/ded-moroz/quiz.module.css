@@ -21,7 +21,7 @@
 .progressBars { display: flex; gap: 6px; margin: 10px 0 27px; }
 .progressBars span { height: 5px; flex: 1; border-radius: 5px; background: #e4edf5; }
 .progressBars span[data-complete="true"] { background: #2b74b6; }
-.counts { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: clamp(7px, 1.3vw, 13px); margin: 25px 0 18px; }
+.counts { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: clamp(7px, 1.3vw, 13px); margin: 25px 0 18px; }
 .counts button { display: grid; place-content: center; min-height: 88px; padding: 8px 3px; color: #144c7e; background: #f3f9ff; border: 1px solid #b9d3e9; border-radius: 14px; }
 .counts strong { font: 900 2rem/1.15 var(--font-nunito), sans-serif; }
 .counts span { font-size: .875rem; }
@@ -52,31 +52,39 @@
 .card .note { margin: 12px 0; }
 .photos { margin-top: 18px; gap: 14px; }
 .photos :global(.dm-photo-slot) { min-width: 0; margin: 0; padding: 15px; border-color: #cbdfee; background: #f7fbff; }
-.photos :global(.dm-slot-heading) { display: flex; align-items: center; gap: 6px; font-size: 1rem; color: var(--dark); }
+.photos :global(.dm-slot-heading) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  color: var(--dark);
+  font-size: 1.25rem;
+  font-weight: 750;
+  line-height: 1.25;
+}
+.photos :global(.dm-slot-heading > svg) { flex: none; }
 .photos :global(.dm-photo-slot[data-kind="portrait"]) { --portrait-color: #125a9e; }
 .photos :global(.dm-photo-slot[data-kind="portrait"]:nth-child(2)) { --portrait-color: #126152; }
 .photos :global(.dm-photo-slot[data-kind="portrait"]:nth-child(3)) { --portrait-color: #694197; }
 .photos :global(.dm-photo-slot[data-kind="portrait"]:nth-child(4)) { --portrait-color: #8c4717; }
-.photos :global(.dm-photo-slot[data-kind="portrait"]:nth-child(5)) { --portrait-color: #882d58; }
 .photos :global(.dm-photo-slot[data-kind="portrait"] .dm-slot-heading) {
   align-items: flex-start;
   justify-content: flex-start;
   gap: 10px;
   color: var(--portrait-color);
-  font-size: 3rem;
+  font-size: 3.125rem;
   font-weight: 750;
   line-height: 1.1;
   overflow-wrap: anywhere;
 }
 .photos :global(.dm-photo-slot[data-kind="portrait"] .dm-slot-heading > svg) {
-  flex: none;
   margin-top: .36em;
 }
 .photos :global(.dm-photo-slot[data-kind="family"] .dm-slot-heading) {
   display: grid;
   grid-template-columns: minmax(18px, 1fr) auto minmax(18px, 1fr);
   gap: 8px;
-  font-size: 1.375rem;
+  font-size: 1.5rem;
   font-weight: 750;
   line-height: 1.25;
   text-align: center;
